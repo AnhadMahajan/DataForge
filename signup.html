@@ -15,88 +15,158 @@
   <link rel="stylesheet" href="css/pages/auth.css">
 </head>
 <body class="auth-page">
-  <div class="auth-card" id="signup-card">
-    <div class="auth-logo">
-      <a href="index.html" class="auth-logo-text">Data<span>Forge</span></a>
-    </div>
+  <div class="auth-container">
+    
+    <!-- Left Showcase Panel (Visual Contrast) -->
+    <aside class="auth-showcase">
+      <div class="auth-showcase-top">
+        <a href="index.html" class="auth-showcase-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span>Data<b>Forge</b></span>
+        </a>
+        <div class="auth-showcase-tag">Empirical Augmentation Suite</div>
 
-    <h1 class="auth-title">Create an account</h1>
-    <p class="auth-subtitle">Begin scientific evaluation of your synthetic data</p>
-
-    <form class="auth-form" id="signup-form" novalidate>
-      <div class="form-group">
-        <label for="name" class="form-label">Full name</label>
-        <input 
-          type="text" 
-          id="name" 
-          name="name" 
-          class="input" 
-          placeholder="e.g. Alex Morgan" 
-          autocomplete="name"
-          required
-        >
-        <div class="form-error hidden" id="name-error"></div>
-      </div>
-
-      <div class="form-group">
-        <label for="email" class="form-label">Email address</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          class="input" 
-          placeholder="name@organization.com" 
-          autocomplete="email"
-          required
-        >
-        <div class="form-error hidden" id="email-error"></div>
-      </div>
-
-      <div class="form-group">
-        <label for="password" class="form-label">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          class="input" 
-          placeholder="At least 8 characters" 
-          autocomplete="new-password"
-          required
-        >
-        <div class="password-strength" id="password-strength" data-score="0">
-          <div class="password-strength-segment"></div>
-          <div class="password-strength-segment"></div>
-          <div class="password-strength-segment"></div>
-          <div class="password-strength-segment"></div>
+        <div class="auth-showcase-metric-card">
+          <div class="text-caption" style="color: #999;">Mathematical Rigor</div>
+          <div class="auth-showcase-metric-val">0% Leakage</div>
+          <div class="text-small" style="color: #aaa; margin-top: 4px;">
+            Cross-stratified evaluations benchmark baseline against candidate models on identical untouched test sets.
+          </div>
         </div>
-        <div class="password-strength-label" id="strength-label">Password strength</div>
-        <div class="form-error hidden" id="password-error"></div>
+
+        <div class="auth-showcase-features">
+          <div class="auth-showcase-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Augmentation Need Score (0–100) based on skew & outliers</span>
+          </div>
+          <div class="auth-showcase-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>SMOTE, Jittered Oversampling & Gaussian Noise Lab</span>
+          </div>
+          <div class="auth-showcase-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Causal mechanism reports with statistical significance p-values</span>
+          </div>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="confirmPassword" class="form-label">Confirm password</label>
-        <input 
-          type="password" 
-          id="confirmPassword" 
-          name="confirmPassword" 
-          class="input" 
-          placeholder="Re-enter password" 
-          autocomplete="new-password"
-          required
-        >
-        <div class="form-error hidden" id="confirm-error"></div>
+      <div class="auth-showcase-footer">
+        © 2026 DataForge. Zero cloud backend dependency.
+      </div>
+    </aside>
+
+    <!-- Right Form Panel -->
+    <main class="auth-form-panel">
+      <div class="auth-header">
+        <div class="auth-header-pill">New Researcher</div>
+        <h1 class="auth-title">Create your workspace</h1>
+        <p class="auth-subtitle">Get started with private client-side ML evaluation</p>
       </div>
 
-      <button type="submit" class="btn btn-primary auth-submit" id="submit-btn">
-        <span>Create account</span>
-      </button>
-    </form>
+      <form class="auth-form" id="signup-form" novalidate>
+        <div class="form-group">
+          <label for="name" class="form-label">Full name</label>
+          <input 
+            type="text" 
+            id="name" 
+            name="name" 
+            class="input" 
+            placeholder="Dr. Elena Vance" 
+            autocomplete="name"
+            required
+          >
+          <div class="form-error hidden" id="name-error"></div>
+        </div>
 
-    <div class="auth-footer">
-      <p class="auth-footer-text">
-        Already have an account? <a href="login.html">Log in</a>
-      </p>
-    </div>
+        <div class="form-group">
+          <label for="email" class="form-label">Email address</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="input" 
+            placeholder="elena@dataforge.ai" 
+            autocomplete="email"
+            required
+          >
+          <div class="form-error hidden" id="email-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="input" 
+              placeholder="Minimum 8 characters" 
+              autocomplete="new-password"
+              required
+            >
+            <button type="button" class="btn-toggle-password" id="toggle-password" aria-label="Toggle password visibility">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="password-strength" id="password-strength" data-score="0">
+            <div class="password-strength-segment"></div>
+            <div class="password-strength-segment"></div>
+            <div class="password-strength-segment"></div>
+            <div class="password-strength-segment"></div>
+          </div>
+          <div class="password-strength-label" id="strength-label">Password strength</div>
+
+          <div class="password-criteria" id="password-criteria">
+            <div class="criteria-item" id="crit-length"><div class="criteria-dot"></div><span>8+ characters</span></div>
+            <div class="criteria-item" id="crit-lower"><div class="criteria-dot"></div><span>Lowercase letter</span></div>
+            <div class="criteria-item" id="crit-upper"><div class="criteria-dot"></div><span>Uppercase letter</span></div>
+            <div class="criteria-item" id="crit-number"><div class="criteria-dot"></div><span>Number or symbol</span></div>
+          </div>
+
+          <div class="form-error hidden" id="password-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword" class="form-label">Confirm password</label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="confirmPassword" 
+              name="confirmPassword" 
+              class="input" 
+              placeholder="Re-enter password" 
+              autocomplete="new-password"
+              required
+            >
+            <button type="button" class="btn-toggle-password" id="toggle-confirm" aria-label="Toggle password visibility">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div class="form-error hidden" id="confirm-error"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary auth-submit-btn" id="submit-btn">
+          <span>Create Researcher Account</span>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p class="auth-footer-text">
+          Already registered? <a href="login.html">Sign In</a>
+        </p>
+      </div>
+    </main>
+
   </div>
 
   <script type="module" src="js/pages/signup.js"></script>

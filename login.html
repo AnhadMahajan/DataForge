@@ -15,66 +15,123 @@
   <link rel="stylesheet" href="css/pages/auth.css">
 </head>
 <body class="auth-page">
-  <div class="auth-card" id="login-card">
-    <div class="auth-logo">
-      <a href="index.html" class="auth-logo-text">Data<span>Forge</span></a>
-    </div>
+  <div class="auth-container">
+    
+    <!-- Left Showcase Panel (Visual Contrast) -->
+    <aside class="auth-showcase">
+      <div class="auth-showcase-top">
+        <a href="index.html" class="auth-showcase-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span>Data<b>Forge</b></span>
+        </a>
+        <div class="auth-showcase-tag">Scientific Intelligence Suite</div>
 
-    <h1 class="auth-title">Welcome back</h1>
-    <p class="auth-subtitle">Enter your credentials to access your workspace</p>
-
-    <form class="auth-form" id="login-form" novalidate>
-      <div class="form-group">
-        <label for="email" class="form-label">Email address</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          class="input" 
-          placeholder="name@organization.com" 
-          autocomplete="email"
-          required
-        >
-        <div class="form-error hidden" id="email-error"></div>
-      </div>
-
-      <div class="form-group">
-        <div class="flex items-center justify-between mb-xs">
-          <label for="password" class="form-label m-0">Password</label>
+        <div class="auth-showcase-metric-card">
+          <div class="text-caption" style="color: #999;">Verified Baseline Benchmark</div>
+          <div class="auth-showcase-metric-val">+14.2% Macro F1</div>
+          <div class="text-small" style="color: #aaa; margin-top: 4px;">
+            SMOTE (k=5) + Gaussian Jitter on Imbalanced Churn Data
+          </div>
         </div>
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          class="input" 
-          placeholder="••••••••" 
-          autocomplete="current-password"
-          required
-        >
-        <div class="form-error hidden" id="password-error"></div>
+
+        <div class="auth-showcase-features">
+          <div class="auth-showcase-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Held-out unaugmented test partitions to prevent synthetic leakage</span>
+          </div>
+          <div class="auth-showcase-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Automated degradation alerts & class-level trade-off detection</span>
+          </div>
+          <div class="auth-showcase-feature-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>100% Client-side local execution with private storage</span>
+          </div>
+        </div>
       </div>
 
-      <div class="auth-options">
-        <label class="checkbox-group">
-          <input type="checkbox" id="remember" class="checkbox" checked>
-          <span class="checkbox-label">Keep me signed in</span>
-        </label>
+      <div class="auth-showcase-footer">
+        © 2026 DataForge. Deterministic Machine Learning Sandbox.
+      </div>
+    </aside>
+
+    <!-- Right Form Panel -->
+    <main class="auth-form-panel">
+      <div class="auth-header">
+        <div class="auth-header-pill">Researcher Access</div>
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-subtitle">Enter your credentials to access your intelligence workspace</p>
       </div>
 
-      <button type="submit" class="btn btn-primary auth-submit" id="submit-btn">
-        <span>Log in</span>
+      <!-- Quick Demo Login Button -->
+      <button type="button" class="demo-pill-btn" id="btn-demo-login">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        <span>1-Click Demo Access (Dr. Vance)</span>
       </button>
 
-      <button type="button" class="btn btn-secondary auth-submit mt-sm" id="btn-demo-login">
-        <span>⚡ Launch Demo Workspace</span>
-      </button>
-    </form>
+      <form class="auth-form" id="login-form" novalidate>
+        <div class="form-group">
+          <label for="email" class="form-label">Email address</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="input" 
+            placeholder="vance@dataforge.ai" 
+            autocomplete="email"
+            required
+          >
+          <div class="form-error hidden" id="email-error"></div>
+        </div>
 
-    <div class="auth-footer">
-      <p class="auth-footer-text">
-        Don't have an account? <a href="signup.html">Create one</a>
-      </p>
-    </div>
+        <div class="form-group">
+          <div class="flex items-center justify-between mb-xs">
+            <label for="password" class="form-label m-0">Password</label>
+          </div>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="input" 
+              placeholder="••••••••••••" 
+              autocomplete="current-password"
+              required
+            >
+            <button type="button" class="btn-toggle-password" id="toggle-password" aria-label="Toggle password visibility">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div class="form-error hidden" id="password-error"></div>
+        </div>
+
+        <div class="auth-options">
+          <label class="checkbox-group">
+            <input type="checkbox" id="remember" class="checkbox" checked>
+            <span class="checkbox-label">Keep me signed in</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary auth-submit-btn" id="submit-btn">
+          <span>Sign In to Workspace</span>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p class="auth-footer-text">
+          Don't have an account? <a href="signup.html">Create free account</a>
+        </p>
+      </div>
+    </main>
+
   </div>
 
   <script type="module" src="js/pages/login.js"></script>

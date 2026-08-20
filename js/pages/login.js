@@ -15,22 +15,46 @@ const emailError = qs('#email-error');
 const passwordError = qs('#password-error');
 const submitBtn = qs('#submit-btn');
 const btnDemoLogin = qs('#btn-demo-login');
+const togglePasswordBtn = qs('#toggle-password');
 
+// Password Visibility Toggle
+if (togglePasswordBtn && passwordInput) {
+  togglePasswordBtn.addEventListener('click', () => {
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    togglePasswordBtn.innerHTML = isPassword
+      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>`
+      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>`;
+  });
+}
+
+// 1-Click Demo Login Handler
 if (btnDemoLogin) {
   btnDemoLogin.addEventListener('click', async () => {
     btnDemoLogin.disabled = true;
-    btnDemoLogin.innerHTML = '<span class="spinner"></span>';
-    toast.info('Launching Demo Workspace...');
+    btnDemoLogin.innerHTML = '<span class="spinner"></span> <span>Launching Demo Workspace...</span>';
+    toast.info('Authenticating demo researcher account...');
     const res = await loginAsDemo();
     if (res.success) {
-      toast.success('Logged in as Demo Researcher.');
+      toast.success('Logged in as Demo Researcher (Dr. Vance).');
       setTimeout(() => {
         window.location.href = 'dashboard.html';
       }, 400);
     } else {
       toast.error('Failed to launch demo session.');
       btnDemoLogin.disabled = false;
-      btnDemoLogin.textContent = '⚡ Launch Demo Workspace';
+      btnDemoLogin.innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        <span>1-Click Demo Access (Dr. Vance)</span>
+      `;
     }
   });
 }
@@ -72,7 +96,7 @@ form.addEventListener('submit', async (e) => {
   clearErrors();
 
   const formData = {
-    email: emailInput.value,
+    email: emailInput.value.trim(),
     password: passwordInput.value,
   };
 
@@ -82,10 +106,9 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  // Disable button while processing
   submitBtn.disabled = true;
   const originalText = submitBtn.innerHTML;
-  submitBtn.innerHTML = '<span class="spinner spinner-light"></span>';
+  submitBtn.innerHTML = '<span class="spinner spinner-light"></span> <span>Authenticating...</span>';
 
   try {
     const result = await login(formData.email, formData.password);
@@ -93,7 +116,7 @@ form.addEventListener('submit', async (e) => {
       toast.success('Welcome back to DataForge.');
       setTimeout(() => {
         window.location.href = 'dashboard.html';
-      }, 500);
+      }, 400);
     } else {
       toast.error(result.error.message || 'Login failed. Please check credentials.');
       passwordInput.classList.add('input-error');

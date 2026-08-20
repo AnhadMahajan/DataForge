@@ -27,14 +27,54 @@ const strengthBar = qs('#password-strength');
 const strengthLabel = qs('#strength-label');
 const submitBtn = qs('#submit-btn');
 
-// Live password strength indicator
+const togglePasswordBtn = qs('#toggle-password');
+const toggleConfirmBtn = qs('#toggle-confirm');
+
+const critLength = qs('#crit-length');
+const critLower = qs('#crit-lower');
+const critUpper = qs('#crit-upper');
+const critNumber = qs('#crit-number');
+
+// Password Visibility Toggles
+function setupPasswordToggle(button, input) {
+  if (!button || !input) return;
+  button.addEventListener('click', () => {
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    button.innerHTML = isPassword
+      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>`
+      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>`;
+  });
+}
+
+setupPasswordToggle(togglePasswordBtn, passwordInput);
+setupPasswordToggle(toggleConfirmBtn, confirmPasswordInput);
+
+// Live password strength & criteria indicator
 passwordInput.addEventListener('input', () => {
   const val = passwordInput.value;
   if (!val) {
     strengthBar.dataset.score = '0';
     strengthLabel.textContent = 'Password strength';
+    if (critLength) critLength.classList.remove('met');
+    if (critLower) critLower.classList.remove('met');
+    if (critUpper) critUpper.classList.remove('met');
+    if (critNumber) critNumber.classList.remove('met');
     return;
   }
+
+  // Update criteria checklist
+  if (critLength) critLength.classList.toggle('met', val.length >= 8);
+  if (critLower) critLower.classList.toggle('met', /[a-z]/.test(val));
+  if (critUpper) critUpper.classList.toggle('met', /[A-Z]/.test(val));
+  if (critNumber) critNumber.classList.toggle('met', /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(val));
+
   const res = checkPasswordStrength(val);
   strengthBar.dataset.score = String(res.score);
   strengthLabel.textContent = `${res.label}${res.feedback.length > 0 ? ' — ' + res.feedback[0] : ''}`;
@@ -42,11 +82,13 @@ passwordInput.addEventListener('input', () => {
 
 function clearErrors() {
   [nameError, emailError, passwordError, confirmError].forEach(el => {
-    hide(el);
-    el.textContent = '';
+    if (el) {
+      hide(el);
+      el.textContent = '';
+    }
   });
   [nameInput, emailInput, passwordInput, confirmPasswordInput].forEach(el => {
-    el.classList.remove('input-error');
+    if (el) el.classList.remove('input-error');
   });
 }
 
@@ -78,8 +120,8 @@ form.addEventListener('submit', async (e) => {
   clearErrors();
 
   const formData = {
-    name: nameInput.value,
-    email: emailInput.value,
+    name: nameInput.value.trim(),
+    email: emailInput.value.trim(),
     password: passwordInput.value,
     confirmPassword: confirmPasswordInput.value,
   };
@@ -111,15 +153,15 @@ form.addEventListener('submit', async (e) => {
 
   submitBtn.disabled = true;
   const originalText = submitBtn.innerHTML;
-  submitBtn.innerHTML = '<span class="spinner spinner-light"></span>';
+  submitBtn.innerHTML = '<span class="spinner spinner-light"></span> <span>Creating account...</span>';
 
   try {
     const result = await signup(formData.name, formData.email, formData.password);
     if (result.success) {
-      toast.success('Account created successfully.');
+      toast.success('Researcher account created successfully.');
       setTimeout(() => {
         window.location.href = 'dashboard.html';
-      }, 500);
+      }, 400);
     } else {
       toast.error(result.error.message || 'Registration failed.');
       if (result.error.code === 'EMAIL_EXISTS') {
