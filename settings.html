@@ -20,51 +20,99 @@
     <div id="sidebar"></div>
 
     <main class="main-content">
+      <!-- Page Header -->
       <header class="page-header">
         <div class="page-header-left">
           <h1 class="page-title">Workspace Settings</h1>
-          <p class="page-subtitle">Configure defaults, manage account details, and backup your workspace data.</p>
+          <p class="page-subtitle">Configure defaults, manage researcher credentials, and monitor client storage.</p>
         </div>
       </header>
 
+      <!-- Profile Header Banner -->
+      <section class="profile-banner-card">
+        <div class="profile-banner-left">
+          <div class="profile-banner-avatar" id="user-avatar-badge">DR</div>
+          <div>
+            <div class="profile-banner-name" id="user-banner-name">Researcher</div>
+            <div class="profile-banner-email" id="user-banner-email">user@dataforge.ai</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-xs">
+          <span class="pill pill-positive">Client Engine: Active</span>
+          <span class="pill">SHA-256 Auth</span>
+        </div>
+      </section>
+
+      <!-- Settings Layout -->
       <div class="settings-grid">
+        
         <!-- Settings Nav Tabs -->
         <nav class="settings-nav">
-          <button class="settings-nav-btn active" data-tab="profile">Account Profile</button>
-          <button class="settings-nav-btn" data-tab="preferences">Evaluation Defaults</button>
-          <button class="settings-nav-btn" data-tab="storage">Data & Storage</button>
-          <button class="settings-nav-btn" data-tab="about">About DataForge</button>
+          <button class="settings-nav-btn active" data-tab="profile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span>Account Profile</span>
+          </button>
+
+          <button class="settings-nav-btn" data-tab="preferences">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span>Evaluation Defaults</span>
+          </button>
+
+          <button class="settings-nav-btn" data-tab="storage">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+            <span>Data &amp; Storage</span>
+          </button>
+
+          <button class="settings-nav-btn" data-tab="about">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>Engine Specifications</span>
+          </button>
         </nav>
 
         <!-- Settings Content Panes -->
         <div class="settings-content">
+          
           <!-- Tab 1: Profile -->
           <section id="tab-profile" class="card">
-            <div class="card-title mb-lg">User Profile</div>
+            <div class="card-title mb-lg">Researcher Profile</div>
             <form id="profile-form" class="stack stack-md">
               <div class="form-group">
                 <label for="profile-name" class="form-label">Full Name</label>
-                <input type="text" id="profile-name" class="input" required>
+                <input type="text" id="profile-name" class="input" placeholder="e.g. Dr. Elena Vance" required>
               </div>
               <div class="form-group">
                 <label for="profile-email" class="form-label">Email Address</label>
-                <input type="email" id="profile-email" class="input" disabled>
-                <span class="form-hint">Email cannot be changed after registration.</span>
+                <input type="email" id="profile-email" class="input" disabled style="opacity: 0.7; cursor: not-allowed;">
+                <span class="form-hint">Email address serves as your cryptographic workspace identifier.</span>
               </div>
-              <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-start;">Save Changes</button>
+              <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-start;">Save Profile</button>
             </form>
 
-            <hr>
+            <hr class="divider">
 
-            <div class="card-title mb-md">Change Password</div>
+            <div class="card-title mb-md">Security &amp; Password</div>
             <form id="password-form" class="stack stack-md">
               <div class="form-group">
                 <label for="current-pwd" class="form-label">Current Password</label>
-                <input type="password" id="current-pwd" class="input" required>
+                <input type="password" id="current-pwd" class="input" placeholder="••••••••••••" required>
               </div>
               <div class="form-group">
                 <label for="new-pwd" class="form-label">New Password</label>
-                <input type="password" id="new-pwd" class="input" required>
+                <input type="password" id="new-pwd" class="input" placeholder="Minimum 8 characters" required>
               </div>
               <button type="submit" class="btn btn-secondary btn-sm" style="align-self: flex-start;">Update Password</button>
             </form>
@@ -72,68 +120,162 @@
 
           <!-- Tab 2: Preferences -->
           <section id="tab-preferences" class="card hidden">
-            <div class="card-title mb-lg">Default Evaluation Parameters</div>
+            <div class="card-title mb-xs">Default Evaluation Parameters</div>
+            <p class="text-secondary text-small mb-lg">These parameters are applied automatically when launching new controlled experiments.</p>
+
             <form id="preferences-form" class="stack stack-md">
               <div class="form-group">
-                <label for="pref-runs" class="form-label">Default Evaluation Runs</label>
+                <label for="pref-runs" class="form-label">Default Evaluation Runs (Variance Tracking)</label>
                 <select id="pref-runs" class="select">
-                  <option value="3">3 Iterations</option>
-                  <option value="5" selected>5 Iterations (Recommended)</option>
-                  <option value="10">10 Iterations</option>
+                  <option value="3">3 Iterations (Fast testing)</option>
+                  <option value="5" selected>5 Iterations (Recommended for statistical significance)</option>
+                  <option value="10">10 Iterations (Deep scientific benchmark)</option>
                 </select>
+                <span class="form-hint">Higher iterations compute tighter standard deviation bounds (±σ).</span>
               </div>
+
               <div class="form-group">
-                <label for="pref-split" class="form-label">Default Train / Test Split</label>
+                <label for="pref-split" class="form-label">Default Train / Test Partition</label>
                 <select id="pref-split" class="select">
                   <option value="0.7">70% Train / 30% Test</option>
-                  <option value="0.8" selected>80% Train / 20% Test</option>
+                  <option value="0.8" selected>80% Train / 20% Test (Standard)</option>
                   <option value="0.9">90% Train / 10% Test</option>
                 </select>
+                <span class="form-hint">Test partitions are strictly held-out and never receive synthetic samples.</span>
               </div>
+
               <div class="form-group">
-                <label for="pref-model" class="form-label">Default Classifier Architecture</label>
+                <label for="pref-model" class="form-label">Default Benchmark Classifier Architecture</label>
                 <select id="pref-model" class="select">
-                  <option value="knn" selected>k-Nearest Neighbors (k=3)</option>
-                  <option value="decision_tree">Decision Tree (Depth=4)</option>
+                  <option value="knn" selected>k-Nearest Neighbors (k=3, Min-Max Normalized)</option>
+                  <option value="decision_tree">Decision Tree (Information Gain, Max Depth=4)</option>
                 </select>
               </div>
+
               <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-start;">Save Preferences</button>
             </form>
           </section>
 
           <!-- Tab 3: Data & Storage -->
           <section id="tab-storage" class="card hidden">
-            <div class="card-title mb-md">Storage Footprint</div>
-            <p class="text-secondary text-small mb-md" id="storage-usage-text">Computing local storage usage...</p>
+            <div class="card-title mb-xs">Browser Storage Quota</div>
+            <p class="text-secondary text-small">All datasets, model evaluations, and audit reports are stored privately in your browser's persistent localStorage.</p>
 
-            <hr>
+            <div class="storage-progress-container">
+              <div class="storage-progress-header">
+                <span>Storage Utilization</span>
+                <span class="mono" id="storage-usage-text">0.00 MB / 5.00 MB</span>
+              </div>
+              <div class="storage-bar-track">
+                <div class="storage-bar-fill" id="storage-bar-fill" style="width: 5%;"></div>
+              </div>
 
-            <div class="card-title mb-xs">Backup & Portability</div>
-            <p class="text-secondary text-small mb-md">Download all datasets, experiments, and reports as a single portable JSON file.</p>
-            <div class="flex gap-sm">
-              <button class="btn btn-secondary btn-sm" id="btn-export-data">Export All Data (JSON)</button>
-              <label class="btn btn-secondary btn-sm cursor-pointer">
-                Import JSON Backup
+              <div class="storage-stats-grid">
+                <div class="storage-stat-tile">
+                  <div class="storage-stat-num" id="stat-count-datasets">0</div>
+                  <div class="storage-stat-label">Datasets</div>
+                </div>
+                <div class="storage-stat-tile">
+                  <div class="storage-stat-num" id="stat-count-experiments">0</div>
+                  <div class="storage-stat-label">Experiments</div>
+                </div>
+                <div class="storage-stat-tile">
+                  <div class="storage-stat-num" id="stat-count-reports">0</div>
+                  <div class="storage-stat-label">Reports</div>
+                </div>
+                <div class="storage-stat-tile">
+                  <div class="storage-stat-num" id="stat-count-keys">0</div>
+                  <div class="storage-stat-label">Total Records</div>
+                </div>
+              </div>
+            </div>
+
+            <hr class="divider">
+
+            <div class="card-title mb-xs">Workspace Backup &amp; Portability</div>
+            <p class="text-secondary text-small mb-md">Download or migrate your complete workspace as a standalone portable JSON manifest.</p>
+            
+            <div class="flex gap-sm flex-wrap">
+              <button class="btn btn-secondary btn-sm" id="btn-export-data">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Export Backup (JSON)</span>
+              </button>
+
+              <label class="btn btn-secondary btn-sm cursor-pointer" id="label-import">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>Import JSON Backup</span>
                 <input type="file" id="input-import-data" accept=".json,application/json" class="hidden">
               </label>
             </div>
 
-            <hr>
+            <hr class="divider">
 
-            <div class="card-title mb-xs" style="color: var(--result-negative);">Danger Zone</div>
-            <p class="text-secondary text-small mb-md">Permanently wipe all local datasets and experiments from this browser origin.</p>
-            <button class="btn btn-danger btn-sm" id="btn-clear-data">Clear Workspace Data</button>
-          </section>
-
-          <!-- Tab 4: About -->
-          <section id="tab-about" class="card hidden">
-            <div class="card-title mb-xs">DataForge v1.0</div>
-            <p class="text-secondary text-small mb-md">Synthetic Data Intelligence Engine</p>
-            <div class="stack stack-sm text-small">
-              <p>Built with vanilla ES modules, pure mathematical vector arithmetic, and monochrome glassmorphism.</p>
-              <p>Designed under the core principle that synthetic data must always be treated as an empirical hypothesis tested against unaugmented held-out ground truth.</p>
+            <div class="danger-zone-card">
+              <div class="danger-zone-header">
+                <div class="card-title text-small" style="color: var(--result-negative);">Danger Zone: Wipe Local Workspace</div>
+                <span class="pill pill-negative">Irreversible</span>
+              </div>
+              <p class="text-secondary text-small mb-md">Permanently erase all stored datasets, historical experiment trials, and compiled reports from this browser instance.</p>
+              <button class="btn btn-danger btn-sm" id="btn-clear-data">Clear Workspace Data</button>
             </div>
           </section>
+
+          <!-- Tab 4: Engine Specifications -->
+          <section id="tab-about" class="card hidden">
+            <div class="card-title mb-xs">DataForge v1.0.0 (Evaluation Build)</div>
+            <p class="text-secondary text-small mb-md">Client-Side Deterministic Synthetic Data Intelligence Engine</p>
+
+            <div class="spec-grid">
+              <div class="spec-card">
+                <div class="spec-card-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                  <span>SMOTE (Chawla et al.)</span>
+                </div>
+                <div class="spec-card-desc">
+                  Calculates Euclidean nearest neighbors on Min-Max normalized feature spaces and interpolates synthetic samples along convex feature line segments.
+                </div>
+              </div>
+
+              <div class="spec-card">
+                <div class="spec-card-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                  <span>Gaussian Jittering</span>
+                </div>
+                <div class="spec-card-desc">
+                  Generates zero-mean perturbations scaled by per-feature standard deviations ($\sigma \cdot 0.1$) via Box-Muller transform to avoid exact sample duplication.
+                </div>
+              </div>
+
+              <div class="spec-card">
+                <div class="spec-card-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                  <span>Controlled Evaluation</span>
+                </div>
+                <div class="spec-card-desc">
+                  Executes stratified train/test partitioning prior to augmentation. Test sets are strictly held out to guarantee 0% data leakage across all trials.
+                </div>
+              </div>
+
+              <div class="spec-card">
+                <div class="spec-card-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                  <span>Degradation Detection</span>
+                </div>
+                <div class="spec-card-desc">
+                  Monitors per-class precision and recall deltas. Flags failure if majority precision drops $>3.5\%$ and issues honest caution warnings.
+                </div>
+              </div>
+            </div>
+          </section>
+
         </div>
       </div>
     </main>
