@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up — DataForge</title>
+  <meta name="description" content="Create a DataForge account to start measuring synthetic data impact.">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/auth.css">
+</head>
+<body class="auth-page">
+  <div class="auth-card" id="signup-card">
+    <div class="auth-logo">
+      <a href="index.html" class="auth-logo-text">Data<span>Forge</span></a>
+    </div>
+
+    <h1 class="auth-title">Create an account</h1>
+    <p class="auth-subtitle">Begin scientific evaluation of your synthetic data</p>
+
+    <form class="auth-form" id="signup-form" novalidate>
+      <div class="form-group">
+        <label for="name" class="form-label">Full name</label>
+        <input 
+          type="text" 
+          id="name" 
+          name="name" 
+          class="input" 
+          placeholder="e.g. Alex Morgan" 
+          autocomplete="name"
+          required
+        >
+        <div class="form-error hidden" id="name-error"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">Email address</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          class="input" 
+          placeholder="name@organization.com" 
+          autocomplete="email"
+          required
+        >
+        <div class="form-error hidden" id="email-error"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          name="password" 
+          class="input" 
+          placeholder="At least 8 characters" 
+          autocomplete="new-password"
+          required
+        >
+        <div class="password-strength" id="password-strength" data-score="0">
+          <div class="password-strength-segment"></div>
+          <div class="password-strength-segment"></div>
+          <div class="password-strength-segment"></div>
+          <div class="password-strength-segment"></div>
+        </div>
+        <div class="password-strength-label" id="strength-label">Password strength</div>
+        <div class="form-error hidden" id="password-error"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword" class="form-label">Confirm password</label>
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          name="confirmPassword" 
+          class="input" 
+          placeholder="Re-enter password" 
+          autocomplete="new-password"
+          required
+        >
+        <div class="form-error hidden" id="confirm-error"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary auth-submit" id="submit-btn">
+        <span>Create account</span>
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p class="auth-footer-text">
+        Already have an account? <a href="login.html">Log in</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module" src="js/pages/signup.js"></script>
+</body>
+</html>

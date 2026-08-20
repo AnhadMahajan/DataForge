@@ -1,0 +1,155 @@
+/* =========================================
+   DataForge — Dashboard Redesign Styles
+   Monochrome glassmorphism, crisp contrast, high information density
+   ========================================= */
+
+.dashboard-header-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--caption);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.04);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  margin-top: 4px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--result-positive);
+}
+
+/* Quick Start Playground Card */
+.playground-banner {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.playground-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: #111111;
+}
+
+.playground-content {
+  flex: 1;
+}
+
+.playground-title {
+  font-size: var(--h3);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.playground-desc {
+  font-size: var(--small);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 680px;
+  margin: 0;
+}
+
+.playground-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+/* 2-Column Visual Intelligence Grid */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--card-gap);
+  margin-bottom: var(--space-2xl);
+}
+
+/* Dataset Health Gauge */
+.health-gauge-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-md);
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-md);
+}
+
+.health-gauge-number {
+  font-family: var(--font-mono);
+  font-size: 2.25rem;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.health-gauge-details {
+  flex: 1;
+}
+
+/* Dashboard List Items */
+.dash-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition-fast);
+  text-decoration: none;
+  color: inherit;
+}
+
+.dash-item-row:last-child {
+  border-bottom: none;
+}
+
+.dash-item-row:hover {
+  background: var(--bg-hover);
+  text-decoration: none;
+}
+
+.dash-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--caption);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  .playground-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .playground-actions {
+    width: 100%;
+  }
+  .playground-actions .btn {
+    flex: 1;
+  }
+}

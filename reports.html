@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelligence Reports — DataForge</title>
+  <meta name="description" content="Detailed synthetic data intelligence reports, causal mechanism explanations, and deployment manifests.">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/reports.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar"></div>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title" id="reports-page-title">Intelligence Reports</h1>
+          <p class="page-subtitle" id="reports-page-subtitle">Explanatory narratives and audit records for decision-makers.</p>
+        </div>
+        <div class="page-actions" id="reports-header-actions">
+          <!-- Populated via JS -->
+        </div>
+      </header>
+
+      <!-- State 1: Reports List View -->
+      <div id="reports-list-state">
+        <div class="card p-0 mb-xl">
+          <div id="reports-table-container"></div>
+        </div>
+      </div>
+
+      <!-- State 2: Report Detail View -->
+      <div id="report-detail-state" class="hidden">
+        <article class="report-detail-card" id="report-document">
+          <div class="flex items-center justify-between pb-md mb-lg border-bottom">
+            <div>
+              <h1 style="font-size: 1.75rem; font-weight: 700;" id="doc-title">Report Document</h1>
+              <div class="text-caption text-muted mt-xs" id="doc-date">Generated on —</div>
+            </div>
+            <div class="pill" id="doc-verdict-pill">RECOMMENDED</div>
+          </div>
+
+          <div id="doc-sections-container"></div>
+        </article>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="js/pages/reports.js"></script>
+</body>
+</html>

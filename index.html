@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataForge — Synthetic Data Intelligence Engine</title>
+  <meta name="description"
+    content="A decision-making engine that treats synthetic data as a controllable variable and measures its actual impact on model quality.">
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/landing.css">
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <header class="landing-nav" id="main-nav">
+    <a href="index.html" class="landing-logo">Data<span>Forge</span></a>
+
+    <nav class="landing-nav-links">
+      <a href="#how-it-works" class="landing-nav-link">How It Works</a>
+      <a href="#features" class="landing-nav-link">Features</a>
+      <a href="#preview" class="landing-nav-link">Preview</a>
+      <a href="login.html" class="landing-nav-link" id="nav-login-link">Log in</a>
+      <a href="signup.html" class="btn btn-primary btn-sm" id="nav-cta-btn">Get Started</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero">
+      <div class="hero-tag">
+        <span>Scientific Data Augmentation</span>
+      </div>
+
+      <h1 class="hero-title">
+        Measure before you train.
+        <span>Stop guessing with synthetic data.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        DataForge is an intelligence engine that analyzes dataset health, tests augmentation strategies under controlled
+        conditions, and tells you whether synthetic data actually helps your model.
+      </p>
+
+      <div class="hero-actions">
+        <a href="signup.html" class="btn btn-primary btn-lg">Get Started Free</a>
+        <a href="#how-it-works" class="btn btn-secondary btn-lg">Explore Workflow</a>
+      </div>
+    </section>
+
+    <!-- Problem Statement -->
+    <section class="landing-section">
+      <div class="problem-card">
+        <div>
+          <div class="problem-stat">67%</div>
+          <div class="problem-stat-desc">
+            of ML teams apply synthetic data blindly without measuring whether downstream metrics improved or degraded.
+          </div>
+        </div>
+        <div>
+          <p class="problem-text">
+            Teams apply SMOTE or noise injection hoping for better accuracy. When performance drops, they blame the
+            model architecture rather than the data.
+          </p>
+          <p class="problem-text">
+            <strong>DataForge treats augmentation as an empirical hypothesis.</strong> We verify if your dataset
+            warrants augmentation, test candidate strategies, and surface evidence-backed decisions.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="landing-section" id="how-it-works">
+      <div class="section-label-center">Methodology</div>
+      <h2 class="section-heading-center">The scientific method for data</h2>
+      <p class="section-sub-center">A disciplined, reproducible pipeline from raw input to verified recommendation.</p>
+
+      <div class="workflow-grid">
+        <div class="workflow-card">
+          <span class="workflow-num">01</span>
+          <div class="workflow-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </div>
+          <h3 class="workflow-title">Observe</h3>
+          <p class="workflow-desc">Analyze raw data to compute class imbalance ratios, outlier density, feature
+            distributions, and overall augmentation need score.</p>
+        </div>
+
+        <div class="workflow-card">
+          <span class="workflow-num">02</span>
+          <div class="workflow-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <h3 class="workflow-title">Hypothesize</h3>
+          <p class="workflow-desc">Select candidate augmentation strategies tailored to your feature space — SMOTE,
+            jittered oversampling, or noise injection.</p>
+        </div>
+
+        <div class="workflow-card">
+          <span class="workflow-num">03</span>
+          <div class="workflow-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M10 2v7.31M14 9.3V1.99M8.5 2h7M14 9.3a6.5 6.5 0 1 1-4 0" />
+            </svg>
+          </div>
+          <h3 class="workflow-title">Experiment</h3>
+          <p class="workflow-desc">Train models across multiple randomized runs on held-out test splits. Only the
+            training set receives synthetic samples.</p>
+        </div>
+
+        <div class="workflow-card">
+          <span class="workflow-num">04</span>
+          <div class="workflow-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+              <path d="m9 15 2 2 4-4" />
+            </svg>
+          </div>
+          <h3 class="workflow-title">Recommend</h3>
+          <p class="workflow-desc">Receive plain-language explanations with statistical significance tests and a clear
+            verdict on whether to proceed.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Features -->
+    <section class="landing-section" id="features">
+      <div class="section-label-center">Capabilities</div>
+      <h2 class="section-heading-center">Built for rigorous data decisions</h2>
+      <p class="section-sub-center">Every capability is designed with mathematical validity and zero fluff.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+          </div>
+          <h3 class="feature-title">Dataset Health Score</h3>
+          <p class="feature-desc">Composite 0-100 diagnostic evaluating imbalance severity, kurtosis, IQR outlier
+            ratios, and feature correlation matrix.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 3h6v6l4 7H5l4-7V3z" />
+              <path d="M5 16h14" />
+            </svg>
+          </div>
+          <h3 class="feature-title">Multi-Strategy Lab</h3>
+          <p class="feature-desc">Run SMOTE (k-NN interpolation), random oversampling with variance jitter, or selective
+            Gaussian noise injection in parallel.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M18 20V10M12 20V4M6 20v-6" />
+            </svg>
+          </div>
+          <h3 class="feature-title">Controlled Evaluation</h3>
+          <p class="feature-desc">Stratified cross-evaluation across multiple seeds. Test sets remain pristine and
+            unaugmented to prevent synthetic leakage.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10" />
+              <path d="m15 9-6 6M9 9l6 6" />
+            </svg>
+          </div>
+          <h3 class="feature-title">Degradation Detection</h3>
+          <p class="feature-desc">Honest reporting that highlights if augmentation damaged specific minority recall or
+            introduced class boundary distortion.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <h3 class="feature-title">Mechanism Explanations</h3>
+          <p class="feature-desc">Narratives that explain <em>why</em> results shifted, quoting exact sample counts,
+            feature variances, and decision boundary dynamics.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <h3 class="feature-title">Zero Data Leakage</h3>
+          <p class="feature-desc">All computation and storage run entirely inside your browser. No telemetry, no
+            external ML backend calls, no vendor lock-in.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preview Section -->
+    <section class="landing-section" id="preview">
+      <div class="section-label-center">Interface</div>
+      <h2 class="section-heading-center">Engineered with aesthetic restraint</h2>
+      <p class="section-sub-center">Monochrome glassmorphism built for maximum focus and scientific clarity.</p>
+
+      <div class="preview-container">
+        <div class="preview-header-bar">
+          <div class="preview-dots">
+            <div class="preview-dot"></div>
+            <div class="preview-dot"></div>
+            <div class="preview-dot"></div>
+          </div>
+          <div class="text-caption">DataForge Workspace</div>
+          <div style="width: 40px;"></div>
+        </div>
+        <div class="preview-mockup-grid">
+          <div class="preview-mockup-sidebar">
+            <div class="preview-nav-item active"></div>
+            <div class="preview-nav-item"></div>
+            <div class="preview-nav-item"></div>
+            <div class="preview-nav-item"></div>
+          </div>
+
+          <div class="preview-mockup-content">
+            <div class="preview-mockup-stats">
+              <div class="preview-stat-card">
+                <div class="text-caption" style="color: #888;">Augmentation Need</div>
+                <div style="font-family: var(--font-mono); font-size: 1.75rem; font-weight: 700; margin-top: 4px;">78 /
+                  100</div>
+                <div class="text-small" style="color: #aaa; margin-top: 4px;">Severe Imbalance (1:8.4)</div>
+              </div>
+              <div class="preview-stat-card">
+                <div class="text-caption" style="color: #888;">Optimal Strategy</div>
+                <div style="font-family: var(--font-mono); font-size: 1.75rem; font-weight: 700; margin-top: 4px;">SMOTE
+                  (k=5)</div>
+                <div class="text-small" style="color: #aaa; margin-top: 4px;">+14.2% Macro F1</div>
+              </div>
+              <div class="preview-stat-card">
+                <div class="text-caption" style="color: #888;">Confidence Level</div>
+                <div style="font-family: var(--font-mono); font-size: 1.75rem; font-weight: 700; margin-top: 4px;">98.4%
+                </div>
+                <div class="text-small" style="color: #aaa; margin-top: 4px;">p &lt; 0.01 across 5 runs</div>
+              </div>
+            </div>
+
+            <div class="card"
+              style="background: rgba(255,255,255,0.7); min-height: 160px; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div class="card-title">Recommendation Summary</div>
+                <p class="text-secondary text-small" style="max-width: 480px; margin-top: 8px;">
+                  SMOTE resolved minority class boundary collapse for Class 1 (n=34) with zero degradation to majority
+                  precision. Augmentation is strongly recommended.
+                </p>
+              </div>
+              <div class="pill pill-positive">Verified Positive (+14.2%)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="footer-copy">
+      © 2026 DataForge. Pure client-side synthetic data intelligence.
+    </div>
+    <div class="footer-links">
+      <a href="login.html" class="footer-link">Log in</a>
+      <a href="signup.html" class="footer-link">Sign up</a>
+      <a href="#how-it-works" class="footer-link">Methodology</a>
+    </div>
+  </footer>
+
+  <script type="module" src="js/pages/landing.js"></script>
+</body>
+
+</html>

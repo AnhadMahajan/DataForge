@@ -1,0 +1,10 @@
+{
+  "name": "dataforge",
+  "version": "1.0.0",
+  "description": "DataForge — Synthetic Data Intelligence Engine",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-suite.js"
+  }
+}

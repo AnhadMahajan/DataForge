@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload & Analysis — DataForge</title>
+  <meta name="description" content="Upload datasets, inspect data distributions, and run dataset health diagnostics.">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/upload.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar"></div>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title" id="page-title">Dataset Analysis</h1>
+          <p class="page-subtitle" id="page-subtitle">Upload a tabular CSV file or load our built-in benchmark dataset.</p>
+        </div>
+        <div class="page-actions" id="header-actions">
+          <!-- Populated via JS -->
+        </div>
+      </header>
+
+      <!-- State 1: Upload Dropzone & Sample CTA -->
+      <div id="upload-state" class="upload-grid-container">
+        <div id="dropzone-container"></div>
+
+        <div class="card flex items-center justify-between p-lg">
+          <div>
+            <div class="card-title">Explore with Benchmark Sample</div>
+            <p class="text-secondary text-small mt-xs">
+              Load our "Customer Churn Risk" benchmark dataset (280 rows, imbalanced classes, simulated outliers).
+            </p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-load-sample">Load Sample Dataset</button>
+        </div>
+
+        <!-- Previous Uploads -->
+        <section class="section mt-xl">
+          <h2 class="section-title mb-md">Uploaded Datasets</h2>
+          <div class="card p-0" id="datasets-history-card">
+            <div id="datasets-history-list"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- State 2: Analysis Results View -->
+      <div id="analysis-state" class="hidden">
+        <!-- Augmentation Need Score Hero -->
+        <div class="analysis-score-card" id="score-hero">
+          <div>
+            <div class="text-caption" style="color: #aaa;">Diagnostic Result</div>
+            <div class="analysis-score-number" id="need-score-val">0</div>
+            <div class="font-semi mt-xs text-on-dark" id="need-score-label">Augmentation Need Score (0-100)</div>
+          </div>
+          <div style="max-width: 440px; text-align: right;" id="score-desc-container">
+            <div class="pill pill-dark mb-sm" id="imbalance-pill">Imbalance Ratio: 1:1</div>
+            <p class="text-on-dark-secondary text-small" id="need-score-summary"></p>
+          </div>
+        </div>
+
+        <!-- Class Distribution Chart & Metadata -->
+        <div class="card-grid-2 mb-xl">
+          <div class="card">
+            <div class="card-title mb-md">Class Balance Distribution</div>
+            <div id="class-chart-container"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title mb-md">Dataset Profile</div>
+            <div class="stack stack-sm" id="dataset-metadata-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Diagnostic Reasons & Warnings -->
+        <div class="card-grid-2 mb-xl">
+          <div class="card">
+            <div class="card-title mb-md">Augmentation Diagnostic Notes</div>
+            <div id="diagnostic-reasons-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title mb-md">Data Health & Warnings</div>
+            <div id="diagnostic-warnings-list"></div>
+          </div>
+        </div>
+
+        <!-- Data Preview Table -->
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title">Data Preview</h2>
+            <div class="text-small text-muted" id="preview-count-label"></div>
+          </div>
+          <div class="card p-md" id="preview-table-container"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="js/pages/upload.js"></script>
+</body>
+</html>

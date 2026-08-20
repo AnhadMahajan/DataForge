@@ -1,0 +1,71 @@
+/* =========================================
+   DataForge — Reports Page Styles
+   ========================================= */
+
+.report-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition-fast);
+  cursor: pointer;
+}
+
+.report-item:last-child {
+  border-bottom: none;
+}
+
+.report-item:hover {
+  background: var(--bg-hover);
+}
+
+.report-detail-card {
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2xl);
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.report-section-block {
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.report-section-block:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.report-section-heading {
+  font-size: var(--h3);
+  font-weight: var(--weight-semi);
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.report-section-text {
+  font-size: var(--body);
+  color: var(--text-body);
+  line-height: 1.7;
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .report-detail-card {
+    padding: var(--space-lg) var(--space-md);
+    border-radius: var(--radius-md);
+  }
+  .report-item {
+    padding: var(--space-md);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — DataForge</title>
+  <meta name="description" content="Manage account profile, evaluation preferences, and local data storage.">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/settings.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar"></div>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title">Workspace Settings</h1>
+          <p class="page-subtitle">Configure defaults, manage account details, and backup your workspace data.</p>
+        </div>
+      </header>
+
+      <div class="settings-grid">
+        <!-- Settings Nav Tabs -->
+        <nav class="settings-nav">
+          <button class="settings-nav-btn active" data-tab="profile">Account Profile</button>
+          <button class="settings-nav-btn" data-tab="preferences">Evaluation Defaults</button>
+          <button class="settings-nav-btn" data-tab="storage">Data & Storage</button>
+          <button class="settings-nav-btn" data-tab="about">About DataForge</button>
+        </nav>
+
+        <!-- Settings Content Panes -->
+        <div class="settings-content">
+          <!-- Tab 1: Profile -->
+          <section id="tab-profile" class="card">
+            <div class="card-title mb-lg">User Profile</div>
+            <form id="profile-form" class="stack stack-md">
+              <div class="form-group">
+                <label for="profile-name" class="form-label">Full Name</label>
+                <input type="text" id="profile-name" class="input" required>
+              </div>
+              <div class="form-group">
+                <label for="profile-email" class="form-label">Email Address</label>
+                <input type="email" id="profile-email" class="input" disabled>
+                <span class="form-hint">Email cannot be changed after registration.</span>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-start;">Save Changes</button>
+            </form>
+
+            <hr>
+
+            <div class="card-title mb-md">Change Password</div>
+            <form id="password-form" class="stack stack-md">
+              <div class="form-group">
+                <label for="current-pwd" class="form-label">Current Password</label>
+                <input type="password" id="current-pwd" class="input" required>
+              </div>
+              <div class="form-group">
+                <label for="new-pwd" class="form-label">New Password</label>
+                <input type="password" id="new-pwd" class="input" required>
+              </div>
+              <button type="submit" class="btn btn-secondary btn-sm" style="align-self: flex-start;">Update Password</button>
+            </form>
+          </section>
+
+          <!-- Tab 2: Preferences -->
+          <section id="tab-preferences" class="card hidden">
+            <div class="card-title mb-lg">Default Evaluation Parameters</div>
+            <form id="preferences-form" class="stack stack-md">
+              <div class="form-group">
+                <label for="pref-runs" class="form-label">Default Evaluation Runs</label>
+                <select id="pref-runs" class="select">
+                  <option value="3">3 Iterations</option>
+                  <option value="5" selected>5 Iterations (Recommended)</option>
+                  <option value="10">10 Iterations</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="pref-split" class="form-label">Default Train / Test Split</label>
+                <select id="pref-split" class="select">
+                  <option value="0.7">70% Train / 30% Test</option>
+                  <option value="0.8" selected>80% Train / 20% Test</option>
+                  <option value="0.9">90% Train / 10% Test</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="pref-model" class="form-label">Default Classifier Architecture</label>
+                <select id="pref-model" class="select">
+                  <option value="knn" selected>k-Nearest Neighbors (k=3)</option>
+                  <option value="decision_tree">Decision Tree (Depth=4)</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm" style="align-self: flex-start;">Save Preferences</button>
+            </form>
+          </section>
+
+          <!-- Tab 3: Data & Storage -->
+          <section id="tab-storage" class="card hidden">
+            <div class="card-title mb-md">Storage Footprint</div>
+            <p class="text-secondary text-small mb-md" id="storage-usage-text">Computing local storage usage...</p>
+
+            <hr>
+
+            <div class="card-title mb-xs">Backup & Portability</div>
+            <p class="text-secondary text-small mb-md">Download all datasets, experiments, and reports as a single portable JSON file.</p>
+            <div class="flex gap-sm">
+              <button class="btn btn-secondary btn-sm" id="btn-export-data">Export All Data (JSON)</button>
+              <label class="btn btn-secondary btn-sm cursor-pointer">
+                Import JSON Backup
+                <input type="file" id="input-import-data" accept=".json,application/json" class="hidden">
+              </label>
+            </div>
+
+            <hr>
+
+            <div class="card-title mb-xs" style="color: var(--result-negative);">Danger Zone</div>
+            <p class="text-secondary text-small mb-md">Permanently wipe all local datasets and experiments from this browser origin.</p>
+            <button class="btn btn-danger btn-sm" id="btn-clear-data">Clear Workspace Data</button>
+          </section>
+
+          <!-- Tab 4: About -->
+          <section id="tab-about" class="card hidden">
+            <div class="card-title mb-xs">DataForge v1.0</div>
+            <p class="text-secondary text-small mb-md">Synthetic Data Intelligence Engine</p>
+            <div class="stack stack-sm text-small">
+              <p>Built with vanilla ES modules, pure mathematical vector arithmetic, and monochrome glassmorphism.</p>
+              <p>Designed under the core principle that synthetic data must always be treated as an empirical hypothesis tested against unaugmented held-out ground truth.</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="js/pages/settings.js"></script>
+</body>
+</html>

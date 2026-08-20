@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Experiment Results — DataForge</title>
+  <meta name="description" content="Controlled evaluation results, baseline vs synthetic comparisons, and strategy recommendations.">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/results.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar"></div>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title" id="exp-title">Experiment Results</h1>
+          <p class="page-subtitle" id="exp-subtitle">Loading experiment evaluation...</p>
+        </div>
+        <div class="page-actions" id="exp-header-actions">
+          <!-- Populated via JS -->
+        </div>
+      </header>
+
+      <!-- Experiment Results Container -->
+      <div id="results-content">
+        <!-- Hero Verdict Card -->
+        <div class="results-hero-card" id="verdict-hero">
+          <div>
+            <div class="text-caption" style="color: #aaa;">Evaluation Verdict</div>
+            <div style="font-size: 2.25rem; font-weight: 700; margin-top: 4px;" id="verdict-label">Analyzing...</div>
+            <div class="text-small text-on-dark-secondary mt-xs" id="verdict-confidence"></div>
+          </div>
+          <div style="text-align: right; max-width: 440px;">
+            <div class="pill pill-positive mb-sm" id="best-strat-pill">Optimal: None</div>
+            <p class="text-small text-on-dark-secondary" id="verdict-explanation"></p>
+          </div>
+        </div>
+
+        <!-- Metric Comparison Row -->
+        <div class="results-metric-grid" id="metrics-grid">
+          <!-- Populated via JS -->
+        </div>
+
+        <!-- Performance Comparison Charts -->
+        <div class="card-grid-2 mb-xl">
+          <div class="card">
+            <div class="card-title mb-md">Multi-Strategy Comparison (Macro Metrics)</div>
+            <div id="comparison-chart-container"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title mb-md">Variance Across Random Splits</div>
+            <div id="variance-chart-container"></div>
+          </div>
+        </div>
+
+        <!-- Strategy Matrix Table -->
+        <section class="section">
+          <h2 class="section-title mb-md">Strategy Evaluation Matrix</h2>
+          <div class="card p-0" id="matrix-table-container"></div>
+        </section>
+
+        <!-- Per-Class Performance Breakdown -->
+        <section class="section">
+          <h2 class="section-title mb-md">Per-Class Sensitivity Breakdown</h2>
+          <div class="card p-0" id="class-table-container"></div>
+        </section>
+
+        <!-- Synthetic Data Quality Metrics -->
+        <section class="section">
+          <h2 class="section-title mb-md">Synthetic Data Quality Audit</h2>
+          <div class="card-grid-3" id="quality-cards-container"></div>
+        </section>
+      </div>
+
+      <!-- Empty State Container -->
+      <div id="results-empty" class="hidden">
+        <div class="card empty-state">
+          <div class="empty-state-title">No Experiment Selected</div>
+          <p class="empty-state-text mb-md">Select an experiment from the dashboard or configure a new run.</p>
+          <a href="experiment.html" class="btn btn-primary btn-sm">Configure Experiment</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="js/pages/results.js"></script>
+</body>
+</html>

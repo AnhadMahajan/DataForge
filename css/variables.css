@@ -1,0 +1,106 @@
+/* =========================================
+   DataForge — Design Tokens
+   Single source of truth for all visual decisions
+   ========================================= */
+
+:root {
+  /* ---- Color: Backgrounds ---- */
+  --bg-body:                #f2f2f2;
+  --bg-card:                rgba(255, 255, 255, 0.55);
+  --bg-card-solid:          #ffffff;
+  --bg-card-dark:           #111111;
+  --bg-card-dark-secondary: #1a1a1a;
+  --bg-sidebar:             rgba(255, 255, 255, 0.45);
+  --bg-input:               rgba(255, 255, 255, 0.65);
+  --bg-hover:               rgba(0, 0, 0, 0.04);
+  --bg-hover-dark:          rgba(255, 255, 255, 0.08);
+  --bg-active:              #111111;
+
+  /* ---- Color: Borders ---- */
+  --border-light:           rgba(0, 0, 0, 0.06);
+  --border-dark:            rgba(255, 255, 255, 0.1);
+
+  /* ---- Color: Text ---- */
+  --text-primary:           #0a0a0a;
+  --text-body:              #333333;
+  --text-secondary:         #666666;
+  --text-muted:             #999999;
+  --text-on-dark:           #ffffff;
+  --text-on-dark-secondary: #aaaaaa;
+
+  /* ---- Color: Semantic (results only, never UI chrome) ---- */
+  --result-positive:        #1a8a5c;
+  --result-negative:        #c43e3e;
+  --result-neutral:         #b08a2e;
+
+  /* ---- Color: Charts ---- */
+  --chart-1: #333333;
+  --chart-2: #1a8a5c;
+  --chart-3: #c43e3e;
+  --chart-4: #b08a2e;
+  --chart-5: #4a7fb5;
+  --chart-6: #888888;
+  --chart-7: #2a9d8f;
+
+  /* ---- Typography ---- */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --h1:      clamp(1.65rem, 3.5vw, 2.25rem);
+  --h2:      clamp(1.25rem, 2.5vw, 1.5rem);
+  --h3:      clamp(1.05rem, 2vw, 1.125rem);
+  --body:    0.9375rem;
+  --small:   0.8125rem;
+  --caption: 0.75rem;
+  --metric:  clamp(2rem, 4.5vw, 2.75rem);
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semi:    600;
+  --weight-bold:    700;
+
+  --lh-heading: 1.2;
+  --lh-body:    1.6;
+  --lh-metric:  1;
+
+  --ls-tight: -0.03em;
+  --ls-normal: 0;
+
+  /* ---- Spacing ---- */
+  --space-xs:  0.25rem;
+  --space-sm:  0.5rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* ---- Border Radius ---- */
+  --radius-sm:   8px;
+  --radius-md:   14px;
+  --radius-lg:   20px;
+  --radius-pill: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-sm:        0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md:        0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg:        0 12px 40px rgba(0, 0, 0, 0.08);
+  --shadow-dark-card: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+  /* ---- Transitions ---- */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---- Layout ---- */
+  --sidebar-width:     240px;
+  --sidebar-collapsed: 56px;
+  --page-padding:      var(--space-2xl);
+  --card-gap:          var(--space-lg);
+
+  /* ---- Breakpoints (for reference — used in media queries) ---- */
+  --mobile:  640px;
+  --tablet:  1024px;
+  --desktop: 1280px;
+  --wide:    1536px;
+}

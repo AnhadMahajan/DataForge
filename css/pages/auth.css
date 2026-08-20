@@ -1,0 +1,139 @@
+/* =========================================
+   DataForge — Auth Page Styles
+   Login + Signup shared styles
+   ========================================= */
+
+.auth-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card-dark);
+  padding: var(--space-lg) var(--space-md);
+  position: relative;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Subtle background pattern */
+.auth-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.auth-card {
+  background: var(--bg-card-solid);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-xl);
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+  position: relative;
+  animation: fadeInUp var(--transition-slow) both;
+  box-sizing: border-box;
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: var(--space-md);
+}
+
+.auth-logo-text {
+  font-size: var(--h3);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--ls-tight);
+  text-decoration: none;
+}
+
+.auth-logo-text span {
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+}
+
+.auth-title {
+  font-size: 1.35rem;
+  font-weight: var(--weight-semi);
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.auth-subtitle {
+  font-size: var(--small);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-md);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-form .form-group {
+  margin-bottom: var(--space-sm);
+}
+
+.auth-form .form-label {
+  margin-bottom: 4px;
+  font-size: var(--small);
+}
+
+.auth-form .input {
+  padding: 0.6rem 0.85rem;
+  font-size: var(--small);
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: var(--space-sm);
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-light);
+}
+
+.auth-footer-text {
+  font-size: var(--small);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.auth-footer-text a {
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.auth-footer-text a:hover {
+  text-decoration: underline;
+}
+
+.auth-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: var(--space-md) var(--space-sm);
+  }
+  .auth-card {
+    padding: var(--space-lg) var(--space-md);
+    border-radius: var(--radius-md);
+  }
+  .auth-title {
+    font-size: 1.25rem;
+  }
+}

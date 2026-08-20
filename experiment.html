@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Experiment Lab — DataForge</title>
+  <meta name="description" content="Configure and execute controlled synthetic data augmentation experiments.">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/experiment.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar"></div>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title">Experiment Lab</h1>
+          <p class="page-subtitle">Configure candidate augmentation strategies and test them against baseline models.</p>
+        </div>
+      </header>
+
+      <!-- Experiment Form -->
+      <form id="experiment-form" class="stack stack-xl">
+        <!-- 1. Dataset Selection & Name -->
+        <section class="card">
+          <div class="card-title mb-md">1. Experiment Setup</div>
+          <div class="card-grid-2">
+            <div class="form-group">
+              <label for="exp-name" class="form-label">Experiment Name</label>
+              <input type="text" id="exp-name" class="input" required>
+            </div>
+            <div class="form-group">
+              <label for="dataset-select" class="form-label">Select Dataset</label>
+              <select id="dataset-select" class="select" required></select>
+            </div>
+          </div>
+          <div id="dataset-summary-box" class="p-md background-subtle rounded text-small text-secondary hidden"></div>
+        </section>
+
+        <!-- 2. Candidate Augmentation Strategies -->
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title">2. Augmentation Strategies to Test</h2>
+            <span class="text-caption text-muted">Select one or more to run in parallel</span>
+          </div>
+
+          <div class="strategy-grid">
+            <!-- SMOTE Card -->
+            <div class="strategy-card selected" id="card-smote" data-strategy="smote">
+              <div class="strategy-card-header">
+                <div class="card-title">SMOTE</div>
+                <input type="checkbox" id="check-smote" class="checkbox" checked>
+              </div>
+              <p class="text-secondary text-small">Synthesizes minority points by interpolating between k-nearest neighbors in feature space.</p>
+              <div class="strategy-params">
+                <div class="form-group mb-sm">
+                  <label class="form-label font-mono text-caption">k-Neighbors (k=5)</label>
+                  <input type="range" id="smote-k" min="2" max="10" value="5" class="w-full">
+                </div>
+              </div>
+            </div>
+
+            <!-- Random Oversampling Card -->
+            <div class="strategy-card selected" id="card-oversampling" data-strategy="oversampling">
+              <div class="strategy-card-header">
+                <div class="card-title">Random Oversampling</div>
+                <input type="checkbox" id="check-oversampling" class="checkbox" checked>
+              </div>
+              <p class="text-secondary text-small">Duplicates minority samples with slight Gaussian jitter to prevent memorization.</p>
+              <div class="strategy-params">
+                <div class="form-group mb-sm">
+                  <label class="form-label font-mono text-caption">Jitter Variance (5%)</label>
+                  <input type="range" id="oversampling-jitter" min="1" max="15" value="5" class="w-full">
+                </div>
+              </div>
+            </div>
+
+            <!-- Noise Injection Card -->
+            <div class="strategy-card selected" id="card-noise" data-strategy="noise_injection">
+              <div class="strategy-card-header">
+                <div class="card-title">Noise Injection</div>
+                <input type="checkbox" id="check-noise" class="checkbox" checked>
+              </div>
+              <p class="text-secondary text-small">Injects proportional Gaussian noise across all numeric dimensions to test boundary robustness.</p>
+              <div class="strategy-params">
+                <div class="form-group mb-sm">
+                  <label class="form-label font-mono text-caption">Noise Factor (8%)</label>
+                  <input type="range" id="noise-factor" min="2" max="20" value="8" class="w-full">
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Evaluation Setup -->
+        <section class="card">
+          <div class="card-title mb-md">3. Controlled Evaluation Controls</div>
+          <div class="card-grid-3">
+            <div class="form-group">
+              <label for="eval-runs" class="form-label">Evaluation Iterations</label>
+              <select id="eval-runs" class="select">
+                <option value="3">3 Iterations (Faster)</option>
+                <option value="5" selected>5 Iterations (Standard)</option>
+                <option value="10">10 Iterations (High Precision)</option>
+              </select>
+              <span class="form-hint">Repeated splits track variance across seeds.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="split-ratio" class="form-label">Train / Test Split</label>
+              <select id="split-ratio" class="select">
+                <option value="0.7">70% Train / 30% Test</option>
+                <option value="0.8" selected>80% Train / 20% Test</option>
+                <option value="0.9">90% Train / 10% Test</option>
+              </select>
+              <span class="form-hint">Test set is NEVER augmented.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="model-type" class="form-label">Classifier Architecture</label>
+              <select id="model-type" class="select">
+                <option value="knn" selected>k-Nearest Neighbors (k=3)</option>
+                <option value="decision_tree">Decision Tree (Depth=4)</option>
+              </select>
+              <span class="form-hint">Evaluates both baseline and synthetic data.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Run Trigger -->
+        <div class="flex items-center justify-between mt-md">
+          <div class="text-small text-muted">
+            Estimated time: ~2 seconds in-browser
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" id="btn-run-exp">
+            <span>Run Controlled Experiment</span>
+          </button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <!-- Progress Overlay -->
+  <div class="progress-overlay" id="progress-overlay">
+    <div class="progress-modal">
+      <div class="spinner mb-md" style="margin: 0 auto;"></div>
+      <h3 class="card-title mb-xs">Executing Experiment</h3>
+      <p class="text-secondary text-small mb-lg" id="progress-status">Initializing model pipeline...</p>
+      
+      <div class="progress-bar">
+        <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/pages/experiment.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+/* =========================================
+   DataForge — Settings Page Styles
+   ========================================= */
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-xl);
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.settings-nav-btn {
+  text-align: left;
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--small);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.settings-nav-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.settings-nav-btn.active {
+  background: var(--bg-active);
+  color: var(--text-on-dark);
+  font-weight: var(--weight-medium);
+}
+
+@media (max-width: 768px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  .settings-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--space-xs);
+    gap: var(--space-xs);
+  }
+  .settings-nav-btn {
+    padding: 0.5rem 0.85rem;
+    font-size: var(--caption);
+  }
+}

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — DataForge</title>
+  <meta name="description" content="DataForge executive dashboard — synthetic data experiments, distribution health, and strategy insights.">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar"></div>
+
+    <main class="main-content">
+      <!-- Top Page Header -->
+      <header class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title" id="welcome-title">Workspace Dashboard</h1>
+          <div class="flex items-center gap-sm">
+            <span class="page-subtitle" id="current-date"></span>
+            <span class="dashboard-header-status">
+              <span class="status-dot"></span>
+              <span>Client-Side Engine Active</span>
+            </span>
+          </div>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-quick-benchmark">⚡ Run Benchmark Demo</button>
+          <a href="upload.html" class="btn btn-secondary btn-sm" id="btn-upload">Upload Dataset</a>
+          <a href="experiment.html" class="btn btn-primary btn-sm" id="btn-new-exp">New Experiment</a>
+        </div>
+      </header>
+
+      <!-- Quick Start Playground Card (visible for quick testing) -->
+      <section class="playground-banner" id="playground-banner">
+        <div class="playground-content">
+          <div class="playground-title">Scientific Augmentation Lab</div>
+          <p class="playground-desc">
+            Test candidate augmentation strategies (SMOTE, Random Oversampling, Noise Injection) against unaugmented baseline models to scientifically verify whether synthetic data improves your classifier.
+          </p>
+        </div>
+        <div class="playground-actions">
+          <button class="btn btn-primary btn-sm" id="btn-banner-demo">⚡ Run 1-Click Demo</button>
+          <a href="upload.html" class="btn btn-secondary btn-sm">Upload CSV</a>
+        </div>
+      </section>
+
+      <!-- Hero Statistics Row -->
+      <section class="stats-row" id="stats-container">
+        <!-- Rendered via JS -->
+      </section>
+
+      <!-- Visual Analytics Grid -->
+      <section class="analytics-grid">
+        <!-- Left: Strategy Performance Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Augmentation Impact Overview</div>
+              <div class="card-subtitle">Macro metrics comparison: Baseline vs tested synthetic strategies</div>
+            </div>
+            <a href="experiment.html" class="btn btn-secondary btn-sm">Run Lab →</a>
+          </div>
+          <div id="dashboard-chart-container" style="min-height: 220px;">
+            <!-- Rendered via Canvas Chart JS -->
+          </div>
+        </div>
+
+        <!-- Right: Dataset Health & Distribution Diagnostic -->
+        <div class="card flex flex-col justify-between">
+          <div>
+            <div class="card-header">
+              <div>
+                <div class="card-title">Dataset Health Radar</div>
+                <div class="card-subtitle">Active sample balance & augmentation diagnostic</div>
+              </div>
+              <a href="upload.html" class="text-caption text-muted font-medium">Inspect →</a>
+            </div>
+
+            <div id="dataset-health-summary">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div class="health-gauge-box" id="health-gauge-box">
+            <div class="health-gauge-number" id="health-score-val">0</div>
+            <div class="health-gauge-details">
+              <div class="text-small font-semi" id="health-score-label">Overall Health Score</div>
+              <div class="text-caption text-muted mt-xs" id="health-score-sub">Based on class imbalance, outlier density & collinearity</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Two Column Bottom Section -->
+      <div class="dashboard-grid-layout">
+        <!-- Left: Recent Experiments Feed -->
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title">Recent Controlled Experiments</h2>
+            <a href="experiment.html" class="text-small text-muted font-medium">View All →</a>
+          </div>
+          <div class="card p-0" id="experiments-card-container">
+            <div id="recent-experiments-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: Active Datasets & Executive Insights -->
+        <div class="flex flex-col gap-xl">
+          <!-- Datasets Vault -->
+          <section class="section">
+            <div class="section-header">
+              <h2 class="section-title">Datasets Vault</h2>
+              <a href="upload.html" class="text-small text-muted font-medium">Upload New →</a>
+            </div>
+            <div class="card p-0" id="datasets-overview-card">
+              <div id="datasets-list">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+          </section>
+
+          <!-- Executive Strategic Insights (Dark Emphasis Card) -->
+          <section class="card-dark" id="insights-card">
+            <div class="text-caption text-on-dark-secondary mb-xs">Executive Recommendation</div>
+            <h3 class="card-title mb-sm" id="insights-title">Empirical Guidance</h3>
+            <p class="text-on-dark-secondary text-small" id="insights-text" style="line-height: 1.6;">
+              No experimental evidence recorded yet. Run a controlled experiment or launch our 1-click benchmark to evaluate SMOTE, random oversampling, and noise injection.
+            </p>
+            <div class="card-footer" style="border-top-color: var(--border-dark);">
+              <span class="text-caption text-on-dark-secondary" id="insights-timestamp">Ready to analyze</span>
+              <a href="reports.html" class="btn btn-secondary btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.2);">Browse Reports →</a>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="js/pages/dashboard.js"></script>
+</body>
+</html>
