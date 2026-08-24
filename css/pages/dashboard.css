@@ -137,9 +137,47 @@
   margin-top: 2px;
 }
 
+/* Dashboard Bottom 2-Column Grid Layout */
+.dashboard-grid-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--card-gap);
+  margin-bottom: var(--space-2xl);
+}
+
+/* Health Badge (Dataset Cards) */
+.health-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--caption);
+  font-weight: var(--weight-semi);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.health-badge.health-high {
+  background: rgba(26, 138, 92, 0.1);
+  color: var(--result-positive);
+}
+
+.health-badge.health-medium {
+  background: rgba(176, 138, 46, 0.1);
+  color: var(--result-neutral);
+}
+
+.health-badge.health-low {
+  background: rgba(196, 62, 62, 0.1);
+  color: var(--result-negative);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
-  .analytics-grid {
+  .analytics-grid,
+  .dashboard-grid-layout {
     grid-template-columns: 1fr;
   }
   .playground-banner {

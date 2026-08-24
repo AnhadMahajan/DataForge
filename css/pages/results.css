@@ -11,7 +11,7 @@
   color: var(--text-on-dark);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-dark-card);
-  margin-bottom: var(--space-2xl);
+  margin-bottom: var(--space-md);
 }
 
 .results-hero-card > div {
@@ -38,7 +38,6 @@
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   overflow: hidden;
-  margin-top: calc(var(--space-2xl) * -1);
   margin-bottom: var(--space-2xl);
 }
 

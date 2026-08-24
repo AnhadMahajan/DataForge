@@ -3,12 +3,18 @@
    Monochrome Glassmorphism, Tabbed Architecture, Visual Storage Metrics
    ========================================= */
 
-   .settings-grid {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: var(--space-xl);
-    align-items: flex-start;
-  }
+.settings-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-xl);
+  align-items: flex-start;
+}
+
+.settings-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
   
   /* Tab Navigation Sidebar */
   .settings-nav {

@@ -254,9 +254,11 @@
   flex-direction: column;
 }
 
+.stack-xs { gap: var(--space-xs); }
 .stack-sm { gap: var(--space-sm); }
 .stack-md { gap: var(--space-md); }
 .stack-lg { gap: var(--space-lg); }
+.stack-xl { gap: var(--space-xl); }
 
 /* ---- Row Layout ---- */
 .row {
@@ -264,9 +266,11 @@
   align-items: center;
 }
 
+.row-xs { gap: var(--space-xs); }
 .row-sm { gap: var(--space-sm); }
 .row-md { gap: var(--space-md); }
 .row-lg { gap: var(--space-lg); }
+.row-xl { gap: var(--space-xl); }
 
 /* ---- Full Page Center (Auth pages) ---- */
 .page-center {

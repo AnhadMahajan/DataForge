@@ -57,10 +57,39 @@
 
 /* ---- Spacing: Padding ---- */
 .p-0 { padding: 0; }
+.p-xs { padding: var(--space-xs); }
 .p-sm { padding: var(--space-sm); }
 .p-md { padding: var(--space-md); }
 .p-lg { padding: var(--space-lg); }
 .p-xl { padding: var(--space-xl); }
+
+.py-0 { padding-top: 0; padding-bottom: 0; }
+.py-xs { padding-top: var(--space-xs); padding-bottom: var(--space-xs); }
+.py-sm { padding-top: var(--space-sm); padding-bottom: var(--space-sm); }
+.py-md { padding-top: var(--space-md); padding-bottom: var(--space-md); }
+.py-lg { padding-top: var(--space-lg); padding-bottom: var(--space-lg); }
+
+.px-0 { padding-left: 0; padding-right: 0; }
+.px-xs { padding-left: var(--space-xs); padding-right: var(--space-xs); }
+.px-sm { padding-left: var(--space-sm); padding-right: var(--space-sm); }
+.px-md { padding-left: var(--space-md); padding-right: var(--space-md); }
+.px-lg { padding-left: var(--space-lg); padding-right: var(--space-lg); }
+
+/* ---- Borders & Backgrounds ---- */
+.border-bottom { border-bottom: 1px solid var(--border-light); }
+.border-top { border-top: 1px solid var(--border-light); }
+.border-left { border-left: 1px solid var(--border-light); }
+.border-right { border-right: 1px solid var(--border-light); }
+.border-all { border: 1px solid var(--border-light); }
+
+.background-subtle { background: rgba(0, 0, 0, 0.03); }
+.background-card { background: var(--bg-card); }
+
+/* ---- Border Radius ---- */
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded, .rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-pill { border-radius: var(--radius-pill); }
 
 /* ---- Text ---- */
 .text-center { text-align: center; }
