@@ -91,27 +91,6 @@ export async function login(email, password) {
 }
 
 /**
- * Quick 1-click Demo login helper for instant exploration.
- */
-export async function loginAsDemo() {
-  const demoEmail = 'demo@dataforge.ai';
-  const users = storage.getCollection(USERS_KEY);
-  let user = users.find(u => u.email === demoEmail);
-
-  if (!user) {
-    const signupRes = await signup('Dr. Alex Morgan', demoEmail, 'DemoPass123!');
-    if (!signupRes.success) return signupRes;
-    user = signupRes.data.user;
-  } else {
-    const session = createSession(user.id);
-    storage.set(SESSION_KEY, session);
-  }
-
-  const { passwordHash: _, ...safeUser } = user;
-  return { success: true, data: { user: safeUser } };
-}
-
-/**
  * Log out the current user by clearing the session.
  */
 export function logout() {

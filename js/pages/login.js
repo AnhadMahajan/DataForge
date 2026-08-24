@@ -1,4 +1,4 @@
-import { login, loginAsDemo, isLoggedIn } from '../services/auth.js';
+import { login, isLoggedIn } from '../services/auth.js';
 import { validateForm } from '../utils/validation.js';
 import { toast } from '../components/toast.js';
 import { qs, show, hide } from '../utils/dom.js';
@@ -14,7 +14,6 @@ const passwordInput = qs('#password');
 const emailError = qs('#email-error');
 const passwordError = qs('#password-error');
 const submitBtn = qs('#submit-btn');
-const btnDemoLogin = qs('#btn-demo-login');
 const togglePasswordBtn = qs('#toggle-password');
 
 // Password Visibility Toggle
@@ -31,31 +30,6 @@ if (togglePasswordBtn && passwordInput) {
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
           <circle cx="12" cy="12" r="3"/>
         </svg>`;
-  });
-}
-
-// 1-Click Demo Login Handler
-if (btnDemoLogin) {
-  btnDemoLogin.addEventListener('click', async () => {
-    btnDemoLogin.disabled = true;
-    btnDemoLogin.innerHTML = '<span class="spinner"></span> <span>Launching Demo Workspace...</span>';
-    toast.info('Authenticating demo researcher account...');
-    const res = await loginAsDemo();
-    if (res.success) {
-      toast.success('Logged in as Demo Researcher (Dr. Vance).');
-      setTimeout(() => {
-        window.location.href = 'dashboard.html';
-      }, 400);
-    } else {
-      toast.error('Failed to launch demo session.');
-      btnDemoLogin.disabled = false;
-      btnDemoLogin.innerHTML = `
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-        <span>1-Click Demo Access (Dr. Vance)</span>
-      `;
-    }
   });
 }
 

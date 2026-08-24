@@ -3,7 +3,7 @@
  * Real-time analytics, 1-click benchmark execution, canvas visualizations, and executive guidance.
  */
 
-import { requireSession, getCurrentUser, loginAsDemo } from '../services/auth.js';
+import { requireSession, getCurrentUser } from '../services/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { getDatasets, getSampleDatasetCSV, createDatasetFromCSV } from '../services/dataset.js';
 import { getExperiments, runExperiment } from '../services/experiment.js';
@@ -15,11 +15,9 @@ import { formatDimensions, formatRelativeTime, formatPercent, formatStrategy } f
 import { el, qs, show, hide } from '../utils/dom.js';
 
 // Authenticate session
-let session = requireSession();
+const session = requireSession();
 if (!session) {
-  // If no session exists, create a demo session so the dashboard renders immediately
-  const demoRes = await loginAsDemo();
-  session = demoRes.data ? { userId: demoRes.data.user.id } : null;
+  // redirect handled in requireSession
 }
 
 // Initialize sidebar navigation

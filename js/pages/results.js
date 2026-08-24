@@ -160,7 +160,7 @@ function renderResults(exp) {
       downloadCSV(`${exp.name}_evaluation_matrix.csv`, csvStr);
       toast.success('Evaluation metrics matrix exported as CSV.');
     }
-  }, '📥 Export Matrix (CSV)');
+  }, '📊 Export Matrix');
   expHeaderActions.appendChild(btnExportMetrics);
 
   if (bestStratRes?.augmentedCSV) {
@@ -170,7 +170,7 @@ function renderResults(exp) {
         downloadCSV(`${exp.name}_augmented_${bestStratRes.strategyType}.csv`, bestStratRes.augmentedCSV);
         toast.success(`Augmented dataset downloaded (${formatStrategy(bestStratRes.strategyType)}).`);
       },
-    }, '📥 Export Augmented CSV');
+    }, '📥 Augmented Data');
     expHeaderActions.appendChild(btnExportAug);
   }
 
@@ -181,14 +181,14 @@ function renderResults(exp) {
         downloadCSV(`${exp.name}_synthetic_only.csv`, bestStratRes.syntheticCSV);
         toast.success('Synthetic-only samples downloaded.');
       },
-    }, '📥 Export Synthetic Only');
+    }, '✨ Synthetic Data');
     expHeaderActions.appendChild(btnExportSynth);
   }
 
   const btnReport = el('a', {
     className: 'btn btn-primary btn-sm',
     href: `reports.html?id=${exp.id}`,
-  }, 'Generate Narrative Report →');
+  }, '📝 Generate Narrative Report →');
   expHeaderActions.appendChild(btnReport);
 
   // 1. Verdict Hero Card

@@ -2,6 +2,85 @@
    DataForge — Results Page Styles
    ========================================= */
 
+/* ---- Results Page Header ---- */
+.results-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.results-header-left {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+
+#exp-title {
+  font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+  font-weight: var(--weight-bold);
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  letter-spacing: -0.02em;
+}
+
+#exp-subtitle {
+  font-size: var(--small);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.results-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.results-header-actions .btn {
+  font-size: 0.8125rem;
+  font-weight: var(--weight-medium);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.results-header-actions .btn-secondary {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.results-header-actions .btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+.results-header-actions .btn-primary {
+  background: var(--text-primary);
+  color: var(--text-on-dark);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.results-header-actions .btn-primary:hover {
+  background: #000;
+  transform: translateY(-1px);
+}
+
+/* ---- Hero Verdict Card ---- */
 .results-hero-card {
   display: flex;
   align-items: center;
@@ -19,10 +98,7 @@
   max-width: 100%;
 }
 
-#exp-title {
-  overflow-wrap: anywhere;
-}
-
+/* ---- Metric Comparison Grid ---- */
 .results-metric-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -30,6 +106,7 @@
   margin-bottom: var(--space-2xl);
 }
 
+/* ---- Context Strip ---- */
 .results-context-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -42,7 +119,7 @@
 }
 
 .results-context-item {
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.85);
   padding: var(--space-md) var(--space-lg);
 }
 
@@ -78,37 +155,51 @@
   padding-top: var(--space-md);
 }
 
+/* ---- Responsive Breakpoints ---- */
 @media (max-width: 1024px) {
   .results-metric-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 640px) {
-  .card-grid-2 > .card,
-  #comparison-chart-container,
-  #variance-chart-container {
-    min-width: 0;
-    overflow: hidden;
+@media (max-width: 768px) {
+  .results-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
   }
-  #exp-header-actions .btn {
-    min-width: 0;
-    max-width: 100%;
-    white-space: normal;
-    text-align: center;
+
+  .results-header-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
+
   .results-hero-card {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-md);
   }
+
   .results-hero-card > div:last-child {
     text-align: left !important;
   }
+
+  .results-context-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
   .results-metric-grid {
     grid-template-columns: 1fr;
   }
+
   .results-context-strip {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+  }
+
+  .results-header-actions .btn {
+    flex: 1 1 100%;
+    justify-content: center;
   }
 }
