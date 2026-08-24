@@ -5,9 +5,14 @@
 
 import { el, icon, qs } from '../utils/dom.js';
 import { getCurrentUser, logout } from '../services/auth.js';
+import { initCommandPalette, openCommandPalette } from './command-palette.js';
 
 // ---- Lucide-style SVG icon paths ----
 const ICONS = {
+  search: [
+    { tag: 'circle', cx: '11', cy: '11', r: '8' },
+    'M21 21l-4.35-4.35',
+  ],
   dashboard: [
     'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
     'M9 22V12h6v10',
@@ -66,6 +71,11 @@ export function initSidebar(containerId = 'sidebar') {
   const user = getCurrentUser();
   const currentPage = getCurrentPage();
 
+  // Initialize global command palette
+  if (typeof window !== 'undefined') {
+    initCommandPalette();
+  }
+
   const sidebar = el('aside', { className: 'sidebar', id: 'app-sidebar' }, [
     // Header
     el('div', { className: 'sidebar-header' }, [
@@ -77,6 +87,18 @@ export function initSidebar(containerId = 'sidebar') {
 
     // Navigation
     el('nav', { className: 'sidebar-nav' }, [
+      el('button', {
+        className: 'nav-item mb-sm w-full',
+        style: { border: '1px dashed rgba(0, 0, 0, 0.15)', justifyContent: 'space-between' },
+        title: 'Open Command Palette (Cmd+K / /)',
+        onClick: () => openCommandPalette(),
+      }, [
+        el('div', { className: 'flex items-center gap-xs' }, [
+          icon(ICONS.search, 16),
+          el('span', {}, 'Quick Find'),
+        ]),
+        el('span', { className: 'font-mono text-caption text-muted' }, '⌘K'),
+      ]),
       el('div', { className: 'sidebar-section-label' }, 'Main'),
       ...NAV_ITEMS.map(item => createNavItem(item, currentPage)),
       el('div', { className: 'sidebar-section-label mt-lg' }, 'System'),
