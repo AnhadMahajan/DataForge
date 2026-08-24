@@ -430,3 +430,240 @@ export function renderCorrelationHeatmap(container, features, matrix, options = 
   return canvas;
 }
 
+/**
+ * Render an Interactive Confusion Matrix Component with DOM-based responsive cells & tooltips
+ * @param {HTMLElement} container - DOM container element
+ * @param {Object} matrixData - { classes, rawMatrix, normalizedMatrix, perClassMetrics }
+ * @param {Object} options - { isNormalized: boolean }
+ */
+export function renderConfusionMatrix(container, matrixData, options = {}) {
+  if (!container || !matrixData || !matrixData.classes) return;
+  const { isNormalized = false } = options;
+  const classes = matrixData.classes;
+  const n = classes.length;
+  const raw = matrixData.rawMatrix || [];
+  const norm = matrixData.normalizedMatrix || [];
+
+  container.innerHTML = '';
+
+  const wrapper = el('div', { className: 'conf-matrix-wrapper' });
+
+  // Header axis label: PREDICTED CLASS
+  const topHeader = el('div', { className: 'conf-matrix-axis-top' }, [
+    el('span', { className: 'conf-matrix-axis-title' }, 'PREDICTED CLASS →'),
+  ]);
+  wrapper.appendChild(topHeader);
+
+  // Main grid layout
+  const gridContainer = el('div', { className: 'conf-matrix-body-layout flex' });
+
+  // Left axis label: ACTUAL CLASS
+  const leftHeader = el('div', { className: 'conf-matrix-axis-left' }, [
+    el('span', { className: 'conf-matrix-axis-title' }, '← ACTUAL CLASS'),
+  ]);
+  gridContainer.appendChild(leftHeader);
+
+  // Table grid
+  const table = el('table', { className: 'conf-matrix-table' });
+  
+  // Table Head (Predicted class names)
+  const thead = el('thead', {}, [
+    el('tr', {}, [
+      el('th', { className: 'conf-matrix-corner-cell' }, ''),
+      ...classes.map(c => el('th', { className: 'conf-matrix-col-header' }, c)),
+    ]),
+  ]);
+  table.appendChild(thead);
+
+  // Table Body
+  const tbody = el('tbody', {});
+  for (let r = 0; r < n; r++) {
+    const rowClass = classes[r];
+    const tr = el('tr', {}, [
+      el('th', { className: 'conf-matrix-row-header' }, rowClass),
+    ]);
+
+    for (let c = 0; c < n; c++) {
+      const rawVal = raw[r] ? raw[r][c] : 0;
+      const normVal = norm[r] ? norm[r][c] : 0;
+      const isDiagonal = r === c;
+
+      // Color computation
+      let bg;
+      let textCol;
+      if (isDiagonal) {
+        const alpha = Math.min(0.95, Math.max(0.12, normVal * 0.95));
+        bg = `rgba(26, 138, 92, ${alpha.toFixed(2)})`;
+        textCol = alpha > 0.45 ? '#ffffff' : '#1a8a5c';
+      } else {
+        const alpha = Math.min(0.95, Math.max(0.04, normVal * 0.95));
+        bg = rawVal > 0 ? `rgba(196, 62, 62, ${alpha.toFixed(2)})` : 'rgba(0, 0, 0, 0.02)';
+        textCol = alpha > 0.45 ? '#ffffff' : (rawVal > 0 ? '#c43e3e' : '#888888');
+      }
+
+      const displayVal = isNormalized ? `${(normVal * 100).toFixed(1)}%` : String(rawVal);
+      const subVal = isNormalized ? `(N=${rawVal})` : `(${(normVal * 100).toFixed(1)}%)`;
+
+      const td = el('td', {
+        className: `conf-matrix-cell ${isDiagonal ? 'cell-diagonal' : 'cell-off-diagonal'}`,
+        style: {
+          backgroundColor: bg,
+          color: textCol,
+        },
+        title: `Actual: "${rowClass}" | Predicted: "${classes[c]}"\nSamples: ${rawVal} (${(normVal * 100).toFixed(1)}% of row)`,
+      }, [
+        el('div', { className: 'conf-matrix-cell-val font-mono font-semi' }, displayVal),
+        el('div', { className: 'conf-matrix-cell-sub text-caption' }, subVal),
+      ]);
+
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  gridContainer.appendChild(table);
+  wrapper.appendChild(gridContainer);
+
+  container.appendChild(wrapper);
+}
+
+/**
+ * Render Density & Histogram Distribution Overlay for Feature Drift
+ * @param {HTMLElement} container - DOM container element
+ * @param {number[]} origVals - Original ground truth values
+ * @param {number[]} synthVals - Synthetic feature values
+ * @param {string} featureName - Feature label
+ * @param {Object} options - Custom options (height, ksStatistic, severity)
+ */
+export function renderDriftDensityChart(container, origVals, synthVals, featureName, options = {}) {
+  if (!container) return;
+  const { height = 220, ksStatistic = null, severity = 'safe' } = options;
+
+  container.innerHTML = '';
+  const canvas = el('canvas', { height });
+  canvas.style.width = '100%';
+  canvas.style.height = `${height}px`;
+  container.appendChild(canvas);
+
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || container.clientWidth || 400;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const cleanOrig = (origVals || []).filter(v => typeof v === 'number' && !isNaN(v));
+  const cleanSynth = (synthVals || []).filter(v => typeof v === 'number' && !isNaN(v));
+
+  if (cleanOrig.length === 0) {
+    ctx.fillStyle = '#888888';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No numeric data points available for drift chart.', width / 2, height / 2);
+    return canvas;
+  }
+
+  const allVals = [...cleanOrig, ...cleanSynth];
+  const minVal = Math.min(...allVals);
+  const maxVal = Math.max(...allVals);
+  const numBins = 10;
+  const binStep = (maxVal - minVal) / numBins || 1;
+
+  const origBins = new Array(numBins).fill(0);
+  const synthBins = new Array(numBins).fill(0);
+
+  cleanOrig.forEach(v => {
+    const idx = Math.min(numBins - 1, Math.max(0, Math.floor((v - minVal) / binStep)));
+    origBins[idx]++;
+  });
+
+  cleanSynth.forEach(v => {
+    const idx = Math.min(numBins - 1, Math.max(0, Math.floor((v - minVal) / binStep)));
+    synthBins[idx]++;
+  });
+
+  // Normalize to relative frequencies (%)
+  const origFreqs = origBins.map(b => cleanOrig.length > 0 ? b / cleanOrig.length : 0);
+  const synthFreqs = synthBins.map(b => cleanSynth.length > 0 ? b / cleanSynth.length : 0);
+
+  const maxFreq = Math.max(0.01, ...origFreqs, ...synthFreqs);
+
+  const padding = { top: 35, right: 30, bottom: 40, left: 45 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+
+  // Grid Lines
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#888888';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+
+  [0, 0.5, 1.0].forEach(p => {
+    const y = padding.top + chartH - p * chartH;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(padding.left + chartW, y);
+    ctx.stroke();
+    ctx.fillText(`${(p * maxFreq * 100).toFixed(0)}%`, padding.left - 6, y + 3);
+  });
+
+  const barGroupWidth = chartW / numBins;
+  const barWidth = (barGroupWidth - 4) / 2;
+
+  // Draw Bars
+  for (let b = 0; b < numBins; b++) {
+    const groupX = padding.left + b * barGroupWidth;
+
+    // Original Ground Truth Bar (Dark Slate)
+    const origH = (origFreqs[b] / maxFreq) * chartH;
+    const origY = padding.top + chartH - origH;
+    ctx.fillStyle = 'rgba(34, 34, 34, 0.75)';
+    ctx.fillRect(groupX + 2, origY, barWidth, origH);
+
+    // Synthetic Bar (Emerald or Burgundy depending on drift)
+    const synthH = (synthFreqs[b] / maxFreq) * chartH;
+    const synthY = padding.top + chartH - synthH;
+    ctx.fillStyle = severity === 'severe' ? 'rgba(196, 62, 62, 0.75)' : 'rgba(26, 138, 92, 0.75)';
+    ctx.fillRect(groupX + 2 + barWidth, synthY, barWidth, synthH);
+
+    // X Axis bin labels
+    const binStart = minVal + b * binStep;
+    ctx.fillStyle = '#666666';
+    ctx.font = '9px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    if (b % 2 === 0 || numBins <= 6) {
+      ctx.fillText(binStart.toFixed(1), groupX + barGroupWidth / 2, padding.top + chartH + 16);
+    }
+  }
+
+  // Legend
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'left';
+
+  // Orig legend
+  ctx.fillStyle = '#222222';
+  ctx.fillRect(padding.left, 12, 10, 10);
+  ctx.fillText(`Original Ground Truth (N=${cleanOrig.length})`, padding.left + 16, 21);
+
+  // Synth legend
+  const synthLegX = padding.left + 210;
+  ctx.fillStyle = severity === 'severe' ? '#c43e3e' : '#1a8a5c';
+  ctx.fillRect(synthLegX, 12, 10, 10);
+  ctx.fillText(`Synthetic Distribution (N=${cleanSynth.length})`, synthLegX + 16, 21);
+
+  // KS statistic badge on top right
+  if (ksStatistic !== null) {
+    const badgeText = `KS Stat D = ${ksStatistic} (${severity.toUpperCase()})`;
+    ctx.font = '10px JetBrains Mono, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = severity === 'severe' ? '#c43e3e' : (severity === 'moderate' ? '#b08a2e' : '#1a8a5c');
+    ctx.fillText(badgeText, padding.left + chartW, 21);
+  }
+
+  return canvas;
+}
+
+

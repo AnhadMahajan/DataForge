@@ -416,3 +416,157 @@ export function softmax(arr) {
   const expSum = sum(exps);
   return exps.map(e => e / (expSum || 1));
 }
+
+// ---- Statistical Distribution Drift (Kolmogorov-Smirnov & Wasserstein) ----
+
+/**
+ * Compute 2-Sample Kolmogorov-Smirnov (KS) Statistic between two continuous 1D distributions.
+ * Returns supremum |F1(x) - F2(x)| measuring maximum discrepancy in cumulative distributions.
+ */
+export function computeKolmogorovSmirnov(sample1, sample2) {
+  const s1 = (sample1 || []).filter(v => typeof v === 'number' && !isNaN(v)).sort((a, b) => a - b);
+  const s2 = (sample2 || []).filter(v => typeof v === 'number' && !isNaN(v)).sort((a, b) => a - b);
+
+  const n1 = s1.length;
+  const n2 = s2.length;
+
+  if (n1 === 0 || n2 === 0) {
+    return { statistic: 0, driftSeverity: 'safe', interpretation: 'Insufficient samples' };
+  }
+
+  let i1 = 0;
+  let i2 = 0;
+  let maxD = 0;
+
+  while (i1 < n1 && i2 < n2) {
+    const val1 = s1[i1];
+    const val2 = s2[i2];
+
+    if (val1 <= val2) {
+      i1++;
+    }
+    if (val2 <= val1) {
+      i2++;
+    }
+
+    const cdf1 = i1 / n1;
+    const cdf2 = i2 / n2;
+    const diff = Math.abs(cdf1 - cdf2);
+    if (diff > maxD) {
+      maxD = diff;
+    }
+  }
+
+  // Determine drift risk severity
+  let driftSeverity = 'safe';
+  if (maxD >= 0.35) {
+    driftSeverity = 'severe';
+  } else if (maxD >= 0.18) {
+    driftSeverity = 'moderate';
+  }
+
+  return {
+    statistic: Number(maxD.toFixed(4)),
+    driftSeverity,
+    n1,
+    n2,
+  };
+}
+
+/**
+ * Compute 1D Wasserstein-1 Distance (Earth Mover's Distance) between two continuous distributions.
+ */
+export function computeWassersteinDistance(sample1, sample2) {
+  const s1 = (sample1 || []).filter(v => typeof v === 'number' && !isNaN(v)).sort((a, b) => a - b);
+  const s2 = (sample2 || []).filter(v => typeof v === 'number' && !isNaN(v)).sort((a, b) => a - b);
+
+  if (s1.length === 0 || s2.length === 0) return 0;
+
+  const quantiles = 100;
+  let totalDist = 0;
+
+  for (let q = 1; q <= quantiles; q++) {
+    const p = q / (quantiles + 1);
+    const idx1 = Math.min(s1.length - 1, Math.floor(p * s1.length));
+    const idx2 = Math.min(s2.length - 1, Math.floor(p * s2.length));
+    totalDist += Math.abs(s1[idx1] - s2[idx2]);
+  }
+
+  return Number((totalDist / quantiles).toFixed(4));
+}
+
+// ---- Confusion Matrix & Diagnostic Error Metrics ----
+
+/**
+ * Compute multi-class / binary Confusion Matrix and per-class diagnostic rates.
+ */
+export function computeConfusionMatrix(actualLabels, predictedLabels, classList) {
+  const classes = classList || Array.from(new Set([...actualLabels, ...predictedLabels])).sort();
+  const n = classes.length;
+  const classMap = new Map();
+  classes.forEach((c, idx) => classMap.set(c, idx));
+
+  // Initialize raw matrix (rows = actual, cols = predicted)
+  const rawMatrix = Array.from({ length: n }, () => Array(n).fill(0));
+
+  for (let i = 0; i < actualLabels.length; i++) {
+    const act = actualLabels[i];
+    const pred = predictedLabels[i];
+    const r = classMap.get(act);
+    const c = classMap.get(pred);
+    if (r !== undefined && c !== undefined) {
+      rawMatrix[r][c]++;
+    }
+  }
+
+  // Row-normalized percentage matrix (recall/sensitivity by true class row)
+  const normalizedMatrix = Array.from({ length: n }, () => Array(n).fill(0));
+  const totalSamples = actualLabels.length || 1;
+
+  for (let r = 0; r < n; r++) {
+    const rowSum = rawMatrix[r].reduce((a, b) => a + b, 0) || 1;
+    for (let c = 0; c < n; c++) {
+      normalizedMatrix[r][c] = rawMatrix[r][c] / rowSum;
+    }
+  }
+
+  // Per-class metrics (TP, FP, TN, FN, Sensitivity, Specificity, FPR)
+  const perClassMetrics = {};
+  classes.forEach((cls, idx) => {
+    const tp = rawMatrix[idx][idx];
+    let fn = 0;
+    let fp = 0;
+
+    for (let c = 0; c < n; c++) {
+      if (c !== idx) fn += rawMatrix[idx][c];
+    }
+    for (let r = 0; r < n; r++) {
+      if (r !== idx) fp += rawMatrix[r][idx];
+    }
+
+    const tn = totalSamples - tp - fn - fp;
+    const sensitivity = (tp + fn) > 0 ? tp / (tp + fn) : 0;
+    const specificity = (tn + fp) > 0 ? tn / (tn + fp) : 1;
+    const fpr = (fp + tn) > 0 ? fp / (fp + tn) : 0;
+
+    perClassMetrics[cls] = {
+      className: cls,
+      tp,
+      fn,
+      fp,
+      tn,
+      sensitivity: Number(sensitivity.toFixed(4)),
+      specificity: Number(specificity.toFixed(4)),
+      fpr: Number(fpr.toFixed(4)),
+    };
+  });
+
+  return {
+    classes,
+    rawMatrix,
+    normalizedMatrix,
+    perClassMetrics,
+    totalSamples,
+  };
+}
+

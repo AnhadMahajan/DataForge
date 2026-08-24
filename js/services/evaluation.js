@@ -14,6 +14,7 @@ import {
   stratifiedSplit,
   accuracy,
   computeConfusionMetrics,
+  computeConfusionMatrix,
   macroAverage,
   mean,
   std,
@@ -443,6 +444,7 @@ export async function runControlledEvaluation({
     // 6. Calculate metrics
     const acc = accuracy(testY, preds);
     const perClass = computeConfusionMetrics(testY, preds, classes);
+    const matrixData = computeConfusionMatrix(testY, preds, classes);
     const prec = macroAverage(perClass, 'precision');
     const rec = macroAverage(perClass, 'recall');
     const f1 = macroAverage(perClass, 'f1');
@@ -454,6 +456,7 @@ export async function runControlledEvaluation({
       recall: rec,
       f1,
       perClass,
+      confusionMatrix: matrixData,
     });
   }
 
@@ -463,11 +466,69 @@ export async function runControlledEvaluation({
   const recs = runResults.map(r => r.recall);
   const f1s = runResults.map(r => r.f1);
 
+  // Compute aggregated average confusion matrix across all runs
+  const nClasses = classes.length;
+  const avgRawMatrix = Array.from({ length: nClasses }, () => Array(nClasses).fill(0));
+  const avgNormMatrix = Array.from({ length: nClasses }, () => Array(nClasses).fill(0));
+  const avgPerClass = {};
+
+  classes.forEach(c => {
+    avgPerClass[c] = {
+      className: c,
+      tp: 0,
+      fn: 0,
+      fp: 0,
+      tn: 0,
+      sensitivity: 0,
+      specificity: 0,
+      fpr: 0,
+    };
+  });
+
+  runResults.forEach(r => {
+    const cm = r.confusionMatrix;
+    for (let i = 0; i < nClasses; i++) {
+      for (let j = 0; j < nClasses; j++) {
+        avgRawMatrix[i][j] += (cm.rawMatrix[i][j] || 0) / runResults.length;
+        avgNormMatrix[i][j] += (cm.normalizedMatrix[i][j] || 0) / runResults.length;
+      }
+    }
+    classes.forEach(c => {
+      const pm = cm.perClassMetrics[c] || {};
+      avgPerClass[c].tp += (pm.tp || 0) / runResults.length;
+      avgPerClass[c].fn += (pm.fn || 0) / runResults.length;
+      avgPerClass[c].fp += (pm.fp || 0) / runResults.length;
+      avgPerClass[c].tn += (pm.tn || 0) / runResults.length;
+      avgPerClass[c].sensitivity += (pm.sensitivity || 0) / runResults.length;
+      avgPerClass[c].specificity += (pm.specificity || 0) / runResults.length;
+      avgPerClass[c].fpr += (pm.fpr || 0) / runResults.length;
+    });
+  });
+
+  // Round aggregated values
+  for (let i = 0; i < nClasses; i++) {
+    for (let j = 0; j < nClasses; j++) {
+      avgRawMatrix[i][j] = Number(avgRawMatrix[i][j].toFixed(1));
+      avgNormMatrix[i][j] = Number(avgNormMatrix[i][j].toFixed(4));
+    }
+  }
+  classes.forEach(c => {
+    avgPerClass[c].sensitivity = Number(avgPerClass[c].sensitivity.toFixed(4));
+    avgPerClass[c].specificity = Number(avgPerClass[c].specificity.toFixed(4));
+    avgPerClass[c].fpr = Number(avgPerClass[c].fpr.toFixed(4));
+  });
+
   const aggregated = {
     accuracy: { mean: Number(mean(accs).toFixed(4)), std: Number(std(accs).toFixed(4)) },
     precision: { mean: Number(mean(precs).toFixed(4)), std: Number(std(precs).toFixed(4)) },
     recall: { mean: Number(mean(recs).toFixed(4)), std: Number(std(recs).toFixed(4)) },
     f1: { mean: Number(mean(f1s).toFixed(4)), std: Number(std(f1s).toFixed(4)) },
+    confusionMatrix: {
+      classes,
+      rawMatrix: avgRawMatrix,
+      normalizedMatrix: avgNormMatrix,
+      perClassMetrics: avgPerClass,
+    },
   };
 
   return {

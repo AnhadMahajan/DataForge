@@ -122,11 +122,57 @@ async function runTests() {
     if (!topResult.augmentedCSV || !topResult.syntheticCSV) {
       throw new Error('Missing generated CSV exports on strategy results');
     }
+
+    // Verify Confusion Matrix
+    if (!exp.baseline.aggregated.confusionMatrix || !topResult.evaluation.aggregated.confusionMatrix) {
+      throw new Error('Missing confusion matrix in evaluation output');
+    }
+
+    // Verify Feature Drift
+    if (!topResult.featureDrift || topResult.featureDrift.length === 0) {
+      throw new Error('Missing featureDrift diagnostics on strategy results');
+    }
   }
 
-  // 7. Test Reports Generator
+  // 7. Test Statistical Math (KS Test, Wasserstein Distance & Confusion Matrix)
+  const mathUtils = await import('./js/utils/math.js');
+  console.log('\n7️⃣ Testing Statistical Drift & Confusion Matrix Math Engine...');
+  
+  // Test KS Statistic
+  const s1 = [10, 12, 14, 15, 16, 18, 20];
+  const s2_identical = [10, 12, 14, 15, 16, 18, 20];
+  const s3_shifted = [100, 105, 110, 115, 120, 125, 130];
+  
+  const ksIdentical = mathUtils.computeKolmogorovSmirnov(s1, s2_identical);
+  const ksShifted = mathUtils.computeKolmogorovSmirnov(s1, s3_shifted);
+  if (ksIdentical.statistic !== 0 || ksIdentical.driftSeverity !== 'safe') {
+    throw new Error('KS test failed on identical distributions: ' + JSON.stringify(ksIdentical));
+  }
+  if (ksShifted.statistic !== 1 || ksShifted.driftSeverity !== 'severe') {
+    throw new Error('KS test failed on shifted distributions: ' + JSON.stringify(ksShifted));
+  }
+  console.log(`✓ KS-Test: Identical D=${ksIdentical.statistic} (${ksIdentical.driftSeverity}) | Shifted D=${ksShifted.statistic} (${ksShifted.driftSeverity})`);
+
+  // Test Wasserstein Distance
+  const w1_ident = mathUtils.computeWassersteinDistance(s1, s2_identical);
+  const w1_shift = mathUtils.computeWassersteinDistance(s1, s3_shifted);
+  if (w1_ident !== 0 || w1_shift < 80) {
+    throw new Error(`Wasserstein distance unexpected: ident=${w1_ident}, shift=${w1_shift}`);
+  }
+  console.log(`✓ Wasserstein-1: Identical W1=${w1_ident} | Shifted W1=${w1_shift}`);
+
+  // Test Confusion Matrix
+  const yTrue = ['cat', 'cat', 'dog', 'dog', 'bird'];
+  const yPred = ['cat', 'dog', 'dog', 'dog', 'bird'];
+  const cm = mathUtils.computeConfusionMatrix(yTrue, yPred, ['bird', 'cat', 'dog']);
+  if (cm.perClassMetrics['cat'].tp !== 1 || cm.perClassMetrics['cat'].fn !== 1) {
+    throw new Error('Confusion matrix calculation mismatch on cat class');
+  }
+  console.log(`✓ Confusion Matrix: 3-Class Matrix generated with Sensitivity & FPR per class`);
+
+  // 8. Test Reports Generator
   const reportsService = await import('./js/services/reports.js');
-  console.log('\n7️⃣ Testing Narrative Report Compiler...');
+  console.log('\n8️⃣ Testing Narrative Report Compiler...');
   const latestExp = expService.getExperiments(userId)[0];
   const report = reportsService.generateReportFromExperiment(userId, latestExp, dataset);
   console.log(`✓ Compiled Report: "${report.title}" (Verdict: ${report.verdict.toUpperCase()}) with ${report.sections.length} narrative sections.`);
@@ -140,4 +186,5 @@ runTests().catch(err => {
   console.error('❌ Test Suite Failed:', err);
   process.exit(1);
 });
+
 

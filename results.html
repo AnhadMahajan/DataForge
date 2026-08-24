@@ -83,13 +83,44 @@
           <div class="card-grid-3" id="quality-cards-container"></div>
         </section>
 
-        <!-- Feature Distribution Shift Comparator -->
-        <section class="section mb-xl">
-          <div class="flex items-center justify-between mb-md">
-            <h2 class="section-title">Feature Distribution Comparison</h2>
-            <div id="feature-select-container" style="max-width: 240px;"></div>
+        <!-- Confusion Matrix Visualizer Section -->
+        <section class="section">
+          <div class="flex items-center justify-between mb-md flex-wrap gap-sm">
+            <div>
+              <h2 class="section-title">Decision Boundary & Confusion Matrix</h2>
+              <p class="text-secondary text-small">Audit true/false classifications, false positive rates, and sensitivity trade-offs across classes.</p>
+            </div>
+            <div class="flex items-center gap-sm flex-wrap">
+              <div id="conf-strat-select-container" style="min-width: 180px;"></div>
+              <div class="btn-group">
+                <button type="button" class="btn btn-secondary btn-sm active" id="btn-conf-raw">Raw Counts</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-conf-norm">Normalized %</button>
+              </div>
+            </div>
           </div>
           <div class="card">
+            <div id="conf-matrix-container"></div>
+            <div class="divider my-md"></div>
+            <div class="card-title text-small font-semi mb-sm">Per-Class Sensitivity, Specificity & False Positive Rate</div>
+            <div class="grid grid-3 gap-sm" id="conf-matrix-metrics-strip"></div>
+          </div>
+        </section>
+
+        <!-- Feature Distribution Shift & Drift Diagnostics -->
+        <section class="section mb-xl">
+          <div class="flex items-center justify-between mb-md flex-wrap gap-sm">
+            <div>
+              <h2 class="section-title">Feature Distribution Shift & Statistical Drift</h2>
+              <p class="text-secondary text-small">Kolmogorov-Smirnov (KS) distance and Wasserstein-1 metrics quantifying distribution distortion.</p>
+            </div>
+            <div id="drift-feature-select-container" style="max-width: 240px;"></div>
+          </div>
+          <div class="card p-0 mb-md" id="drift-table-container"></div>
+          <div class="card">
+            <div class="flex items-center justify-between mb-sm">
+              <div class="card-title text-small font-semi" id="drift-chart-title">Distribution Overlay</div>
+              <span class="text-caption text-muted">Click any row in the table above or use the selector</span>
+            </div>
             <div id="distribution-chart-container"></div>
           </div>
         </section>

@@ -70,11 +70,27 @@ export function renderDataTable(container, headers, rows, options = {}) {
 
     // Body
     const tbody = el('tbody');
-    pageRows.forEach(row => {
-      const tr = el('tr');
+    pageRows.forEach((row, pageRowIdx) => {
+      const origIdx = currentRows.indexOf(row);
+      const tr = el('tr', {
+        className: options.onRowClick ? 'cursor-pointer' : '',
+        onClick: options.onRowClick ? () => options.onRowClick(origIdx) : null,
+      });
+
       row.forEach(cell => {
         const isNum = typeof cell === 'number';
-        const td = el('td', { className: isNum ? 'mono' : '' }, cell !== null && cell !== undefined ? String(cell) : '—');
+        const td = el('td', { className: isNum ? 'mono' : '' });
+
+        if (cell === null || cell === undefined) {
+          td.textContent = '—';
+        } else if (typeof cell === 'string' && cell.trim().startsWith('<') && cell.includes('>')) {
+          td.innerHTML = cell;
+        } else if (cell instanceof HTMLElement) {
+          td.appendChild(cell);
+        } else {
+          td.textContent = String(cell);
+        }
+
         tr.appendChild(td);
       });
       tbody.appendChild(tr);

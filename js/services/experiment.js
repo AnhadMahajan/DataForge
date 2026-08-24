@@ -15,7 +15,7 @@ import {
 } from './augmentation.js';
 import { runControlledEvaluation, compareEvaluations } from './evaluation.js';
 import { generateRecommendation } from './recommendations.js';
-import { generateUUID } from '../utils/math.js';
+import { generateUUID, mean, std, computeKolmogorovSmirnov, computeWassersteinDistance } from '../utils/math.js';
 import { generateCSV } from '../utils/csv.js';
 
 const EXPERIMENTS_PREFIX = 'experiments_';
@@ -192,12 +192,42 @@ export async function runExperiment({
 
       const comparison = compareEvaluations(baseline, evalResult);
 
+      // Compute per-feature statistical drift metrics (KS-Test & Wasserstein)
+      const featureDrift = [];
+      numericIndices.forEach(fIdx => {
+        const featName = featureHeaders[fIdx] || `Feature_${fIdx}`;
+        const origVals = dataRows.map(r => Number(r[fIdx])).filter(v => !isNaN(v));
+        const synthVals = (sampleAug.syntheticData || []).map(r => Number(r[fIdx])).filter(v => !isNaN(v));
+
+        const origM = origVals.length > 0 ? mean(origVals) : 0;
+        const origS = origVals.length > 1 ? std(origVals) : 1;
+        const synthM = synthVals.length > 0 ? mean(synthVals) : origM;
+        const synthS = synthVals.length > 1 ? std(synthVals) : origS;
+
+        const ks = computeKolmogorovSmirnov(origVals, synthVals);
+        const w1 = computeWassersteinDistance(origVals, synthVals);
+
+        featureDrift.push({
+          featureName: featName,
+          featureIndex: fIdx,
+          originalMean: Number(origM.toFixed(2)),
+          originalStd: Number(origS.toFixed(2)),
+          syntheticMean: Number(synthM.toFixed(2)),
+          syntheticStd: Number(synthS.toFixed(2)),
+          ksStatistic: ks.statistic,
+          driftSeverity: ks.driftSeverity,
+          wassersteinDistance: w1,
+        });
+      });
+
       strategyResults.push({
         strategyType: stratType,
         strategyParams: params,
         evaluation: evalResult,
         comparison,
         qualityMetrics,
+        featureDrift,
+        syntheticData: sampleAug.syntheticData || [],
         syntheticCount: sampleAug.syntheticCount || 0,
         augmentedRowCount: augmentedFullRows.length,
         augmentedCSV,

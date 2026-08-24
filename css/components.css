@@ -656,3 +656,134 @@
   color: var(--text-muted);
 }
 
+/* ---- Confusion Matrix Styles ---- */
+.conf-matrix-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-md) var(--space-sm);
+  overflow-x: auto;
+}
+
+.conf-matrix-axis-top {
+  text-align: center;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+}
+
+.conf-matrix-body-layout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.conf-matrix-axis-left {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-align: center;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.conf-matrix-table {
+  border-collapse: separate;
+  border-spacing: 4px;
+}
+
+.conf-matrix-corner-cell {
+  background: transparent;
+  border: none;
+}
+
+.conf-matrix-col-header {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: var(--weight-semi);
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--space-xs) var(--space-sm);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conf-matrix-row-header {
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: var(--weight-semi);
+  color: var(--text-secondary);
+  text-align: right;
+  padding: var(--space-xs) var(--space-sm);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conf-matrix-cell {
+  width: 90px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.conf-matrix-cell:hover {
+  transform: scale(1.04);
+  box-shadow: var(--shadow-md);
+  z-index: 5;
+}
+
+.conf-matrix-cell-val {
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.conf-matrix-cell-sub {
+  font-size: 10px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+/* ---- Drift Risk Badges ---- */
+.drift-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: var(--weight-semi);
+  font-family: var(--font-mono);
+}
+
+.drift-badge-safe {
+  background: rgba(26, 138, 92, 0.12);
+  color: #1a8a5c;
+  border: 1px solid rgba(26, 138, 92, 0.25);
+}
+
+.drift-badge-moderate {
+  background: rgba(176, 138, 46, 0.12);
+  color: #b08a2e;
+  border: 1px solid rgba(176, 138, 46, 0.25);
+}
+
+.drift-badge-severe {
+  background: rgba(196, 62, 62, 0.12);
+  color: #c43e3e;
+  border: 1px solid rgba(196, 62, 62, 0.25);
+}
+
+

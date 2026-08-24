@@ -1,13 +1,24 @@
+/**
+ * DataForge — Results & Performance Dashboard
+ * Displays evaluation matrix, statistical recommendations, multi-strategy comparisons,
+ * Confusion Matrix visualizer (Raw vs Normalized), Feature Drift Diagnostics (KS & Wasserstein),
+ * and cross-experiment benchmarking.
+ */
+
 import { requireSession } from '../services/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { getExperimentById, getExperiments } from '../services/experiment.js';
 import { getDatasetById } from '../services/dataset.js';
-import { renderGroupedBarChart, renderRunVarianceChart } from '../components/charts.js';
+import {
+  renderGroupedBarChart,
+  renderRunVarianceChart,
+  renderConfusionMatrix,
+  renderDriftDensityChart,
+} from '../components/charts.js';
 import { renderDataTable } from '../components/tables.js';
 import { toast } from '../components/toast.js';
 import { downloadCSV, generateCSV } from '../utils/csv.js';
 import { formatDelta, formatPercent, formatStrategy } from '../utils/formatting.js';
-import { min, max } from '../utils/math.js';
 import { el, qs, show, hide } from '../utils/dom.js';
 
 const session = requireSession();
@@ -35,10 +46,19 @@ const matrixTableContainer = qs('#matrix-table-container');
 const classTableContainer = qs('#class-table-container');
 const qualityCardsContainer = qs('#quality-cards-container');
 const resultsContextStrip = qs('#results-context-strip');
-const featureSelectContainer = qs('#feature-select-container');
-const distributionChartContainer = qs('#distribution-chart-container');
 const compareSelectContainer = qs('#compare-select-container');
 const compareCardContainer = qs('#compare-card-container');
+
+// Confusion Matrix & Feature Drift selectors
+const confStratSelectContainer = qs('#conf-strat-select-container');
+const btnConfRaw = qs('#btn-conf-raw');
+const btnConfNorm = qs('#btn-conf-norm');
+const confMatrixContainer = qs('#conf-matrix-container');
+const confMatrixMetricsStrip = qs('#conf-matrix-metrics-strip');
+const driftFeatureSelectContainer = qs('#drift-feature-select-container');
+const driftTableContainer = qs('#drift-table-container');
+const driftChartTitle = qs('#drift-chart-title');
+const distributionChartContainer = qs('#distribution-chart-container');
 
 const urlParams = new URLSearchParams(window.location.search);
 let expId = urlParams.get('id');
@@ -77,7 +97,7 @@ function renderResults(exp) {
   // Header Actions
   expHeaderActions.innerHTML = '';
 
-  // Metrics CSV Export (Feature C)
+  // Metrics CSV Export
   const btnExportMetrics = el('button', {
     className: 'btn btn-secondary btn-sm',
     onClick: () => {
@@ -202,9 +222,6 @@ function renderResults(exp) {
   });
 
   // 2. Metrics Comparison Grid (Baseline vs Best Strategy)
-  const bestAgg = bestStratRes ? bestStratRes.evaluation.aggregated : baseline.aggregated;
-  const baseAgg = baseline.aggregated;
-
   metricsGrid.innerHTML = '';
   const metricItems = [
     { name: 'Macro F1-Score', base: baseAgg.f1.mean, aug: bestAgg.f1.mean },
@@ -320,67 +337,175 @@ function renderResults(exp) {
     el('div', { className: 'text-small text-secondary mt-xs' }, 'Normalized deviation from original ground truth'),
   ]));
 
-  // 8. Feature Distribution Comparator
-  if (dataset && featureSelectContainer && distributionChartContainer) {
-    const numericCols = dataset.columns.filter(c => c.type === 'numeric' && c.name !== dataset.targetColumn);
-    
-    if (numericCols.length > 0) {
-      featureSelectContainer.innerHTML = '';
-      const select = el('select', {
+  // 8. Confusion Matrix Visualizer Controller
+  if (confMatrixContainer) {
+    let currentConfStrat = rec.bestStrategy || (strategyResults[0]?.strategyType) || 'baseline';
+    let isConfNorm = false;
+
+    // Strategy selector
+    if (confStratSelectContainer) {
+      confStratSelectContainer.innerHTML = '';
+      const stratOptions = [
+        el('option', { value: 'baseline' }, 'Model: Baseline (Raw)'),
+        ...strategyResults.map(s => el('option', {
+          value: s.strategyType,
+          selected: s.strategyType === currentConfStrat,
+        }, `Model: ${formatStrategy(s.strategyType)}`)),
+      ];
+
+      const stratSelect = el('select', {
         className: 'select select-sm',
-        onChange: (e) => renderFeatureComparison(e.target.value),
-      }, numericCols.map(c => el('option', { value: c.name }, `Feature: ${c.name}`)));
-      featureSelectContainer.appendChild(select);
+        onChange: (e) => {
+          currentConfStrat = e.target.value;
+          updateConfusionMatrixDisplay();
+        },
+      }, stratOptions);
+      confStratSelectContainer.appendChild(stratSelect);
+    }
 
-      function renderFeatureComparison(colName) {
-        distributionChartContainer.innerHTML = '';
-        const colIdx = dataset.headers.indexOf(colName);
-        if (colIdx === -1) return;
+    // Normalized vs Raw Buttons
+    if (btnConfRaw && btnConfNorm) {
+      btnConfRaw.onclick = () => {
+        isConfNorm = false;
+        btnConfRaw.classList.add('active');
+        btnConfNorm.classList.remove('active');
+        updateConfusionMatrixDisplay();
+      };
+      btnConfNorm.onclick = () => {
+        isConfNorm = true;
+        btnConfNorm.classList.add('active');
+        btnConfRaw.classList.remove('active');
+        updateConfusionMatrixDisplay();
+      };
+    }
 
-        const origVals = dataset.fullData.map(r => Number(r[colIdx])).filter(v => !isNaN(v));
-        const minVal = min(origVals);
-        const maxVal = max(origVals);
-        const binCount = 5;
-        const binStep = (maxVal - minVal) / binCount || 1;
+    function updateConfusionMatrixDisplay() {
+      const isBase = currentConfStrat === 'baseline';
+      const targetEval = isBase ? baseline : (strategyResults.find(s => s.strategyType === currentConfStrat)?.evaluation || baseline);
+      const matrixData = targetEval?.aggregated?.confusionMatrix;
 
-        const binLabels = [];
-        const origBinCounts = new Array(binCount).fill(0);
-        const augBinCounts = new Array(binCount).fill(0);
-
-        for (let b = 0; b < binCount; b++) {
-          const bStart = (minVal + b * binStep).toFixed(1);
-          const bEnd = (minVal + (b + 1) * binStep).toFixed(1);
-          binLabels.push(`${bStart}-${bEnd}`);
-        }
-
-        origVals.forEach(v => {
-          const idx = Math.min(binCount - 1, Math.max(0, Math.floor((v - minVal) / binStep)));
-          origBinCounts[idx]++;
-        });
-
-        // Synthetic values from best strategy
-        const synthRows = bestStratRes?.syntheticData || [];
-        const synthVals = synthRows.map(r => Number(r[colIdx])).filter(v => !isNaN(v));
-        synthVals.forEach(v => {
-          const idx = Math.min(binCount - 1, Math.max(0, Math.floor((v - minVal) / binStep)));
-          augBinCounts[idx]++;
-        });
-
-        const series = [
-          { name: 'Original Ground Truth', values: origBinCounts, color: '#333333' },
-          { name: 'Synthetic Distribution', values: augBinCounts, color: '#1a8a5c' },
-        ];
-
-        renderGroupedBarChart(distributionChartContainer, binLabels, series, { height: 210 });
+      if (!matrixData) {
+        confMatrixContainer.innerHTML = '<div class="text-small text-muted p-md text-center">No confusion matrix recorded for this evaluation.</div>';
+        return;
       }
 
-      renderFeatureComparison(numericCols[0].name);
+      renderConfusionMatrix(confMatrixContainer, matrixData, { isNormalized: isConfNorm });
+
+      // Render per-class metrics summary strip
+      if (confMatrixMetricsStrip) {
+        confMatrixMetricsStrip.innerHTML = '';
+        const perClass = matrixData.perClassMetrics || {};
+        Object.values(perClass).forEach(m => {
+          const chip = el('div', { className: 'card background-subtle p-sm' }, [
+            el('div', { className: 'flex justify-between items-center mb-xs' }, [
+              el('span', { className: 'font-semi text-primary text-small' }, m.className),
+              el('span', { className: 'text-caption font-mono text-muted' }, `TP: ${m.tp} | FP: ${m.fp}`),
+            ]),
+            el('div', { className: 'flex justify-between text-caption border-bottom py-xs' }, [
+              el('span', { className: 'text-muted' }, 'Sensitivity (Recall)'),
+              el('span', { className: 'font-mono font-semi ' + (m.sensitivity >= 0.85 ? 'delta-positive' : '') }, formatPercent(m.sensitivity)),
+            ]),
+            el('div', { className: 'flex justify-between text-caption border-bottom py-xs' }, [
+              el('span', { className: 'text-muted' }, 'Specificity'),
+              el('span', { className: 'font-mono font-semi ' + (m.specificity >= 0.85 ? 'delta-positive' : '') }, formatPercent(m.specificity)),
+            ]),
+            el('div', { className: 'flex justify-between text-caption py-xs' }, [
+              el('span', { className: 'text-muted' }, 'False Positive Rate'),
+              el('span', { className: 'font-mono font-semi ' + (m.fpr > 0.15 ? 'delta-negative' : 'text-muted') }, formatPercent(m.fpr)),
+            ]),
+          ]);
+          confMatrixMetricsStrip.appendChild(chip);
+        });
+      }
+    }
+
+    updateConfusionMatrixDisplay();
+  }
+
+  // 9. Feature Distribution Shift & Drift Diagnostics Controller
+  if (driftTableContainer && distributionChartContainer) {
+    const driftList = bestStratRes?.featureDrift || [];
+
+    if (driftList.length > 0) {
+      // Build Drift Diagnostics Table
+      const driftHeaders = [
+        'Feature',
+        'Baseline Dist (μ ± σ)',
+        'Synthetic Dist (μ ± σ)',
+        'KS Stat (D)',
+        'Wasserstein Dist (W₁)',
+        'Drift Severity'
+      ];
+
+      const driftRows = driftList.map(item => {
+        const badgeClass = item.driftSeverity === 'severe'
+          ? 'drift-badge drift-badge-severe'
+          : (item.driftSeverity === 'moderate' ? 'drift-badge drift-badge-moderate' : 'drift-badge drift-badge-safe');
+
+        return [
+          item.featureName,
+          `${item.originalMean} ± ${item.originalStd}`,
+          `${item.syntheticMean} ± ${item.syntheticStd}`,
+          item.ksStatistic.toFixed(4),
+          item.wassersteinDistance.toFixed(4),
+          `<span class="${badgeClass}">${item.driftSeverity.toUpperCase()}</span>`,
+        ];
+      });
+
+      renderDataTable(driftTableContainer, driftHeaders, driftRows, {
+        pageSize: 10,
+        onRowClick: (rowIdx) => {
+          const selectedFeat = driftList[rowIdx]?.featureName;
+          if (selectedFeat) {
+            renderDriftOverlayChart(selectedFeat);
+            if (driftFeatureSelect) driftFeatureSelect.value = selectedFeat;
+          }
+        },
+      });
+
+      // Feature selector for chart
+      let driftFeatureSelect = null;
+      if (driftFeatureSelectContainer) {
+        driftFeatureSelectContainer.innerHTML = '';
+        driftFeatureSelect = el('select', {
+          className: 'select select-sm',
+          onChange: (e) => renderDriftOverlayChart(e.target.value),
+        }, driftList.map(d => el('option', { value: d.featureName }, `Feature: ${d.featureName}`)));
+        driftFeatureSelectContainer.appendChild(driftFeatureSelect);
+      }
+
+      function renderDriftOverlayChart(featName) {
+        const driftItem = driftList.find(d => d.featureName === featName) || driftList[0];
+        if (!driftItem || !dataset) return;
+
+        const colIdx = dataset.headers.indexOf(featName);
+        if (colIdx === -1) return;
+
+        if (driftChartTitle) {
+          driftChartTitle.textContent = `Distribution Overlay: ${featName}`;
+        }
+
+        const origVals = dataset.fullData.map(r => Number(r[colIdx])).filter(v => !isNaN(v));
+        const synthVals = (bestStratRes?.syntheticData || []).map(r => Number(r[colIdx])).filter(v => !isNaN(v));
+
+        renderDriftDensityChart(distributionChartContainer, origVals, synthVals, featName, {
+          height: 220,
+          ksStatistic: driftItem.ksStatistic,
+          severity: driftItem.driftSeverity,
+        });
+      }
+
+      // Initial render for top drift feature (or first feature)
+      const topDriftFeat = [...driftList].sort((a, b) => b.ksStatistic - a.ksStatistic)[0]?.featureName || driftList[0].featureName;
+      if (driftFeatureSelect) driftFeatureSelect.value = topDriftFeat;
+      renderDriftOverlayChart(topDriftFeat);
     } else {
-      distributionChartContainer.innerHTML = '<div class="text-small text-muted p-md">No continuous numeric features available for histogram comparison.</div>';
+      driftTableContainer.innerHTML = '<div class="text-small text-muted p-md text-center">No continuous numeric features available for drift diagnostics.</div>';
+      distributionChartContainer.innerHTML = '<div class="text-small text-muted p-md text-center">Insufficient numeric features for distribution overlay.</div>';
     }
   }
 
-  // 9. Cross-Experiment Comparison (Feature A)
+  // 10. Cross-Experiment Head-to-Head Comparison
   const allUserExps = getExperiments(userId);
   const otherExps = allUserExps.filter(e => e.id !== exp.id && e.status === 'completed');
 
@@ -480,4 +605,3 @@ function renderResults(exp) {
     }
   }
 }
-

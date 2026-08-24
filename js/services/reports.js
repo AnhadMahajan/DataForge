@@ -32,24 +32,40 @@ export function generateReportFromExperiment(userId, experiment, dataset) {
       content: `The raw dataset exhibited an Augmentation Need Score of ${dataset.analysisResult?.augmentationNeedScore || 0}/100 with an imbalance ratio of ${dataset.analysisResult?.imbalanceRatio || 1}:1 (${dataset.analysisResult?.imbalanceSeverity || 'none'}). Target column "${dataset.targetColumn}" possessed minority class "${dataset.analysisResult?.minClass || 'N/A'}" with only ${dataset.analysisResult?.minCount || 0} observations.`,
     },
     {
-      heading: '3. Augmentation Mechanics & Quality Audit',
+      heading: '3. Augmentation Mechanics & Statistical Drift Audit',
       content: strategyResults.map(s => {
         const q = s.qualityMetrics || {};
-        return `• ${formatStrategy(s.strategyType)}: Synthesized ${s.syntheticCount} rows. Diversity Score: ${q.diversityScore || 80}/100, Duplicate Redundancy: ${q.redundancyScore || 0}%, Feature Distribution Shift: ${q.distributionShift || 0.05}.`;
-      }).join('\n'),
+        const driftSummaries = (s.featureDrift || []).map(d => `${d.featureName}: KS D=${d.ksStatistic} (Severity: ${d.driftSeverity.toUpperCase()})`).join(', ');
+        return `• ${formatStrategy(s.strategyType)}: Synthesized ${s.syntheticCount} rows. Diversity Score: ${q.diversityScore || 80}/100, Duplicate Redundancy: ${q.redundancyScore || 0}%, Feature Shift: ${q.distributionShift || 0.05}.\n  Feature Drift: ${driftSummaries || 'No continuous features analyzed.'}`;
+      }).join('\n\n'),
     },
     {
-      heading: '4. Causal Explanation Engine',
+      heading: '4. Confusion Matrix & Decision Boundary Diagnostics',
+      content: (() => {
+        const baseCm = baseline.aggregated?.confusionMatrix?.perClassMetrics || {};
+        const bestCm = bestStratObj?.evaluation?.aggregated?.confusionMatrix?.perClassMetrics || {};
+        const lines = ['Class-level sensitivity and error rate shifts:'];
+        Object.keys(baseCm).forEach(cls => {
+          const b = baseCm[cls];
+          const a = bestCm[cls] || b;
+          const sensDelta = ((a.sensitivity - b.sensitivity) * 100).toFixed(1);
+          lines.push(`• Class "${cls}": Sensitivity: ${(b.sensitivity * 100).toFixed(1)}% → ${(a.sensitivity * 100).toFixed(1)}% (Δ ${sensDelta > 0 ? '+' : ''}${sensDelta}%), Specificity: ${(a.specificity * 100).toFixed(1)}%, False Positive Rate: ${(a.fpr * 100).toFixed(1)}%`);
+        });
+        return lines.join('\n');
+      })(),
+    },
+    {
+      heading: '5. Causal Explanation Engine',
       content: recommendation.explanations.join('\n\n') || 'Baseline and augmented distributions produced equivalent decision boundaries across test splits.',
     },
     {
-      heading: '5. Risk & Degradation Analysis',
+      heading: '6. Risk & Degradation Analysis',
       content: recommendation.risks.length > 0
         ? recommendation.risks.map(r => `⚠️ ${r}`).join('\n')
         : 'No class-level degradation or excess variance was detected across repeated seeds.',
     },
     {
-      heading: '6. Strategic Recommendation',
+      heading: '7. Strategic Recommendation',
       content: recommendation.verdict === 'recommended'
         ? `Adopt ${bestStrat} in production pipelines. Synthetic sampling resolved minority underrepresentation without causing feature drift or precision degradation.`
         : (recommendation.verdict === 'not_recommended'
@@ -57,7 +73,7 @@ export function generateReportFromExperiment(userId, experiment, dataset) {
           : `Augmentation produced marginal gains within noise margins. Retain original unaugmented training data unless sample size expands.`),
     },
     {
-      heading: '7. Reproducibility Manifest',
+      heading: '8. Reproducibility Manifest',
       content: `• Architecture: ${config.modelType.toUpperCase()}\n• Evaluation Iterations: ${config.runs}\n• Train/Test Split: ${(config.trainTestSplit * 100).toFixed(0)}% / ${(100 - config.trainTestSplit * 100).toFixed(0)}%\n• Seed Base: ${config.baseSeed}\n• Generated: ${new Date().toISOString()}`,
     },
   ];
