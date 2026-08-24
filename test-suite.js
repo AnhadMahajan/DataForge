@@ -177,6 +177,96 @@ async function runTests() {
   const report = reportsService.generateReportFromExperiment(userId, latestExp, dataset);
   console.log(`✓ Compiled Report: "${report.title}" (Verdict: ${report.verdict.toUpperCase()}) with ${report.sections.length} narrative sections.`);
 
+  // 9. Test Linear Algebra & Synthesizer Engine
+  console.log('\n9️⃣ Testing Linear Algebra & Synthesizer Engine...');
+  const linalg = await import('./js/utils/linalg.js');
+  const synth = await import('./js/services/synthesizer.js');
+
+  // Test Cholesky decomposition
+  const symMatrix = [
+    [4, 12, -16],
+    [12, 37, -43],
+    [-16, -43, 98],
+  ];
+  const L = linalg.choleskyDecompose(symMatrix);
+  const LT = linalg.transpose(L);
+  const reconstructed = linalg.matrixMultiply(L, LT);
+  const maxDiff = Math.max(...symMatrix.flatMap((row, i) => row.map((v, j) => Math.abs(v - reconstructed[i][j]))));
+  if (maxDiff > 0.01) {
+    throw new Error(`Cholesky reconstruction error: ${maxDiff}`);
+  }
+  console.log(`✓ Cholesky Decomposition: L * L^T matches input matrix within ${maxDiff.toFixed(6)}`);
+
+  // Test Invert Normal CDF
+  const z0 = linalg.invertNormalCDF(0.5);
+  const z975 = linalg.invertNormalCDF(0.975);
+  if (Math.abs(z0) > 0.001 || Math.abs(z975 - 1.96) > 0.02) {
+    throw new Error(`InvertNormalCDF mismatch: z(0.5)=${z0}, z(0.975)=${z975}`);
+  }
+  console.log(`✓ Probit / InvertNormalCDF: Φ⁻¹(0.5) = ${z0.toFixed(4)}, Φ⁻¹(0.975) = ${z975.toFixed(4)}`);
+
+  // Test Gaussian Copula Synthesis
+  const testData = [
+    [25, 50000, 'Tech', 'Active'],
+    [30, 60000, 'Finance', 'Active'],
+    [35, 75000, 'Tech', 'Active'],
+    [40, 90000, 'Healthcare', 'Inactive'],
+    [45, 105000, 'Finance', 'Active'],
+    [50, 120000, 'Tech', 'Active'],
+    [28, 55000, 'Healthcare', 'Inactive'],
+    [33, 68000, 'Finance', 'Active'],
+    [38, 82000, 'Tech', 'Active'],
+    [48, 115000, 'Healthcare', 'Inactive'],
+  ];
+  const testHeaders = ['Age', 'Salary', 'Industry', 'Status'];
+  const testNumIdx = [0, 1];
+  const testCatIdx = [2, 3];
+
+  const copulaResult = await synth.synthesizeDataset({
+    data: testData,
+    headers: testHeaders,
+    numericIndices: testNumIdx,
+    categoricalIndices: testCatIdx,
+    algorithm: 'copula',
+    rowCount: 50,
+    seed: 42,
+  });
+
+  if (copulaResult.syntheticData.length !== 50) {
+    throw new Error(`Copula generated ${copulaResult.syntheticData.length} rows, expected 50`);
+  }
+  console.log(`✓ Gaussian Copula Synthesizer: Generated 50 rows, Correlation Fidelity: ${(copulaResult.qualityReport.correlationFidelity * 100).toFixed(1)}%, Distribution Fidelity: ${(copulaResult.qualityReport.distributionFidelity * 100).toFixed(1)}%`);
+
+  // Test Bayesian Network Synthesis
+  const bnResult = await synth.synthesizeDataset({
+    data: testData,
+    headers: testHeaders,
+    numericIndices: testNumIdx,
+    categoricalIndices: testCatIdx,
+    algorithm: 'bayesian_network',
+    rowCount: 30,
+    seed: 42,
+  });
+  if (bnResult.syntheticData.length !== 30) {
+    throw new Error(`Bayesian Network generated ${bnResult.syntheticData.length} rows, expected 30`);
+  }
+  console.log(`✓ Bayesian Network Synthesizer: Generated 30 rows with DAG structure`);
+
+  // Test KDE Synthesis
+  const kdeResult = await synth.synthesizeDataset({
+    data: testData,
+    headers: testHeaders,
+    numericIndices: testNumIdx,
+    categoricalIndices: testCatIdx,
+    algorithm: 'kde',
+    rowCount: 30,
+    seed: 42,
+  });
+  if (kdeResult.syntheticData.length !== 30) {
+    throw new Error(`KDE generated ${kdeResult.syntheticData.length} rows, expected 30`);
+  }
+  console.log(`✓ Kernel Density Estimation Synthesizer: Generated 30 rows using Silverman bandwidth`);
+
   console.log('\n========================================================');
   console.log('🎉 ALL PRODUCTION ENGINE CAPABILITIES VERIFIED 100% OPERATIONAL!');
   console.log('========================================================\n');

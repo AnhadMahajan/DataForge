@@ -495,6 +495,48 @@ export function computeWassersteinDistance(sample1, sample2) {
   return Number((totalDist / quantiles).toFixed(4));
 }
 
+// ---- Synthesizer Support Utilities ----
+
+/**
+ * Compute the p-th empirical quantile from a sorted array.
+ * Uses linear interpolation between floor/ceil indices.
+ */
+export function empiricalQuantile(sortedValues, p) {
+  if (!sortedValues || sortedValues.length === 0) return 0;
+  if (p <= 0) return sortedValues[0];
+  if (p >= 1) return sortedValues[sortedValues.length - 1];
+  const idx = p * (sortedValues.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.min(lo + 1, sortedValues.length - 1);
+  const frac = idx - lo;
+  return sortedValues[lo] * (1 - frac) + sortedValues[hi] * frac;
+}
+
+/**
+ * Gaussian probability density function.
+ */
+export function normalPDF(x, mu = 0, sigma = 1) {
+  const z = (x - mu) / sigma;
+  return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+}
+
+/**
+ * Silverman's rule of thumb for KDE bandwidth selection.
+ * h = 0.9 * min(σ, IQR/1.34) * n^(-1/5)
+ */
+export function silvermanBandwidth(values) {
+  if (!values || values.length < 2) return 1;
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  const m = mean(values);
+  const s = std(values) || 1;
+  const q25 = empiricalQuantile(sorted, 0.25);
+  const q75 = empiricalQuantile(sorted, 0.75);
+  const iqr = q75 - q25;
+  const spread = Math.min(s, (iqr || s) / 1.34);
+  return 0.9 * spread * Math.pow(n, -0.2);
+}
+
 // ---- Confusion Matrix & Diagnostic Error Metrics ----
 
 /**

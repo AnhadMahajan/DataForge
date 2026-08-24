@@ -27,6 +27,11 @@ const ICONS = {
     { tag: 'line', x1: '9', y1: '3', x2: '15', y2: '3' },
     { tag: 'path', d: 'M5 16h14' },
   ],
+  synthesizer: [
+    { tag: 'path', d: 'M10 2v7.31L4.41 18.2A2 2 0 0 0 6.06 21h11.88a2 2 0 0 0 1.65-2.8L14 9.31V2' },
+    { tag: 'line', x1: '8.5', y1: '2', x2: '15.5', y2: '2' },
+    { tag: 'line', x1: '7', y1: '15', x2: '17', y2: '15' },
+  ],
   results: [
     'M18 20V10',
     'M12 20V4',
@@ -54,6 +59,7 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'dashboard' },
   { id: 'upload', label: 'Upload', href: 'upload.html', icon: 'upload' },
   { id: 'experiment', label: 'Experiments', href: 'experiment.html', icon: 'experiment' },
+  { id: 'synthesizer-lab', label: 'Synthesizer', href: 'synthesizer-lab.html', icon: 'synthesizer' },
   { id: 'results', label: 'Results', href: 'results.html', icon: 'results' },
   { id: 'reports', label: 'Reports', href: 'reports.html', icon: 'reports' },
 ];
@@ -161,6 +167,7 @@ function getCurrentPage() {
   if (filename.includes('dashboard')) return 'dashboard';
   if (filename.includes('upload')) return 'upload';
   if (filename.includes('experiment')) return 'experiment';
+  if (filename.includes('synthesizer-lab')) return 'synthesizer-lab';
   if (filename.includes('results')) return 'results';
   if (filename.includes('reports')) return 'reports';
   if (filename.includes('settings')) return 'settings';

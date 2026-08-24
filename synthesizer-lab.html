@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synthesizer Lab — DataForge</title>
+  <meta name="description" content="Generate entirely new synthetic datasets using Gaussian Copula, Bayesian Networks, KDE, or VAE algorithms.">
+  
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages/synthesizer-lab.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="sidebar"></div>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title">Synthesizer Lab</h1>
+          <p class="page-subtitle">Generate entirely new synthetic datasets that preserve the statistical properties of your real data.</p>
+        </div>
+      </header>
+
+      <!-- Synthesis Configuration Form -->
+      <form id="synth-form" class="stack stack-xl">
+
+        <!-- 1. Source Dataset Selection -->
+        <section class="card">
+          <div class="card-title mb-md">1. Source Dataset</div>
+          <div class="card-grid-2">
+            <div class="form-group">
+              <label for="dataset-select" class="form-label">Learn From Dataset</label>
+              <select id="dataset-select" class="select" required></select>
+            </div>
+            <div class="form-group">
+              <label for="synth-name" class="form-label">Synthesis Name</label>
+              <input type="text" id="synth-name" class="input" placeholder="e.g., Copula Expansion v1">
+            </div>
+          </div>
+          <div id="dataset-summary" class="p-md background-subtle rounded text-small text-secondary hidden mt-md"></div>
+        </section>
+
+        <!-- 2. Algorithm Selection -->
+        <section class="card">
+          <div class="card-title mb-md">2. Generation Algorithm</div>
+          <div class="synth-algo-grid" id="algo-grid">
+            <!-- Gaussian Copula -->
+            <label class="synth-algo-card selected" data-algo="copula">
+              <input type="radio" name="algorithm" value="copula" checked hidden>
+              <div class="synth-algo-icon">🔗</div>
+              <div class="synth-algo-name">Gaussian Copula</div>
+              <div class="synth-algo-desc">Learns column correlations via Cholesky decomposition. Fast, interpretable, and high fidelity.</div>
+              <span class="pill pill-positive">Recommended</span>
+            </label>
+            <!-- Bayesian Network -->
+            <label class="synth-algo-card" data-algo="bayesian_network">
+              <input type="radio" name="algorithm" value="bayesian_network" hidden>
+              <div class="synth-algo-icon">🕸️</div>
+              <div class="synth-algo-name">Bayesian Network</div>
+              <div class="synth-algo-desc">Learns causal dependencies between columns via mutual information scoring.</div>
+              <span class="pill pill-neutral">Structural</span>
+            </label>
+            <!-- KDE -->
+            <label class="synth-algo-card" data-algo="kde">
+              <input type="radio" name="algorithm" value="kde" hidden>
+              <div class="synth-algo-icon">📊</div>
+              <div class="synth-algo-name">Kernel Density</div>
+              <div class="synth-algo-desc">Non-parametric density estimation. Great for non-Gaussian and multi-modal distributions.</div>
+              <span class="pill pill-neutral">Non-Parametric</span>
+            </label>
+            <!-- VAE -->
+            <label class="synth-algo-card" data-algo="vae">
+              <input type="radio" name="algorithm" value="vae" hidden>
+              <div class="synth-algo-icon">🧠</div>
+              <div class="synth-algo-name">VAE (Pyodide)</div>
+              <div class="synth-algo-desc">Deep generative model via in-browser Python. Higher quality but slower cold start.</div>
+              <span class="pill pill-caution">Experimental</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- 3. Algorithm-Specific Parameters -->
+        <section class="card" id="params-section">
+          <div class="card-title mb-md">3. Parameters</div>
+
+          <!-- Copula Params -->
+          <div id="params-copula" class="synth-params-panel">
+            <div class="card-grid-2">
+              <div class="form-group">
+                <label class="form-label">Correlation Method</label>
+                <select id="copula-corr-method" class="select">
+                  <option value="pearson">Pearson (linear)</option>
+                  <option value="spearman">Spearman (rank-based)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- BN Params -->
+          <div id="params-bayesian_network" class="synth-params-panel hidden">
+            <div class="card-grid-2">
+              <div class="form-group">
+                <label class="form-label">Max Parents per Node</label>
+                <input type="number" id="bn-max-parents" class="input" value="3" min="1" max="10">
+              </div>
+              <div class="form-group">
+                <label class="form-label">MI Significance Threshold</label>
+                <input type="number" id="bn-threshold" class="input" value="0.01" step="0.005" min="0" max="1">
+              </div>
+            </div>
+          </div>
+
+          <!-- KDE Params -->
+          <div id="params-kde" class="synth-params-panel hidden">
+            <div class="card-grid-2">
+              <div class="form-group">
+                <label class="form-label">Bandwidth Multiplier</label>
+                <input type="number" id="kde-bandwidth" class="input" value="1.0" step="0.1" min="0.1" max="5.0">
+              </div>
+            </div>
+          </div>
+
+          <!-- VAE Params -->
+          <div id="params-vae" class="synth-params-panel hidden">
+            <div class="card-grid-2">
+              <div class="form-group">
+                <label class="form-label">Latent Dimensions</label>
+                <input type="number" id="vae-latent" class="input" value="4" min="2" max="32">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Training Epochs</label>
+                <input type="number" id="vae-epochs" class="input" value="50" min="10" max="500">
+              </div>
+            </div>
+            <div class="mt-sm p-sm background-subtle rounded text-small text-secondary">
+              ⚠️ VAE requires loading the Pyodide Python runtime (~5-10 sec first time). Falls back to Copula if unavailable.
+            </div>
+          </div>
+
+          <!-- Row Count -->
+          <div class="form-group mt-lg">
+            <label class="form-label">Rows to Generate</label>
+            <div class="synth-row-slider-wrapper">
+              <input type="range" id="row-count-slider" class="synth-slider" min="1" max="3.7" step="0.01" value="2">
+              <span id="row-count-display" class="synth-row-count">100</span>
+            </div>
+            <div class="synth-slider-labels">
+              <span>10</span>
+              <span>100</span>
+              <span>1,000</span>
+              <span>5,000</span>
+            </div>
+          </div>
+
+          <!-- Seed -->
+          <div class="form-group mt-md">
+            <label class="form-label">Random Seed</label>
+            <input type="number" id="synth-seed" class="input" value="42" style="max-width: 120px;">
+          </div>
+        </section>
+
+        <!-- Generate Button -->
+        <div class="flex items-center gap-md">
+          <button type="submit" id="generate-btn" class="btn btn-primary btn-lg">
+            <span id="generate-btn-text">⚗️ Generate Synthetic Dataset</span>
+          </button>
+          <div id="progress-container" class="synth-progress hidden">
+            <div class="synth-progress-bar" id="progress-bar"></div>
+            <span class="synth-progress-text" id="progress-text">Preparing...</span>
+          </div>
+        </div>
+      </form>
+
+      <!-- Results Section (hidden until generation completes) -->
+      <div id="results-section" class="stack stack-xl mt-xl hidden">
+
+        <!-- Quality Report -->
+        <section class="card">
+          <div class="card-title mb-md">Quality Report</div>
+          <div class="synth-quality-grid" id="quality-gauges">
+            <div id="gauge-correlation"></div>
+            <div id="gauge-distribution"></div>
+            <div id="gauge-diversity"></div>
+            <div id="gauge-redundancy"></div>
+          </div>
+          <div id="quality-summary" class="mt-md p-md background-subtle rounded text-small"></div>
+        </section>
+
+        <!-- Correlation Comparison -->
+        <section class="card">
+          <div class="card-title mb-md">Correlation Comparison</div>
+          <div class="synth-corr-grid">
+            <div>
+              <div class="text-small text-secondary mb-sm">Original Data</div>
+              <div id="corr-original"></div>
+            </div>
+            <div>
+              <div class="text-small text-secondary mb-sm">Synthetic Data</div>
+              <div id="corr-synthetic"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Distribution Comparison Charts -->
+        <section class="card">
+          <div class="card-title mb-md">Distribution Comparison (per Feature)</div>
+          <div id="dist-charts" class="synth-dist-grid"></div>
+        </section>
+
+        <!-- Preview Table -->
+        <section class="card">
+          <div class="flex items-center justify-between mb-md">
+            <div class="card-title">Preview (first 50 rows)</div>
+            <button type="button" id="download-csv-btn" class="btn btn-secondary btn-sm">📥 Download Full CSV</button>
+          </div>
+          <div id="preview-table" class="table-scroll"></div>
+        </section>
+
+        <!-- Metadata -->
+        <section class="card">
+          <div class="card-title mb-md">Generation Metadata</div>
+          <div id="metadata-grid" class="card-grid-2"></div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <script type="module" src="js/pages/synthesizer-lab.js"></script>
+</body>
+</html>

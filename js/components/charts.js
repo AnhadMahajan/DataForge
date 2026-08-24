@@ -667,3 +667,177 @@ export function renderDriftDensityChart(container, origVals, synthVals, featureN
 }
 
 
+// ============================================================
+// SYNTHESIZER LAB CHARTS
+// ============================================================
+
+/**
+ * Render an overlaid histogram comparing original vs synthetic distributions.
+ */
+export function renderDistributionComparison(container, originalVals, syntheticVals, options = {}) {
+  const { height = 200, title = '', bins = 20 } = options;
+  const canvas = el('canvas', { height });
+  canvas.style.width = '100%';
+  canvas.style.height = `${height}px`;
+  canvas.style.display = 'block';
+
+  container.innerHTML = '';
+  if (title) {
+    container.appendChild(el('div', { className: 'card-title mb-sm text-small font-semi' }, title));
+  }
+  container.appendChild(canvas);
+
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || container.clientWidth || 320;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const padding = { top: 30, right: 20, bottom: 32, left: 45 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+
+  const allVals = [...originalVals, ...syntheticVals].filter(v => !isNaN(v));
+  if (allVals.length === 0) return canvas;
+
+  const dataMin = Math.min(...allVals);
+  const dataMax = Math.max(...allVals);
+  const range = dataMax - dataMin || 1;
+  const binWidth = range / bins;
+
+  function histogram(values) {
+    const counts = Array(bins).fill(0);
+    values.forEach(v => {
+      const idx = Math.min(bins - 1, Math.floor(((v - dataMin) / range) * bins));
+      counts[idx]++;
+    });
+    return counts.map(c => c / (values.length || 1));
+  }
+
+  const origHist = histogram(originalVals.filter(v => !isNaN(v)));
+  const synthHist = histogram(syntheticVals.filter(v => !isNaN(v)));
+  const maxFreq = Math.max(...origHist, ...synthHist) || 1;
+
+  // Grid
+  ctx.strokeStyle = CHART_COLORS.grid;
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = padding.top + (chartH * i) / 4;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(padding.left + chartW, y);
+    ctx.stroke();
+  }
+
+  const barW = chartW / bins;
+
+  // Original bars (gray, semi-transparent)
+  ctx.fillStyle = 'rgba(100, 100, 100, 0.35)';
+  origHist.forEach((freq, i) => {
+    const barH = (freq / maxFreq) * chartH;
+    ctx.fillRect(padding.left + i * barW, padding.top + chartH - barH, barW - 1, barH);
+  });
+
+  // Synthetic bars (teal, semi-transparent)
+  ctx.fillStyle = 'rgba(42, 157, 143, 0.45)';
+  synthHist.forEach((freq, i) => {
+    const barH = (freq / maxFreq) * chartH;
+    ctx.fillRect(padding.left + i * barW, padding.top + chartH - barH, barW - 1, barH);
+  });
+
+  // Axes
+  ctx.fillStyle = CHART_COLORS.text;
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+
+  // X-axis labels (5 ticks)
+  for (let i = 0; i <= 4; i++) {
+    const val = dataMin + (range * i) / 4;
+    const x = padding.left + (chartW * i) / 4;
+    ctx.fillText(val.toFixed(1), x, padding.top + chartH + 14);
+  }
+
+  // Y-axis label
+  ctx.textAlign = 'right';
+  ctx.fillText((maxFreq * 100).toFixed(0) + '%', padding.left - 4, padding.top + 4);
+  ctx.fillText('0%', padding.left - 4, padding.top + chartH + 4);
+
+  // Legend
+  ctx.textAlign = 'left';
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(100, 100, 100, 0.8)';
+  ctx.fillRect(padding.left, 8, 10, 10);
+  ctx.fillStyle = CHART_COLORS.text;
+  ctx.fillText(`Original (N=${originalVals.length})`, padding.left + 14, 17);
+
+  ctx.fillStyle = 'rgba(42, 157, 143, 0.8)';
+  ctx.fillRect(padding.left + 140, 8, 10, 10);
+  ctx.fillStyle = CHART_COLORS.text;
+  ctx.fillText(`Synthetic (N=${syntheticVals.length})`, padding.left + 154, 17);
+
+  return canvas;
+}
+
+/**
+ * Render a radial quality gauge (0-100 score).
+ */
+export function renderQualityGauge(container, score, options = {}) {
+  const { label = 'Quality', size = 120, thresholds = [40, 70] } = options;
+  const canvas = el('canvas', {});
+  canvas.style.width = `${size}px`;
+  canvas.style.height = `${size}px`;
+  canvas.style.display = 'block';
+  container.innerHTML = '';
+  container.appendChild(canvas);
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(size * dpr);
+  canvas.height = Math.round(size * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = size * 0.38;
+  const lineWidth = size * 0.1;
+
+  // Background arc
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0.75 * Math.PI, 2.25 * Math.PI);
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Colored arc
+  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const endAngle = 0.75 * Math.PI + pct * 1.5 * Math.PI;
+
+  let color = '#c43e3e'; // Red (poor)
+  if (score >= thresholds[1]) color = '#1a8a5c'; // Green (good)
+  else if (score >= thresholds[0]) color = '#b08a2e'; // Yellow (moderate)
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0.75 * Math.PI, endAngle);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Score text
+  ctx.fillStyle = '#333';
+  ctx.font = `bold ${size * 0.22}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(Math.round(score), cx, cy - 2);
+
+  // Label text
+  ctx.fillStyle = CHART_COLORS.text;
+  ctx.font = `${Math.max(9, size * 0.09)}px system-ui, sans-serif`;
+  ctx.fillText(label, cx, cy + size * 0.18);
+
+  return canvas;
+}
+

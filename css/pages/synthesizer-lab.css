@@ -1,0 +1,257 @@
+/* ============================================================
+   DataForge — Synthesizer Lab Page Styles
+   ============================================================ */
+
+/* ---- Algorithm Selection Grid ---- */
+.synth-algo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+.synth-algo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-lg) var(--space-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--color-surface);
+  position: relative;
+}
+
+.synth-algo-card:hover {
+  border-color: var(--color-text-secondary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.synth-algo-card.selected {
+  border-color: var(--color-text-primary);
+  background: rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.synth-algo-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.synth-algo-icon {
+  font-size: 2rem;
+  margin-bottom: var(--space-sm);
+  line-height: 1;
+}
+
+.synth-algo-name {
+  font-weight: 600;
+  font-size: var(--font-size-md);
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-primary);
+}
+
+.synth-algo-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin-bottom: var(--space-sm);
+}
+
+/* ---- Parameter Panels ---- */
+.synth-params-panel {
+  animation: fadeIn 0.2s ease;
+}
+
+/* ---- Row Count Slider ---- */
+.synth-row-slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.synth-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.synth-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-text-primary);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.synth-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.synth-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-text-primary);
+  border: none;
+  cursor: pointer;
+}
+
+.synth-row-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  min-width: 60px;
+  text-align: right;
+  color: var(--color-text-primary);
+}
+
+.synth-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+  padding: 0 2px;
+}
+
+/* ---- Progress Bar ---- */
+.synth-progress {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  max-width: 400px;
+}
+
+.synth-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.synth-progress-bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: var(--progress, 0%);
+  background: var(--color-text-primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.synth-progress-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+/* ---- Quality Gauges Grid ---- */
+.synth-quality-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-lg);
+  justify-items: center;
+}
+
+/* ---- Correlation Comparison ---- */
+.synth-corr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .synth-corr-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Distribution Charts Grid ---- */
+.synth-dist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-lg);
+}
+
+/* ---- Pill Variants for Algorithm Tags ---- */
+.pill-positive {
+  background: rgba(26, 138, 92, 0.1);
+  color: #1a8a5c;
+}
+
+.pill-neutral {
+  background: rgba(74, 127, 181, 0.1);
+  color: #4a7fb5;
+}
+
+.pill-caution {
+  background: rgba(176, 138, 46, 0.1);
+  color: #b08a2e;
+}
+
+/* ---- Table Scroll Container ---- */
+.table-scroll {
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ---- Metadata Grid ---- */
+#metadata-grid .meta-item {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+#metadata-grid .meta-item:last-child {
+  border-bottom: none;
+}
+
+#metadata-grid .meta-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+#metadata-grid .meta-value {
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--font-size-md);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .synth-algo-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .synth-quality-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .synth-dist-grid {
+    grid-template-columns: 1fr;
+  }
+}

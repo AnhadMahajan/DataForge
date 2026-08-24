@@ -90,3 +90,10 @@ export const toast = {
     return createToast('info', title, message);
   },
 };
+
+export function showToast(message, type = 'info', title = '') {
+  if (type === 'success') return toast.success(message, title || 'Success');
+  if (type === 'error') return toast.error(message, title || 'Error');
+  return toast.info(message, title || 'Info');
+}
+

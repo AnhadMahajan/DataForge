@@ -29,6 +29,13 @@ const COMMANDS = [
     action: () => { window.location.href = 'experiment.html'; },
   },
   {
+    id: 'nav-synth',
+    title: 'Synthesizer Lab (Copula, BN, KDE, VAE)',
+    category: 'Generative',
+    icon: [{ tag: 'path', d: 'M10 2v7.31L4.41 18.2A2 2 0 0 0 6.06 21h11.88a2 2 0 0 0 1.65-2.8L14 9.31V2' }, { tag: 'line', x1: '7', y1: '15', x2: '17', y2: '15' }],
+    action: () => { window.location.href = 'synthesizer-lab.html'; },
+  },
+  {
     id: 'nav-results',
     title: 'View Latest Evaluation Matrix',
     category: 'Results',
