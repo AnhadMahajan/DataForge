@@ -5,7 +5,7 @@ import { getDatasetById } from '../services/dataset.js';
 import { renderGroupedBarChart, renderRunVarianceChart } from '../components/charts.js';
 import { renderDataTable } from '../components/tables.js';
 import { toast } from '../components/toast.js';
-import { downloadCSV } from '../utils/csv.js';
+import { downloadCSV, generateCSV } from '../utils/csv.js';
 import { formatDelta, formatPercent, formatStrategy } from '../utils/formatting.js';
 import { min, max } from '../utils/math.js';
 import { el, qs, show, hide } from '../utils/dom.js';
@@ -37,6 +37,8 @@ const qualityCardsContainer = qs('#quality-cards-container');
 const resultsContextStrip = qs('#results-context-strip');
 const featureSelectContainer = qs('#feature-select-container');
 const distributionChartContainer = qs('#distribution-chart-container');
+const compareSelectContainer = qs('#compare-select-container');
+const compareCardContainer = qs('#compare-card-container');
 
 const urlParams = new URLSearchParams(window.location.search);
 let expId = urlParams.get('id');
@@ -66,12 +68,80 @@ function renderResults(exp) {
   const rec = exp.recommendation;
   const strategyResults = exp.strategyResults || [];
   const bestStratRes = strategyResults.find(s => s.strategyType === rec.bestStrategy) || strategyResults[0];
+  const baseAgg = baseline.aggregated;
+  const bestAgg = bestStratRes ? bestStratRes.evaluation.aggregated : baseline.aggregated;
 
   expTitle.textContent = exp.name;
   expSubtitle.textContent = `Evaluated on ${dataset ? dataset.name : 'Dataset'} • ${exp.config.runs} Iterations (${exp.config.modelType.toUpperCase()})`;
 
   // Header Actions
   expHeaderActions.innerHTML = '';
+
+  // Metrics CSV Export (Feature C)
+  const btnExportMetrics = el('button', {
+    className: 'btn btn-secondary btn-sm',
+    onClick: () => {
+      const headers = [
+        'Experiment_Name',
+        'Model_Architecture',
+        'Runs',
+        'Train_Test_Split',
+        'Strategy',
+        'Synthetic_Rows_Added',
+        'Macro_F1_Mean',
+        'Macro_F1_Std',
+        'Accuracy_Mean',
+        'Precision_Mean',
+        'Recall_Mean',
+        'Percentage_Gain_F1',
+        'P_Value_Estimate',
+        'Statistically_Significant',
+        'Verdict'
+      ];
+      const rows = [];
+      rows.push([
+        exp.name,
+        exp.config.modelType,
+        exp.config.runs,
+        exp.config.trainTestSplit || 0.8,
+        'Baseline (Raw)',
+        0,
+        baseAgg.f1.mean.toFixed(4),
+        baseAgg.f1.std.toFixed(4),
+        baseAgg.accuracy.mean.toFixed(4),
+        baseAgg.precision.mean.toFixed(4),
+        baseAgg.recall.mean.toFixed(4),
+        '0.0%',
+        '1.000',
+        'No',
+        'Baseline'
+      ]);
+      strategyResults.forEach(s => {
+        const agg = s.evaluation.aggregated;
+        rows.push([
+          exp.name,
+          exp.config.modelType,
+          exp.config.runs,
+          exp.config.trainTestSplit || 0.8,
+          formatStrategy(s.strategyType),
+          s.syntheticCount || 0,
+          agg.f1.mean.toFixed(4),
+          agg.f1.std.toFixed(4),
+          agg.accuracy.mean.toFixed(4),
+          agg.precision.mean.toFixed(4),
+          agg.recall.mean.toFixed(4),
+          `${s.comparison.percentageImprovement > 0 ? '+' : ''}${s.comparison.percentageImprovement.toFixed(2)}%`,
+          s.comparison.pEstimate.toFixed(4),
+          s.comparison.isSignificant ? 'Yes' : 'No',
+          s.comparison.percentageImprovement > 1 ? 'Recommended' : (s.comparison.percentageImprovement < -1 ? 'Harmful' : 'Marginal')
+        ]);
+      });
+      const csvStr = generateCSV(headers, rows);
+      downloadCSV(`${exp.name}_evaluation_matrix.csv`, csvStr);
+      toast.success('Evaluation metrics matrix exported as CSV.');
+    }
+  }, '📥 Export Matrix (CSV)');
+  expHeaderActions.appendChild(btnExportMetrics);
 
   if (bestStratRes?.augmentedCSV) {
     const btnExportAug = el('button', {
@@ -307,6 +377,106 @@ function renderResults(exp) {
       renderFeatureComparison(numericCols[0].name);
     } else {
       distributionChartContainer.innerHTML = '<div class="text-small text-muted p-md">No continuous numeric features available for histogram comparison.</div>';
+    }
+  }
+
+  // 9. Cross-Experiment Comparison (Feature A)
+  const allUserExps = getExperiments(userId);
+  const otherExps = allUserExps.filter(e => e.id !== exp.id && e.status === 'completed');
+
+  if (compareSelectContainer && compareCardContainer) {
+    if (otherExps.length === 0) {
+      compareSelectContainer.innerHTML = '';
+      compareCardContainer.innerHTML = `
+        <div class="text-center p-lg">
+          <div class="text-small text-muted mb-sm">Only 1 experiment recorded in workspace. Launch another run in the Experiment Lab to compare performance across classifiers.</div>
+          <a href="experiment.html" class="btn btn-secondary btn-sm">Configure Another Experiment →</a>
+        </div>
+      `;
+    } else {
+      compareSelectContainer.innerHTML = '';
+      const select = el('select', {
+        className: 'select select-sm',
+        onChange: (e) => renderExperimentComparison(e.target.value),
+      }, [
+        el('option', { value: '' }, '-- Select Comparison Experiment --'),
+        ...otherExps.map(e => el('option', { value: e.id }, `${e.name} (${e.config.modelType.toUpperCase()})`)),
+      ]);
+      compareSelectContainer.appendChild(select);
+
+      function renderExperimentComparison(compareId) {
+        if (!compareId) {
+          compareCardContainer.innerHTML = '<div class="text-small text-muted p-md text-center">Select a benchmark from the dropdown to compare metrics side-by-side.</div>';
+          return;
+        }
+        const otherExp = getExperimentById(userId, compareId);
+        if (!otherExp) return;
+
+        const otherBase = otherExp.baseline.aggregated;
+        const otherRec = otherExp.recommendation;
+        const otherBestStrat = (otherExp.strategyResults || []).find(s => s.strategyType === otherRec.bestStrategy) || (otherExp.strategyResults || [])[0];
+        const otherBestAgg = otherBestStrat ? otherBestStrat.evaluation.aggregated : otherBase;
+
+        compareCardContainer.innerHTML = '';
+
+        // Summary cards comparison
+        const summaryGrid = el('div', { className: 'card-grid-2 mb-lg' }, [
+          // Current Exp Card
+          el('div', { className: 'card background-subtle p-md' }, [
+            el('div', { className: 'flex justify-between items-center mb-xs' }, [
+              el('span', { className: 'font-semi text-primary' }, exp.name),
+              el('span', { className: 'pill pill-dark' }, exp.config.modelType.toUpperCase()),
+            ]),
+            el('div', { className: 'text-caption text-muted' }, `Top Strategy: ${rec.bestStrategy ? formatStrategy(rec.bestStrategy) : 'None'}`),
+            el('div', { className: 'metric-value mt-xs', style: { fontSize: '1.75rem' } }, formatPercent(bestAgg.f1.mean)),
+            el('div', { className: 'text-caption mt-xs font-semi ' + (rec.improvement > 0 ? 'delta-positive' : 'text-muted') },
+              `F1 Delta: ${rec.improvement > 0 ? '+' : ''}${rec.improvement.toFixed(1)}%`
+            ),
+          ]),
+          // Target Exp Card
+          el('div', { className: 'card background-subtle p-md' }, [
+            el('div', { className: 'flex justify-between items-center mb-xs' }, [
+              el('span', { className: 'font-semi text-primary' }, otherExp.name),
+              el('span', { className: 'pill pill-dark' }, otherExp.config.modelType.toUpperCase()),
+            ]),
+            el('div', { className: 'text-caption text-muted' }, `Top Strategy: ${otherRec.bestStrategy ? formatStrategy(otherRec.bestStrategy) : 'None'}`),
+            el('div', { className: 'metric-value mt-xs', style: { fontSize: '1.75rem' } }, formatPercent(otherBestAgg.f1.mean)),
+            el('div', { className: 'text-caption mt-xs font-semi ' + (otherRec.improvement > 0 ? 'delta-positive' : 'text-muted') },
+              `F1 Delta: ${otherRec.improvement > 0 ? '+' : ''}${otherRec.improvement.toFixed(1)}%`
+            ),
+          ]),
+        ]);
+        compareCardContainer.appendChild(summaryGrid);
+
+        // Comparison Chart
+        const chartWrapper = el('div', { className: 'mt-md' }, [
+          el('div', { className: 'card-title text-small font-semi mb-sm' }, 'Macro Metrics Head-to-Head Comparison'),
+        ]);
+        const chartBox = el('div', { style: { minHeight: '220px' } });
+        chartWrapper.appendChild(chartBox);
+        compareCardContainer.appendChild(chartWrapper);
+
+        const compLabels = ['Macro F1', 'Accuracy', 'Precision', 'Recall'];
+        const compSeries = [
+          {
+            name: `${exp.name} (Top Strategy)`,
+            values: [bestAgg.f1.mean, bestAgg.accuracy.mean, bestAgg.precision.mean, bestAgg.recall.mean],
+            color: '#1a8a5c',
+          },
+          {
+            name: `${otherExp.name} (Top Strategy)`,
+            values: [otherBestAgg.f1.mean, otherBestAgg.accuracy.mean, otherBestAgg.precision.mean, otherBestAgg.recall.mean],
+            color: '#4a7fb5',
+          },
+        ];
+        renderGroupedBarChart(chartBox, compLabels, compSeries, { height: 210 });
+      }
+
+      // Auto-select first other experiment
+      if (otherExps.length > 0) {
+        select.value = otherExps[0].id;
+        renderExperimentComparison(otherExps[0].id);
+      }
     }
   }
 }

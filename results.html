@@ -84,13 +84,27 @@
         </section>
 
         <!-- Feature Distribution Shift Comparator -->
-        <section class="section">
+        <section class="section mb-xl">
           <div class="flex items-center justify-between mb-md">
             <h2 class="section-title">Feature Distribution Comparison</h2>
             <div id="feature-select-container" style="max-width: 240px;"></div>
           </div>
           <div class="card">
             <div id="distribution-chart-container"></div>
+          </div>
+        </section>
+
+        <!-- Cross-Experiment Comparative Benchmark -->
+        <section class="section" id="compare-section">
+          <div class="flex items-center justify-between mb-md flex-wrap gap-sm">
+            <div>
+              <h2 class="section-title">Cross-Experiment Benchmark Comparison</h2>
+              <p class="text-secondary text-small">Compare candidate strategies and generalization gains across different runs and model architectures.</p>
+            </div>
+            <div id="compare-select-container" style="min-width: 240px;"></div>
+          </div>
+          <div class="card" id="compare-card-container">
+            <!-- Rendered via JS -->
           </div>
         </section>
       </div>
