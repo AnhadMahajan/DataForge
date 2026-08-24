@@ -44,3 +44,4 @@ jspm_packages/
 docs.zip
 .cache
 .temp
+.playwright-mcp/

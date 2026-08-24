@@ -53,6 +53,10 @@ export function generateRecommendation(dataset, baseline, strategyResults) {
 
   if (bestStrategy === 'smote' && bestImprovement > 0) {
     explanations.push(`SMOTE generated synthetic interpolations for "${minClass}" (baseline sample size: ${minCount}), expanding sparse minority regions and raising macro F1 by ${bestImprovement.toFixed(1)}%.`);
+  } else if (bestStrategy === 'adasyn' && bestImprovement > 0) {
+    explanations.push(`ADASYN adaptively focused synthetic density on hard-to-learn boundary samples for "${minClass}", improving minority decision boundaries by ${bestImprovement.toFixed(1)}%.`);
+  } else if (bestStrategy === 'smote_tomek' && bestImprovement > 0) {
+    explanations.push(`SMOTE-Tomek cleaned ambiguous overlapping boundary instances after interpolation, reducing false positives and boosting macro F1 by ${bestImprovement.toFixed(1)}%.`);
   } else if (bestStrategy === 'oversampling' && bestImprovement > 0) {
     explanations.push(`Random oversampling with variance jitter improved representation of underrepresented classes by ${bestImprovement.toFixed(1)}% without exact-duplicate overfitting.`);
   } else if (bestStrategy === 'noise_injection') {

@@ -5,10 +5,18 @@
  */
 
 import * as storage from './storage.js';
-import { applySMOTE, applyRandomOversampling, applyNoiseInjection, computeSyntheticQuality } from './augmentation.js';
+import {
+  applySMOTE,
+  applyADASYN,
+  applySMOTETomek,
+  applyRandomOversampling,
+  applyNoiseInjection,
+  computeSyntheticQuality,
+} from './augmentation.js';
 import { runControlledEvaluation, compareEvaluations } from './evaluation.js';
 import { generateRecommendation } from './recommendations.js';
 import { generateUUID } from '../utils/math.js';
+import { generateCSV } from '../utils/csv.js';
 
 const EXPERIMENTS_PREFIX = 'experiments_';
 
@@ -44,7 +52,7 @@ export async function runExperiment({
   userId,
   dataset,
   name,
-  strategies = ['smote', 'oversampling', 'noise_injection'],
+  strategies = ['smote', 'adasyn', 'smote_tomek', 'oversampling', 'noise_injection'],
   strategyParams = {},
   runs = 5,
   trainTestSplit = 0.8,
@@ -74,20 +82,31 @@ export async function runExperiment({
     recommendation: null,
   };
 
-  const { headers, columns, fullData, targetColumn } = dataset;
+  const { headers, columns, fullData, targetColumn, analysisResult } = dataset;
   const targetIndex = headers.indexOf(targetColumn);
 
-  // Extract raw rows & labels
+  // Extract raw rows & labels (preserving original feature indices)
   const dataRows = fullData.map(r => r.filter((_, idx) => idx !== targetIndex));
-  const labels = fullData.map(r => String(r[targetIndex]));
+  const labels = fullData.map(r => String(r[targetIndex] ?? 'UNKNOWN'));
 
-  // Identify numeric feature indices
+  // Separate feature columns (excluding target)
+  const featureHeaders = headers.filter((_, idx) => idx !== targetIndex);
   const numericIndices = [];
+  const categoricalIndices = [];
+  const idIndices = [];
+
   let colCounter = 0;
   headers.forEach((_, idx) => {
     if (idx !== targetIndex) {
-      if (columns[idx].type === 'numeric') {
+      const col = columns[idx];
+      const isId = analysisResult?.idIndices?.includes(idx);
+      if (isId) {
+        idIndices.push(colCounter);
+      }
+      if (col.type === 'numeric') {
         numericIndices.push(colCounter);
+      } else {
+        categoricalIndices.push(colCounter);
       }
       colCounter++;
     }
@@ -100,6 +119,8 @@ export async function runExperiment({
       data: dataRows,
       labels,
       numericIndices,
+      categoricalIndices,
+      idIndices,
       augmentFn: null,
       runs,
       trainTestSplit,
@@ -121,22 +142,47 @@ export async function runExperiment({
       let params = strategyParams[stratType] || {};
 
       if (stratType === 'smote') {
-        augmentFn = (d, l, numIdx, opt) => applySMOTE(d, l, numIdx, { ...params, ...opt });
+        augmentFn = (d, l, numIdx, opt) => applySMOTE(d, l, numIdx, { ...params, ...opt, categoricalIndices });
+      } else if (stratType === 'adasyn') {
+        augmentFn = (d, l, numIdx, opt) => applyADASYN(d, l, numIdx, { ...params, ...opt, categoricalIndices });
+      } else if (stratType === 'smote_tomek') {
+        augmentFn = (d, l, numIdx, opt) => applySMOTETomek(d, l, numIdx, { ...params, ...opt, categoricalIndices });
       } else if (stratType === 'oversampling') {
-        augmentFn = (d, l, numIdx, opt) => applyRandomOversampling(d, l, numIdx, { ...params, ...opt });
+        augmentFn = (d, l, numIdx, opt) => applyRandomOversampling(d, l, numIdx, { ...params, ...opt, categoricalIndices });
       } else if (stratType === 'noise_injection') {
         augmentFn = (d, l, numIdx, opt) => applyNoiseInjection(d, l, numIdx, { ...params, ...opt });
       }
 
-      // Generate synthetic samples on full data to measure quality metrics
-      const sampleAug = augmentFn ? augmentFn(dataRows, labels, numericIndices, { seed: baseSeed }) : { syntheticData: [] };
-      const qualityMetrics = computeSyntheticQuality(dataRows, sampleAug.syntheticData, numericIndices);
+      // Generate synthetic samples on full data to produce downloadable CSVs & quality metrics
+      const sampleAug = augmentFn
+        ? augmentFn(dataRows, labels, numericIndices, { seed: baseSeed, categoricalIndices })
+        : { syntheticData: [], syntheticLabels: [], augmentedData: dataRows, augmentedLabels: labels };
+
+      const qualityMetrics = computeSyntheticQuality(dataRows, sampleAug.syntheticData, numericIndices, categoricalIndices);
+
+      // Reconstruct full rows with Target column for downloadable CSVs
+      const augmentedFullRows = sampleAug.augmentedData.map((row, rIdx) => {
+        const fullRow = [...row];
+        fullRow.splice(targetIndex, 0, sampleAug.augmentedLabels[rIdx]);
+        return fullRow;
+      });
+
+      const syntheticFullRows = (sampleAug.syntheticData || []).map((row, rIdx) => {
+        const fullRow = [...row];
+        fullRow.splice(targetIndex, 0, sampleAug.syntheticLabels[rIdx]);
+        return fullRow;
+      });
+
+      const augmentedCSV = generateCSV(headers, augmentedFullRows);
+      const syntheticCSV = generateCSV(headers, syntheticFullRows);
 
       // Run controlled evaluation on training splits
       const evalResult = await runControlledEvaluation({
         data: dataRows,
         labels,
         numericIndices,
+        categoricalIndices,
+        idIndices,
         augmentFn,
         runs,
         trainTestSplit,
@@ -153,6 +199,9 @@ export async function runExperiment({
         comparison,
         qualityMetrics,
         syntheticCount: sampleAug.syntheticCount || 0,
+        augmentedRowCount: augmentedFullRows.length,
+        augmentedCSV,
+        syntheticCSV,
       });
 
       currentProgress += stepSize;
@@ -179,3 +228,4 @@ export async function runExperiment({
     return { success: false, error: { message: err.message || 'Experiment execution failed.' } };
   }
 }
+

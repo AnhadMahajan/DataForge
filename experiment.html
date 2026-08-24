@@ -52,18 +52,47 @@
             <span class="text-caption text-muted">Select one or more to run in parallel</span>
           </div>
 
-          <div class="strategy-grid">
+          <div class="strategy-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
             <!-- SMOTE Card -->
             <div class="strategy-card selected" id="card-smote" data-strategy="smote">
               <div class="strategy-card-header">
-                <div class="card-title">SMOTE</div>
+                <div class="card-title">SMOTE-NC</div>
                 <input type="checkbox" id="check-smote" class="checkbox" checked>
               </div>
-              <p class="text-secondary text-small">Synthesizes minority points by interpolating between k-nearest neighbors in feature space.</p>
+              <p class="text-secondary text-small">Interpolates minority samples across numeric & categorical feature spaces.</p>
               <div class="strategy-params">
                 <div class="form-group mb-sm">
                   <label class="form-label font-mono text-caption">k-Neighbors (k=5)</label>
                   <input type="range" id="smote-k" min="2" max="10" value="5" class="w-full">
+                </div>
+              </div>
+            </div>
+
+            <!-- ADASYN Card -->
+            <div class="strategy-card selected" id="card-adasyn" data-strategy="adasyn">
+              <div class="strategy-card-header">
+                <div class="card-title">ADASYN</div>
+                <input type="checkbox" id="check-adasyn" class="checkbox" checked>
+              </div>
+              <p class="text-secondary text-small">Adaptive synthesis focusing samples on hard-to-learn decision boundaries.</p>
+              <div class="strategy-params">
+                <div class="form-group mb-sm">
+                  <label class="form-label font-mono text-caption">k-Neighbors (k=5)</label>
+                  <input type="range" id="adasyn-k" min="2" max="10" value="5" class="w-full">
+                </div>
+              </div>
+            </div>
+
+            <!-- SMOTE-Tomek Card -->
+            <div class="strategy-card selected" id="card-tomek" data-strategy="smote_tomek">
+              <div class="strategy-card-header">
+                <div class="card-title">SMOTE-Tomek</div>
+                <input type="checkbox" id="check-tomek" class="checkbox" checked>
+              </div>
+              <p class="text-secondary text-small">Generates SMOTE samples then cleans ambiguous overlapping boundary pairs.</p>
+              <div class="strategy-params">
+                <div class="form-group mb-sm">
+                  <label class="form-label font-mono text-caption">Boundary Clean: Enabled</label>
                 </div>
               </div>
             </div>
@@ -74,7 +103,7 @@
                 <div class="card-title">Random Oversampling</div>
                 <input type="checkbox" id="check-oversampling" class="checkbox" checked>
               </div>
-              <p class="text-secondary text-small">Duplicates minority samples with slight Gaussian jitter to prevent memorization.</p>
+              <p class="text-secondary text-small">Duplicates minority samples with Gaussian variance jitter to prevent exact overfitting.</p>
               <div class="strategy-params">
                 <div class="form-group mb-sm">
                   <label class="form-label font-mono text-caption">Jitter Variance (5%)</label>
@@ -84,12 +113,12 @@
             </div>
 
             <!-- Noise Injection Card -->
-            <div class="strategy-card selected" id="card-noise" data-strategy="noise_injection">
+            <div class="strategy-card" id="card-noise" data-strategy="noise_injection">
               <div class="strategy-card-header">
                 <div class="card-title">Noise Injection</div>
-                <input type="checkbox" id="check-noise" class="checkbox" checked>
+                <input type="checkbox" id="check-noise" class="checkbox">
               </div>
-              <p class="text-secondary text-small">Injects proportional Gaussian noise across all numeric dimensions to test boundary robustness.</p>
+              <p class="text-secondary text-small">Injects proportional Gaussian noise across numeric dimensions to test boundary robustness.</p>
               <div class="strategy-params">
                 <div class="form-group mb-sm">
                   <label class="form-label font-mono text-caption">Noise Factor (8%)</label>
@@ -129,6 +158,8 @@
               <select id="model-type" class="select">
                 <option value="knn" selected>k-Nearest Neighbors (k=3)</option>
                 <option value="decision_tree">Decision Tree (Depth=4)</option>
+                <option value="logistic_regression">Logistic Regression (SGD)</option>
+                <option value="random_forest">Random Forest (7 Trees)</option>
               </select>
               <span class="form-hint">Evaluates both baseline and synthetic data.</span>
             </div>

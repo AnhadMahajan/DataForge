@@ -1,14 +1,11 @@
-/**
- * DataForge — Upload & Analysis Page Controller
- */
-
 import { requireSession } from '../services/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { createDropzone } from '../components/dropzone.js';
-import { createDatasetFromCSV, getSampleDatasetCSV, getDatasets, getDatasetById } from '../services/dataset.js';
+import { createDatasetFromCSV, getSampleDatasetCSV, getDatasets, getDatasetById, updateDatasetTarget, exportDatasetAsCSV } from '../services/dataset.js';
 import { renderBarChart } from '../components/charts.js';
 import { renderDataTable } from '../components/tables.js';
 import { toast } from '../components/toast.js';
+import { downloadCSV } from '../utils/csv.js';
 import { formatDimensions, formatRelativeTime } from '../utils/formatting.js';
 import { el, qs, show, hide } from '../utils/dom.js';
 
@@ -34,6 +31,7 @@ const needScoreSummary = qs('#need-score-summary');
 const imbalancePill = qs('#imbalance-pill');
 const classChartContainer = qs('#class-chart-container');
 const metadataList = qs('#dataset-metadata-list');
+const targetSelectContainer = qs('#target-select-container');
 const reasonsList = qs('#diagnostic-reasons-list');
 const warningsList = qs('#diagnostic-warnings-list');
 const previewContainer = qs('#preview-table-container');
@@ -135,12 +133,22 @@ function renderAnalysisView(dataset) {
     },
   }, '← Upload Another');
 
+  const btnExportCSV = el('button', {
+    className: 'btn btn-secondary btn-sm',
+    onClick: () => {
+      const csvStr = exportDatasetAsCSV(dataset);
+      downloadCSV(`${dataset.name}_clean.csv`, csvStr);
+      toast.success('Dataset CSV exported.');
+    },
+  }, '📥 Export CSV');
+
   const btnStartExp = el('a', {
     className: 'btn btn-primary btn-sm',
     href: `experiment.html?datasetId=${dataset.id}`,
   }, 'Configure Experiment →');
 
   headerActions.appendChild(btnBack);
+  headerActions.appendChild(btnExportCSV);
   headerActions.appendChild(btnStartExp);
 
   // Health Score & Analysis
@@ -160,6 +168,7 @@ function renderAnalysisView(dataset) {
     : (needScore >= 30 ? 'Moderate potential: augmentation may yield marginal improvements in boundary resolution.' : 'Low augmentation need: dataset is well-balanced and representative.');
 
   // Render Class Balance Bar Chart
+  classChartContainer.innerHTML = '';
   if (dataset.classDistribution) {
     const chartData = Object.entries(dataset.classDistribution).map(([cls, count]) => ({
       label: cls,
@@ -169,12 +178,37 @@ function renderAnalysisView(dataset) {
     renderBarChart(classChartContainer, chartData, { height: 180 });
   }
 
+  // Render Target Column Dropdown selector
+  if (targetSelectContainer) {
+    targetSelectContainer.innerHTML = '';
+    const select = el('select', {
+      className: 'select select-sm',
+      onChange: (e) => {
+        const newTarget = e.target.value;
+        const updateRes = updateDatasetTarget(userId, dataset.id, newTarget);
+        if (updateRes.success) {
+          toast.success(`Target column switched to "${newTarget}". Diagnostics updated.`);
+          renderAnalysisView(updateRes.data);
+        }
+      },
+    }, dataset.headers.map(h => el('option', {
+      value: h,
+      selected: h === dataset.targetColumn,
+    }, `Target: ${h}`)));
+    targetSelectContainer.appendChild(select);
+  }
+
   // Profile metadata
   metadataList.innerHTML = '';
+  const numCols = dataset.columns.filter(c => c.type === 'numeric').length;
+  const catCols = dataset.columns.filter(c => c.type !== 'numeric').length;
+  const idColNames = (analysis.idIndices || []).map(idx => dataset.headers[idx]).join(', ');
+
   const metaItems = [
     ['Total Rows', dataset.rowCount],
-    ['Feature Count', dataset.columnCount - 1],
-    ['Target Column', dataset.targetColumn || 'None designated'],
+    ['Numeric Features', numCols],
+    ['Categorical Features', catCols],
+    ['Auto-detected ID Columns', idColNames || 'None'],
     ['Missing Values', dataset.columns.reduce((acc, c) => acc + (c.stats.nullCount || 0), 0)],
   ];
   metaItems.forEach(([k, v]) => {

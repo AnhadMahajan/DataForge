@@ -176,11 +176,59 @@ export function getDatasets(userId) {
 }
 
 /**
- * Retrieve a specific dataset by ID.
+ * Get a specific dataset by ID.
  */
 export function getDatasetById(userId, datasetId) {
   const storageKey = `${DATASETS_PREFIX}${userId}`;
   return storage.findInCollection(storageKey, datasetId);
+}
+
+/**
+ * Update the designated target column of a dataset and re-run diagnostics.
+ */
+export function updateDatasetTarget(userId, datasetId, newTargetColumn) {
+  const storageKey = `${DATASETS_PREFIX}${userId}`;
+  const dataset = storage.findInCollection(storageKey, datasetId);
+  if (!dataset) return { success: false, error: { message: 'Dataset not found.' } };
+
+  const targetIndex = dataset.headers.indexOf(newTargetColumn);
+  if (targetIndex === -1) return { success: false, error: { message: 'Column not found in dataset headers.' } };
+
+  dataset.targetColumn = newTargetColumn;
+
+  // Recompute class distribution
+  const classDist = {};
+  dataset.fullData.forEach(r => {
+    const cls = String(r[targetIndex] ?? 'UNKNOWN');
+    classDist[cls] = (classDist[cls] || 0) + 1;
+  });
+  dataset.classDistribution = classDist;
+
+  // Re-run health analysis
+  const analysis = analyzeDataset(dataset);
+  dataset.analysisResult = analysis;
+  dataset.healthScore = Math.max(0, 100 - analysis.augmentationNeedScore);
+
+  storage.updateInCollection(storageKey, datasetId, dataset);
+  return { success: true, data: dataset };
+}
+
+/**
+ * Generate CSV text representation of a dataset.
+ */
+export function exportDatasetAsCSV(dataset) {
+  if (!dataset || !dataset.headers || !dataset.fullData) return '';
+  const lines = [dataset.headers.join(',')];
+  dataset.fullData.forEach(row => {
+    lines.push(row.map(v => {
+      const s = String(v ?? '');
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    }).join(','));
+  });
+  return lines.join('\n');
 }
 
 /**

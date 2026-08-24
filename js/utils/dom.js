@@ -158,7 +158,7 @@ export function icon(pathData, size = 20, strokeWidth = 1.5) {
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', d);
         svg.appendChild(path);
-      } else if (typeof d === 'object') {
+      } else if (typeof d === 'object' && d !== null) {
         const elem = document.createElementNS('http://www.w3.org/2000/svg', d.tag || 'path');
         for (const [attr, val] of Object.entries(d)) {
           if (attr !== 'tag') elem.setAttribute(attr, val);
@@ -166,7 +166,13 @@ export function icon(pathData, size = 20, strokeWidth = 1.5) {
         svg.appendChild(elem);
       }
     }
-  } else {
+  } else if (typeof pathData === 'object' && pathData !== null) {
+    const elem = document.createElementNS('http://www.w3.org/2000/svg', pathData.tag || 'path');
+    for (const [attr, val] of Object.entries(pathData)) {
+      if (attr !== 'tag') elem.setAttribute(attr, val);
+    }
+    svg.appendChild(elem);
+  } else if (typeof pathData === 'string') {
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', pathData);
     svg.appendChild(path);

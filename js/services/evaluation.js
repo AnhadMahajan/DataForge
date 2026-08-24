@@ -1,6 +1,11 @@
 /**
  * DataForge — Model Training & Evaluation Engine
- * Pure JavaScript implementations of k-NN and simplified Decision Tree classifiers.
+ * Pure JavaScript implementations of:
+ * 1. k-Nearest Neighbors (k-NN)
+ * 2. Decision Tree (Gini split)
+ * 3. Logistic Regression (One-vs-Rest SGD with L2 regularization)
+ * 4. Random Forest (Bagging Ensemble of randomized Decision Trees)
+ * Plus automatic categorical one-hot encoding, missing value imputation, and ID column exclusion.
  * Enforces strict scientific constraint: TEST SET IS NEVER AUGMENTED.
  */
 
@@ -12,9 +17,84 @@ import {
   macroAverage,
   mean,
   std,
+  median,
+  mode,
+  sigmoid,
+  dotProduct,
   pairedTTest,
   euclideanDistance,
 } from '../utils/math.js';
+
+// ---- Feature Encoder for Mixed-Type Datasets ----
+
+export function createDatasetEncoder(data, numericIndices, categoricalIndices = [], idIndices = []) {
+  const numericStats = {};
+  numericIndices.forEach(idx => {
+    if (idIndices.includes(idx)) return;
+    const vals = data.map(r => Number(r[idx])).filter(v => !isNaN(v) && v !== null);
+    numericStats[idx] = {
+      median: vals.length > 0 ? median(vals) : 0,
+      std: vals.length > 1 ? (std(vals) || 1) : 1,
+      mean: vals.length > 0 ? mean(vals) : 0,
+    };
+  });
+
+  const categoricalMaps = {};
+  categoricalIndices.forEach(idx => {
+    if (idIndices.includes(idx)) return;
+    const rawVals = data.map(r => r[idx]).filter(v => v !== null && v !== undefined && v !== '');
+    const defaultMode = rawVals.length > 0 ? mode(rawVals) : 'UNKNOWN';
+    const uniqueVals = Array.from(new Set(rawVals)).slice(0, 20); // Top 20 categories per column
+
+    categoricalMaps[idx] = {
+      defaultMode,
+      categories: uniqueVals,
+    };
+  });
+
+  function encodeRow(row) {
+    const vector = [];
+
+    // 1. Continuous Features (Imputed & Standardized)
+    numericIndices.forEach(idx => {
+      if (idIndices.includes(idx)) return;
+      let v = Number(row[idx]);
+      const stat = numericStats[idx] || { median: 0, mean: 0, std: 1 };
+      if (isNaN(v) || v === null || v === undefined) {
+        v = stat.median;
+      }
+      // Scaled feature
+      vector.push((v - stat.mean) / stat.std);
+    });
+
+    // 2. Nominal Features (One-Hot Encoded)
+    categoricalIndices.forEach(idx => {
+      if (idIndices.includes(idx)) return;
+      const meta = categoricalMaps[idx];
+      let val = row[idx];
+      if (val === null || val === undefined || val === '') {
+        val = meta?.defaultMode || 'UNKNOWN';
+      }
+      const strVal = String(val);
+      if (meta && meta.categories.length > 0) {
+        meta.categories.forEach(cat => {
+          vector.push(strVal === String(cat) ? 1.0 : 0.0);
+        });
+      }
+    });
+
+    return vector;
+  }
+
+  function encodeMatrix(rows) {
+    return rows.map(encodeRow);
+  }
+
+  return {
+    encodeRow,
+    encodeMatrix,
+  };
+}
 
 // ---- Classifier 1: k-Nearest Neighbors ----
 
@@ -38,9 +118,8 @@ class KNNClassifier {
           label: this.trainY[idx],
         }))
         .sort((a, b) => a.dist - b.dist)
-        .slice(0, this.k);
+        .slice(0, Math.min(this.k, this.trainX.length));
 
-      // Majority vote
       const votes = {};
       neighbors.forEach(n => {
         votes[n.label] = (votes[n.label] || 0) + 1;
@@ -54,7 +133,7 @@ class KNNClassifier {
           topClass = cls;
         }
       }
-      return topClass;
+      return topClass || this.trainY[0];
     });
   }
 }
@@ -62,8 +141,9 @@ class KNNClassifier {
 // ---- Classifier 2: Decision Tree ----
 
 class DecisionTreeClassifier {
-  constructor(maxDepth = 4) {
+  constructor(maxDepth = 4, maxFeatures = null) {
     this.maxDepth = maxDepth;
+    this.maxFeatures = maxFeatures;
     this.tree = null;
   }
 
@@ -88,9 +168,14 @@ class DecisionTreeClassifier {
     let bestFeature = null;
     let bestThreshold = null;
     const baseGini = this.gini(y);
-    const nFeatures = X[0]?.length || 0;
+    const totalFeatures = X[0]?.length || 0;
 
-    for (let f = 0; f < nFeatures; f++) {
+    let featureIndices = Array.from({ length: totalFeatures }, (_, i) => i);
+    if (this.maxFeatures && this.maxFeatures < totalFeatures) {
+      featureIndices = featureIndices.sort(() => Math.random() - 0.5).slice(0, this.maxFeatures);
+    }
+
+    for (const f of featureIndices) {
       const values = X.map(row => row[f]);
       const uniqueVals = Array.from(new Set(values)).sort((a, b) => a - b);
 
@@ -125,7 +210,6 @@ class DecisionTreeClassifier {
   buildTree(X, y, depth) {
     const uniqueClasses = Array.from(new Set(y));
     if (uniqueClasses.length === 1 || depth >= this.maxDepth || X.length < 4) {
-      // Leaf node: return majority class
       const counts = {};
       y.forEach(l => { counts[l] = (counts[l] || 0) + 1; });
       let majority = uniqueClasses[0];
@@ -169,7 +253,7 @@ class DecisionTreeClassifier {
   }
 
   predictSample(sample, node) {
-    if (node.leaf) return node.prediction;
+    if (!node || node.leaf) return node?.prediction || 'UNKNOWN';
     if (sample[node.feature] <= node.threshold) {
       return this.predictSample(sample, node.left);
     }
@@ -181,11 +265,126 @@ class DecisionTreeClassifier {
   }
 }
 
+// ---- Classifier 3: Logistic Regression (One-vs-Rest) ----
+
+class LogisticRegressionClassifier {
+  constructor(epochs = 40, learningRate = 0.05) {
+    this.epochs = epochs;
+    this.lr = learningRate;
+    this.models = {}; // Class -> { weights, bias }
+    this.classes = [];
+  }
+
+  fit(X, y) {
+    this.classes = Array.from(new Set(y));
+    const nFeatures = X[0]?.length || 0;
+
+    this.classes.forEach(targetCls => {
+      const weights = new Array(nFeatures).fill(0);
+      let bias = 0;
+
+      for (let epoch = 0; epoch < this.epochs; epoch++) {
+        for (let i = 0; i < X.length; i++) {
+          const row = X[i];
+          const target = y[i] === targetCls ? 1.0 : 0.0;
+          const z = dotProduct(weights, row) + bias;
+          const pred = sigmoid(z);
+          const error = pred - target;
+
+          // Gradient updates with L2 regularization
+          for (let f = 0; f < nFeatures; f++) {
+            weights[f] -= this.lr * (error * row[f] + 0.001 * weights[f]);
+          }
+          bias -= this.lr * error;
+        }
+      }
+
+      this.models[targetCls] = { weights, bias };
+    });
+  }
+
+  predict(X) {
+    return X.map(sample => {
+      let bestClass = this.classes[0];
+      let maxProb = -Infinity;
+
+      this.classes.forEach(cls => {
+        const model = this.models[cls];
+        if (model) {
+          const z = dotProduct(model.weights, sample) + model.bias;
+          const prob = sigmoid(z);
+          if (prob > maxProb) {
+            maxProb = prob;
+            bestClass = cls;
+          }
+        }
+      });
+
+      return bestClass;
+    });
+  }
+}
+
+// ---- Classifier 4: Random Forest (Bagging Ensemble) ----
+
+class RandomForestClassifier {
+  constructor(numTrees = 7, maxDepth = 4) {
+    this.numTrees = numTrees;
+    this.maxDepth = maxDepth;
+    this.trees = [];
+  }
+
+  fit(X, y) {
+    this.trees = [];
+    const n = X.length;
+    const nFeatures = X[0]?.length || 0;
+    const maxSubFeatures = Math.max(2, Math.round(Math.sqrt(nFeatures)));
+
+    for (let t = 0; t < this.numTrees; t++) {
+      // Bootstrap sampling with replacement
+      const bootX = [];
+      const bootY = [];
+      for (let i = 0; i < n; i++) {
+        const randIdx = Math.floor(Math.random() * n);
+        bootX.push(X[randIdx]);
+        bootY.push(y[randIdx]);
+      }
+
+      const tree = new DecisionTreeClassifier(this.maxDepth, maxSubFeatures);
+      tree.fit(bootX, bootY);
+      this.trees.push(tree);
+    }
+  }
+
+  predict(X) {
+    const allPreds = this.trees.map(tree => tree.predict(X));
+    return X.map((_, sampleIdx) => {
+      const votes = {};
+      allPreds.forEach(preds => {
+        const label = preds[sampleIdx];
+        votes[label] = (votes[label] || 0) + 1;
+      });
+
+      let topClass = null;
+      let maxVotes = -1;
+      for (const [cls, count] of Object.entries(votes)) {
+        if (count > maxVotes) {
+          maxVotes = count;
+          topClass = cls;
+        }
+      }
+      return topClass;
+    });
+  }
+}
+
 /**
- * Factory for creating configured model.
+ * Factory for creating configured models.
  */
 function createModel(type) {
   if (type === 'decision_tree') return new DecisionTreeClassifier(4);
+  if (type === 'logistic_regression') return new LogisticRegressionClassifier(45, 0.05);
+  if (type === 'random_forest') return new RandomForestClassifier(7, 4);
   return new KNNClassifier(3);
 }
 
@@ -197,6 +396,8 @@ export async function runControlledEvaluation({
   data,
   labels,
   numericIndices,
+  categoricalIndices = [],
+  idIndices = [],
   augmentFn = null,
   runs = 5,
   trainTestSplit = 0.8,
@@ -206,48 +407,40 @@ export async function runControlledEvaluation({
   const classes = Array.from(new Set(labels));
   const runResults = [];
 
-  // Extract purely numeric feature representation for model training
-  const featureMatrix = data.map(row =>
-    numericIndices.map(colIdx => {
-      const v = Number(row[colIdx]);
-      return isNaN(v) ? 0 : v;
-    })
-  );
-
   for (let r = 0; r < runs; r++) {
     const seed = baseSeed + r * 17;
     const rng = createRNG(seed);
 
-    // 1. Create Stratified Train / Test Split
-    const split = stratifiedSplit(featureMatrix, labels, 1.0 - trainTestSplit, rng);
-    let trainX = split.trainData;
+    // 1. Create Stratified Train / Test Split on raw rows
+    const split = stratifiedSplit(data, labels, 1.0 - trainTestSplit, rng);
+    let trainRawData = split.trainData;
     let trainY = split.trainLabels;
-    const testX = split.testData;
+    const testRawData = split.testData;
     const testY = split.testLabels;
 
     // 2. If augmentation function is supplied, augment ONLY the training data
     if (typeof augmentFn === 'function') {
-      // Reconstruct row representation for augmentation
-      const fullTrainRows = split.trainIndices.map(i => data[i]);
-      const augRes = augmentFn(fullTrainRows, trainY, numericIndices, { seed });
-      // Map back to numeric feature matrix
-      trainX = augRes.augmentedData.map(row =>
-        numericIndices.map(colIdx => {
-          const v = Number(row[colIdx]);
-          return isNaN(v) ? 0 : v;
-        })
-      );
+      const augRes = augmentFn(trainRawData, trainY, numericIndices, {
+        seed,
+        categoricalIndices,
+      });
+      trainRawData = augRes.augmentedData;
       trainY = augRes.augmentedLabels;
     }
 
-    // 3. Train model
+    // 3. Build encoder strictly using training data
+    const encoder = createDatasetEncoder(trainRawData, numericIndices, categoricalIndices, idIndices);
+    const trainX = encoder.encodeMatrix(trainRawData);
+    const testX = encoder.encodeMatrix(testRawData);
+
+    // 4. Train model
     const model = createModel(modelType);
     model.fit(trainX, trainY);
 
-    // 4. Predict on unaugmented test data
+    // 5. Predict on unaugmented test data
     const preds = model.predict(testX);
 
-    // 5. Calculate metrics
+    // 6. Calculate metrics
     const acc = accuracy(testY, preds);
     const perClass = computeConfusionMetrics(testY, preds, classes);
     const prec = macroAverage(perClass, 'precision');

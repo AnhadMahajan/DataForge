@@ -46,6 +46,17 @@ export function parseCSV(text, options = {}) {
     return row.slice(0, columnCount);
   });
 
+  // Helper to clean numeric string representations like $1,234.50 or 45%
+  const cleanNumericCandidate = (str) => {
+    if (typeof str !== 'string') return str;
+    const s = str.trim();
+    if (s === '' || s.toLowerCase() === 'nan' || s.toLowerCase() === 'null') return null;
+    const stripped = s.replace(/^[\$€£₹]\s*/, '').replace(/%$/, '').replace(/,/g, '').trim();
+    if (stripped === '') return null;
+    const num = Number(stripped);
+    return isNaN(num) ? null : num;
+  };
+
   // Infer column types
   const columnTypes = inferColumnTypes(normalizedRows, headers);
 
@@ -53,14 +64,10 @@ export function parseCSV(text, options = {}) {
   const typedRows = normalizedRows.map(row =>
     row.map((cell, colIdx) => {
       if (columnTypes[colIdx] === 'numeric') {
-        const trimmed = cell.trim();
-        if (trimmed === '' || trimmed.toLowerCase() === 'nan' || trimmed.toLowerCase() === 'null') {
-          return null;
-        }
-        const num = Number(trimmed);
-        return isNaN(num) ? null : num;
+        const cleaned = cleanNumericCandidate(cell);
+        return cleaned !== null ? cleaned : null;
       }
-      return cell.trim();
+      return typeof cell === 'string' ? cell.trim() : cell;
     })
   );
 
@@ -180,16 +187,19 @@ function inferColumnTypes(rows, headers) {
 
     if (values.length === 0) return 'text';
 
-    const numericCount = values.filter(v => !isNaN(Number(v))).length;
+    const numericCount = values.filter(v => {
+      const stripped = v.replace(/^[\$€£₹]\s*/, '').replace(/%$/, '').replace(/,/g, '').trim();
+      return stripped !== '' && !isNaN(Number(stripped));
+    }).length;
     const numericRatio = numericCount / values.length;
 
-    if (numericRatio > 0.85) return 'numeric';
+    if (numericRatio > 0.80) return 'numeric';
 
     // Categorical: fewer unique values relative to total
     const uniqueValues = new Set(values);
     const uniqueRatio = uniqueValues.size / values.length;
 
-    if (uniqueRatio < 0.5 || uniqueValues.size <= 20) return 'categorical';
+    if (uniqueRatio < 0.5 || uniqueValues.size <= 30) return 'categorical';
 
     return 'text';
   });
@@ -201,7 +211,7 @@ function inferColumnTypes(rows, headers) {
 export function generateCSV(headers, rows, delimiter = ',') {
   const escapeField = (field) => {
     const str = String(field ?? '');
-    if (str.includes(delimiter) || str.includes('"') || str.includes('\n')) {
+    if (str.includes(delimiter) || str.includes('"') || str.includes('\n') || str.includes('\r')) {
       return `"${str.replace(/"/g, '""')}"`;
     }
     return str;
@@ -210,6 +220,22 @@ export function generateCSV(headers, rows, delimiter = ',') {
   const headerLine = headers.map(escapeField).join(delimiter);
   const dataLines = rows.map(row => row.map(escapeField).join(delimiter));
   return [headerLine, ...dataLines].join('\n');
+}
+
+/**
+ * Trigger client-side browser file download of CSV content.
+ */
+export function downloadCSV(filename, csvContent) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 /**

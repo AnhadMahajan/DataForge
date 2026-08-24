@@ -6,8 +6,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 3000;
-const ROOT = __dirname;
+const PORT = process.env.PORT || 3005;
+const ROOT = path.resolve(__dirname);
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=UTF-8',
@@ -21,10 +21,13 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-  let reqPath = decodeURI(req.url.split('?')[0]);
-  if (reqPath === '/') reqPath = '/index.html';
+  let rawUrl = req.url.split('?')[0];
+  let reqPath = decodeURI(rawUrl);
+  if (reqPath === '/' || reqPath === '') reqPath = 'index.html';
+  else reqPath = reqPath.replace(/^[/\\]+/, '');
 
-  const filePath = path.join(ROOT, reqPath);
+  const filePath = path.resolve(ROOT, reqPath);
+  console.log(`[REQ] ${req.url} -> ${filePath}`);
 
   // Prevent directory traversal
   if (!filePath.startsWith(ROOT)) {
@@ -35,6 +38,7 @@ const server = http.createServer((req, res) => {
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
+      console.log(`[404] File not found: ${filePath}`);
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('404 Not Found: ' + reqPath);
       return;

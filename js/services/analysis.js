@@ -46,20 +46,46 @@ export function analyzeDataset(dataset) {
   // 2. Feature-level Analysis & Noise Estimation
   const featureAnalysis = [];
   const numericIndices = [];
+  const categoricalIndices = [];
+  const idIndices = [];
+  const missingColumns = [];
+
+  const idPattern = /^(id|_id|uuid|guid|pk|ssn|email|index|key|identifier|client_id|customer_id|user_id|order_id|patient_id)$/i;
 
   columns.forEach((col, colIdx) => {
     if (colIdx === targetIndex) return;
 
+    const rawVals = fullData.map(r => r[colIdx]);
+    const nonNullVals = rawVals.filter(v => v !== null && v !== undefined && v !== '' && String(v).toLowerCase() !== 'nan');
+    const missingCount = rowCount - nonNullVals.length;
+    const missingPercentage = Number(((missingCount / (rowCount || 1)) * 100).toFixed(1));
+
+    if (missingCount > 0) {
+      missingColumns.push({
+        columnName: col.name,
+        columnIndex: colIdx,
+        missingCount,
+        missingPercentage,
+      });
+    }
+
+    // Check for ID column characteristics
+    const uniqueVals = new Set(nonNullVals);
+    const uniqueRatio = uniqueVals.size / (nonNullVals.length || 1);
+    const isIdByName = idPattern.test(col.name.trim());
+    const isIdByCardinality = uniqueRatio > 0.92 && rowCount >= 20 && col.type !== 'numeric';
+    const isIdColumn = isIdByName || isIdByCardinality;
+
+    if (isIdColumn) {
+      idIndices.push(colIdx);
+    }
+
     if (col.type === 'numeric') {
       numericIndices.push(colIdx);
-      const values = fullData
-        .map(r => r[colIdx])
-        .filter(v => v !== null && v !== undefined && typeof v === 'number' && !isNaN(v));
+      const values = nonNullVals.map(Number).filter(v => !isNaN(v));
 
       const distribution = detectDistribution(values);
       const outlierRes = detectOutliers(values);
-      const missingCount = rowCount - values.length;
-      const missingPercentage = Number(((missingCount / (rowCount || 1)) * 100).toFixed(1));
       const outlierPercentage = Number(((outlierRes.count / (values.length || 1)) * 100).toFixed(1));
 
       // Noise estimate: ratio of standard deviation to range normalized
@@ -71,6 +97,7 @@ export function analyzeDataset(dataset) {
         columnName: col.name,
         columnIndex: colIdx,
         type: 'numeric',
+        isIdColumn,
         distribution,
         outlierCount: outlierRes.count,
         outlierPercentage,
@@ -79,15 +106,18 @@ export function analyzeDataset(dataset) {
         noiseEstimate,
       });
     } else {
+      categoricalIndices.push(colIdx);
       featureAnalysis.push({
         columnName: col.name,
         columnIndex: colIdx,
         type: 'categorical',
+        isIdColumn,
         distribution: 'categorical',
         outlierCount: 0,
         outlierPercentage: 0,
-        missingCount: col.stats.nullCount || 0,
-        missingPercentage: Number((((col.stats.nullCount || 0) / (rowCount || 1)) * 100).toFixed(1)),
+        missingCount,
+        missingPercentage,
+        uniqueCount: uniqueVals.size,
         noiseEstimate: 0,
       });
     }
@@ -154,8 +184,20 @@ export function analyzeDataset(dataset) {
     score += 5;
   }
 
+  // ID column warnings
+  if (idIndices.length > 0) {
+    const idNames = idIndices.map(idx => headers[idx]).join(', ');
+    reasons.push(`Identifier column(s) detected (${idNames}) — automatically excluded from ML distance metrics to prevent trivial overfitting.`);
+  }
+
+  // Missing data warnings
+  if (missingColumns.length > 0) {
+    const missingNames = missingColumns.map(m => `${m.columnName} (${m.missingPercentage}%)`).join(', ');
+    warnings.push(`Missing values detected in: ${missingNames}. Engine automatically performs median/mode imputation during feature synthesis.`);
+  }
+
   // Outlier / Noise warnings
-  const highOutlierFeatures = featureAnalysis.filter(f => f.outlierPercentage > 5);
+  const highOutlierFeatures = featureAnalysis.filter(f => f.outlierPercentage > 5 && !f.isIdColumn);
   if (highOutlierFeatures.length > 0) {
     score += 10;
     const names = highOutlierFeatures.map(f => f.columnName).join(', ');
@@ -179,6 +221,10 @@ export function analyzeDataset(dataset) {
     maxClass,
     minCount,
     maxCount,
+    numericIndices,
+    categoricalIndices,
+    idIndices,
+    missingColumns,
     featureAnalysis,
     correlations,
     augmentationNeedScore,

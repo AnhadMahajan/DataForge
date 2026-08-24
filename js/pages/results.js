@@ -1,14 +1,13 @@
-/**
- * DataForge — Experiment Results Page Controller
- */
-
 import { requireSession } from '../services/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { getExperimentById, getExperiments } from '../services/experiment.js';
 import { getDatasetById } from '../services/dataset.js';
 import { renderGroupedBarChart, renderRunVarianceChart } from '../components/charts.js';
 import { renderDataTable } from '../components/tables.js';
+import { toast } from '../components/toast.js';
+import { downloadCSV } from '../utils/csv.js';
 import { formatDelta, formatPercent, formatStrategy } from '../utils/formatting.js';
+import { min, max } from '../utils/math.js';
 import { el, qs, show, hide } from '../utils/dom.js';
 
 const session = requireSession();
@@ -36,6 +35,8 @@ const matrixTableContainer = qs('#matrix-table-container');
 const classTableContainer = qs('#class-table-container');
 const qualityCardsContainer = qs('#quality-cards-container');
 const resultsContextStrip = qs('#results-context-strip');
+const featureSelectContainer = qs('#feature-select-container');
+const distributionChartContainer = qs('#distribution-chart-container');
 
 const urlParams = new URLSearchParams(window.location.search);
 let expId = urlParams.get('id');
@@ -64,12 +65,36 @@ function renderResults(exp) {
   const baseline = exp.baseline;
   const rec = exp.recommendation;
   const strategyResults = exp.strategyResults || [];
+  const bestStratRes = strategyResults.find(s => s.strategyType === rec.bestStrategy) || strategyResults[0];
 
   expTitle.textContent = exp.name;
   expSubtitle.textContent = `Evaluated on ${dataset ? dataset.name : 'Dataset'} • ${exp.config.runs} Iterations (${exp.config.modelType.toUpperCase()})`;
 
   // Header Actions
   expHeaderActions.innerHTML = '';
+
+  if (bestStratRes?.augmentedCSV) {
+    const btnExportAug = el('button', {
+      className: 'btn btn-secondary btn-sm',
+      onClick: () => {
+        downloadCSV(`${exp.name}_augmented_${bestStratRes.strategyType}.csv`, bestStratRes.augmentedCSV);
+        toast.success(`Augmented dataset downloaded (${formatStrategy(bestStratRes.strategyType)}).`);
+      },
+    }, '📥 Export Augmented CSV');
+    expHeaderActions.appendChild(btnExportAug);
+  }
+
+  if (bestStratRes?.syntheticCSV) {
+    const btnExportSynth = el('button', {
+      className: 'btn btn-secondary btn-sm',
+      onClick: () => {
+        downloadCSV(`${exp.name}_synthetic_only.csv`, bestStratRes.syntheticCSV);
+        toast.success('Synthetic-only samples downloaded.');
+      },
+    }, '📥 Export Synthetic Only');
+    expHeaderActions.appendChild(btnExportSynth);
+  }
+
   const btnReport = el('a', {
     className: 'btn btn-primary btn-sm',
     href: `reports.html?id=${exp.id}`,
@@ -107,7 +132,6 @@ function renderResults(exp) {
   });
 
   // 2. Metrics Comparison Grid (Baseline vs Best Strategy)
-  const bestStratRes = strategyResults.find(s => s.strategyType === rec.bestStrategy) || strategyResults[0];
   const bestAgg = bestStratRes ? bestStratRes.evaluation.aggregated : baseline.aggregated;
   const baseAgg = baseline.aggregated;
 
@@ -145,7 +169,7 @@ function renderResults(exp) {
     },
   ];
 
-  const colors = ['#1a8a5c', '#4a7fb5', '#b08a2e'];
+  const colors = ['#1a8a5c', '#4a7fb5', '#b08a2e', '#8a4ab5', '#33a398'];
   strategyResults.forEach((s, idx) => {
     chartSeries.push({
       name: formatStrategy(s.strategyType),
@@ -225,4 +249,65 @@ function renderResults(exp) {
     el('div', { className: 'metric-value mt-xs' }, String(qm.distributionShift)),
     el('div', { className: 'text-small text-secondary mt-xs' }, 'Normalized deviation from original ground truth'),
   ]));
+
+  // 8. Feature Distribution Comparator
+  if (dataset && featureSelectContainer && distributionChartContainer) {
+    const numericCols = dataset.columns.filter(c => c.type === 'numeric' && c.name !== dataset.targetColumn);
+    
+    if (numericCols.length > 0) {
+      featureSelectContainer.innerHTML = '';
+      const select = el('select', {
+        className: 'select select-sm',
+        onChange: (e) => renderFeatureComparison(e.target.value),
+      }, numericCols.map(c => el('option', { value: c.name }, `Feature: ${c.name}`)));
+      featureSelectContainer.appendChild(select);
+
+      function renderFeatureComparison(colName) {
+        distributionChartContainer.innerHTML = '';
+        const colIdx = dataset.headers.indexOf(colName);
+        if (colIdx === -1) return;
+
+        const origVals = dataset.fullData.map(r => Number(r[colIdx])).filter(v => !isNaN(v));
+        const minVal = min(origVals);
+        const maxVal = max(origVals);
+        const binCount = 5;
+        const binStep = (maxVal - minVal) / binCount || 1;
+
+        const binLabels = [];
+        const origBinCounts = new Array(binCount).fill(0);
+        const augBinCounts = new Array(binCount).fill(0);
+
+        for (let b = 0; b < binCount; b++) {
+          const bStart = (minVal + b * binStep).toFixed(1);
+          const bEnd = (minVal + (b + 1) * binStep).toFixed(1);
+          binLabels.push(`${bStart}-${bEnd}`);
+        }
+
+        origVals.forEach(v => {
+          const idx = Math.min(binCount - 1, Math.max(0, Math.floor((v - minVal) / binStep)));
+          origBinCounts[idx]++;
+        });
+
+        // Synthetic values from best strategy
+        const synthRows = bestStratRes?.syntheticData || [];
+        const synthVals = synthRows.map(r => Number(r[colIdx])).filter(v => !isNaN(v));
+        synthVals.forEach(v => {
+          const idx = Math.min(binCount - 1, Math.max(0, Math.floor((v - minVal) / binStep)));
+          augBinCounts[idx]++;
+        });
+
+        const series = [
+          { name: 'Original Ground Truth', values: origBinCounts, color: '#333333' },
+          { name: 'Synthetic Distribution', values: augBinCounts, color: '#1a8a5c' },
+        ];
+
+        renderGroupedBarChart(distributionChartContainer, binLabels, series, { height: 210 });
+      }
+
+      renderFeatureComparison(numericCols[0].name);
+    } else {
+      distributionChartContainer.innerHTML = '<div class="text-small text-muted p-md">No continuous numeric features available for histogram comparison.</div>';
+    }
+  }
 }
+

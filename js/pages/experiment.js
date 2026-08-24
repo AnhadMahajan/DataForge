@@ -32,25 +32,30 @@ const progressBarFill = qs('#progress-bar-fill');
 // Strategy card elements
 const strategyCards = {
   smote: qs('#card-smote'),
+  adasyn: qs('#card-adasyn'),
+  smote_tomek: qs('#card-tomek'),
   oversampling: qs('#card-oversampling'),
   noise_injection: qs('#card-noise'),
 };
 
 const strategyChecks = {
   smote: qs('#check-smote'),
+  adasyn: qs('#check-adasyn'),
+  smote_tomek: qs('#check-tomek'),
   oversampling: qs('#check-oversampling'),
   noise_injection: qs('#check-noise'),
 };
 
 // Toggle strategy selection on card click
 Object.entries(strategyCards).forEach(([strat, card]) => {
+  if (!card) return;
   const checkbox = strategyChecks[strat];
   card.addEventListener('click', (e) => {
     if (e.target.tagName === 'INPUT' && e.target.type === 'range') return;
-    if (e.target !== checkbox) {
+    if (e.target !== checkbox && checkbox) {
       checkbox.checked = !checkbox.checked;
     }
-    card.classList.toggle('selected', checkbox.checked);
+    if (checkbox) card.classList.toggle('selected', checkbox.checked);
   });
 });
 
@@ -106,9 +111,11 @@ form.addEventListener('submit', async (e) => {
 
   // Collect selected strategies
   const selectedStrategies = [];
-  if (strategyChecks.smote.checked) selectedStrategies.push('smote');
-  if (strategyChecks.oversampling.checked) selectedStrategies.push('oversampling');
-  if (strategyChecks.noise_injection.checked) selectedStrategies.push('noise_injection');
+  if (strategyChecks.smote?.checked) selectedStrategies.push('smote');
+  if (strategyChecks.adasyn?.checked) selectedStrategies.push('adasyn');
+  if (strategyChecks.smote_tomek?.checked) selectedStrategies.push('smote_tomek');
+  if (strategyChecks.oversampling?.checked) selectedStrategies.push('oversampling');
+  if (strategyChecks.noise_injection?.checked) selectedStrategies.push('noise_injection');
 
   if (selectedStrategies.length === 0) {
     toast.error('Please select at least one augmentation strategy to test.');
@@ -116,9 +123,11 @@ form.addEventListener('submit', async (e) => {
   }
 
   const strategyParams = {
-    smote: { k: Number(qs('#smote-k').value) },
-    oversampling: { jitterStd: Number(qs('#oversampling-jitter').value) / 100 },
-    noise_injection: { noiseFactor: Number(qs('#noise-factor').value) / 100 },
+    smote: { k: Number(qs('#smote-k')?.value || 5) },
+    adasyn: { k: Number(qs('#adasyn-k')?.value || 5) },
+    smote_tomek: { k: Number(qs('#smote-k')?.value || 5) },
+    oversampling: { jitterStd: Number(qs('#oversampling-jitter')?.value || 5) / 100 },
+    noise_injection: { noiseFactor: Number(qs('#noise-factor')?.value || 8) / 100 },
   };
 
   // Show progress modal

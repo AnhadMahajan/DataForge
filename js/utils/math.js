@@ -379,3 +379,40 @@ export function stratifiedSplit(data, labels, testRatio, rng) {
     testIndices,
   };
 }
+
+// ---- Mode (Most Frequent Value) ----
+export function mode(arr) {
+  if (!arr || arr.length === 0) return null;
+  const counts = {};
+  let maxCount = 0;
+  let bestVal = arr[0];
+  for (const v of arr) {
+    if (v === null || v === undefined || v === '') continue;
+    counts[v] = (counts[v] || 0) + 1;
+    if (counts[v] > maxCount) {
+      maxCount = counts[v];
+      bestVal = v;
+    }
+  }
+  return bestVal;
+}
+
+// ---- Linear Algebra & Activation Functions ----
+export function sigmoid(z) {
+  if (z > 40) return 1;
+  if (z < -40) return 0;
+  return 1 / (1 + Math.exp(-z));
+}
+
+export function dotProduct(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += (a[i] || 0) * (b[i] || 0);
+  return s;
+}
+
+export function softmax(arr) {
+  const maxVal = Math.max(...arr);
+  const exps = arr.map(v => Math.exp(v - maxVal));
+  const expSum = sum(exps);
+  return exps.map(e => e / (expSum || 1));
+}

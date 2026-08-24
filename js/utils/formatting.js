@@ -170,6 +170,8 @@ export function capitalize(str) {
 export function formatStrategy(type) {
   const labels = {
     smote: 'SMOTE',
+    adasyn: 'ADASYN',
+    smote_tomek: 'SMOTE-Tomek',
     oversampling: 'Random Oversampling',
     noise_injection: 'Noise Injection',
     combined: 'Combined Strategy',
