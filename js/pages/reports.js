@@ -26,11 +26,17 @@ const pageTitle = qs('#reports-page-title');
 const pageSubtitle = qs('#reports-page-subtitle');
 const headerActions = qs('#reports-header-actions');
 const tableContainer = qs('#reports-table-container');
+const reportsSearch = qs('#reports-search');
+const reportsVerdictFilter = qs('#reports-verdict-filter');
+const reportsCount = qs('#reports-count');
 
 const docTitle = qs('#doc-title');
 const docDate = qs('#doc-date');
 const docVerdictPill = qs('#doc-verdict-pill');
 const docSectionsContainer = qs('#doc-sections-container');
+
+reportsSearch.addEventListener('input', renderReportsList);
+reportsVerdictFilter.addEventListener('change', renderReportsList);
 
 // Check URL query parameters for ?id={experimentId or reportId}
 const urlParams = new URLSearchParams(window.location.search);
@@ -68,6 +74,14 @@ function renderReportsList() {
   const reports = getReports(userId);
   tableContainer.innerHTML = '';
 
+  const searchTerm = reportsSearch.value.trim().toLowerCase();
+  const verdictFilter = reportsVerdictFilter.value;
+  const filteredReports = reports.filter(rep => {
+    const matchesSearch = !searchTerm || `${rep.title} ${rep.summary}`.toLowerCase().includes(searchTerm);
+    return matchesSearch && (verdictFilter === 'all' || rep.verdict === verdictFilter);
+  });
+  reportsCount.textContent = `${filteredReports.length} ${filteredReports.length === 1 ? 'report' : 'reports'}`;
+
   if (reports.length === 0) {
     // Check if there are completed experiments to generate from
     const completedExp = getExperiments(userId).filter(e => e.status === 'completed');
@@ -89,7 +103,15 @@ function renderReportsList() {
     return;
   }
 
-  reports.forEach(rep => {
+  if (filteredReports.length === 0) {
+    tableContainer.appendChild(el('div', { className: 'empty-state' }, [
+      el('div', { className: 'empty-state-title' }, 'No Matching Reports'),
+      el('p', { className: 'empty-state-text' }, 'Try a different search term or verdict filter.'),
+    ]));
+    return;
+  }
+
+  filteredReports.forEach((rep, index) => {
     const isRecommended = rep.verdict === 'recommended';
     const isDegraded = rep.verdict === 'not_recommended';
     const pillClass = isRecommended ? 'pill-positive' : (isDegraded ? 'pill-negative' : 'pill-neutral');
@@ -98,12 +120,15 @@ function renderReportsList() {
       className: 'report-item',
       onClick: () => renderReportDetail(rep),
     }, [
-      el('div', {}, [
-        el('div', { className: 'font-semi text-primary' }, rep.title),
+      el('div', { className: 'report-item-main' }, [
+        el('div', { className: 'report-item-index mono' }, String(index + 1).padStart(2, '0')),
+        el('div', {}, [
+          el('div', { className: 'font-semi text-primary' }, rep.title),
         el('div', { className: 'text-small text-muted mt-xs' }, [
           el('span', {}, formatRelativeTime(rep.generatedAt)),
           el('span', {}, ' • '),
           el('span', {}, rep.summary.slice(0, 75) + '...'),
+        ]),
         ]),
       ]),
       el('div', { className: 'flex items-center gap-md' }, [
@@ -169,6 +194,14 @@ function renderReportDetail(rep) {
   const isRecommended = rep.verdict === 'recommended';
   const isDegraded = rep.verdict === 'not_recommended';
   docVerdictPill.className = `pill ${isRecommended ? 'pill-positive' : (isDegraded ? 'pill-negative' : 'pill-neutral')}`;
+
+  const detailMeta = el('div', { className: 'report-detail-meta' }, [
+    el('span', {}, rep.summary),
+    el('span', { className: 'report-detail-id mono' }, `REPORT ${rep.id.slice(0, 8).toUpperCase()}`),
+  ]);
+  const existingMeta = document.querySelector('#report-document .report-detail-meta');
+  existingMeta?.remove();
+  docTitle.closest('.flex').after(detailMeta);
 
   docSectionsContainer.innerHTML = '';
   (rep.sections || []).forEach(sec => {

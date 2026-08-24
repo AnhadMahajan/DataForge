@@ -35,6 +35,7 @@ const varianceChartContainer = qs('#variance-chart-container');
 const matrixTableContainer = qs('#matrix-table-container');
 const classTableContainer = qs('#class-table-container');
 const qualityCardsContainer = qs('#quality-cards-container');
+const resultsContextStrip = qs('#results-context-strip');
 
 const urlParams = new URLSearchParams(window.location.search);
 let expId = urlParams.get('id');
@@ -92,6 +93,19 @@ function renderResults(exp) {
     ? rec.explanations[0]
     : 'No statistically significant delta observed over baseline model training.';
 
+  resultsContextStrip.innerHTML = '';
+  [
+    ['DATASET', dataset?.name || 'Unknown dataset'],
+    ['MODEL', exp.config.modelType.toUpperCase()],
+    ['EVALUATION', `${exp.config.runs} repeated splits`],
+    ['BEST F1 DELTA', `${rec.improvement > 0 ? '+' : ''}${rec.improvement}%`],
+  ].forEach(([label, value]) => {
+    resultsContextStrip.appendChild(el('div', { className: 'results-context-item' }, [
+      el('div', { className: 'text-caption text-muted' }, label),
+      el('div', { className: 'results-context-value' }, value),
+    ]));
+  });
+
   // 2. Metrics Comparison Grid (Baseline vs Best Strategy)
   const bestStratRes = strategyResults.find(s => s.strategyType === rec.bestStrategy) || strategyResults[0];
   const bestAgg = bestStratRes ? bestStratRes.evaluation.aggregated : baseline.aggregated;
@@ -116,6 +130,7 @@ function renderResults(exp) {
         el('span', { className: 'text-caption text-muted' }, `Baseline: ${formatPercent(item.base)}`),
         el('span', { className: `pill ${delta.className} text-caption` }, delta.text),
       ]),
+      el('div', { className: 'metric-context text-caption text-muted' }, item === metricItems[0] ? 'Primary selection metric' : 'Held-out evaluation metric'),
     ]);
     metricsGrid.appendChild(card);
   });

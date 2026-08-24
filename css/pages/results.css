@@ -14,11 +14,46 @@
   margin-bottom: var(--space-2xl);
 }
 
+.results-hero-card > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#exp-title {
+  overflow-wrap: anywhere;
+}
+
 .results-metric-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--card-gap);
   margin-bottom: var(--space-2xl);
+}
+
+.results-context-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border-light);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: calc(var(--space-2xl) * -1);
+  margin-bottom: var(--space-2xl);
+}
+
+.results-context-item {
+  background: rgba(255, 255, 255, 0.62);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.results-context-value {
+  margin-top: var(--space-xs);
+  color: var(--text-primary);
+  font-weight: var(--weight-semi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .metric-comparison-card {
@@ -39,6 +74,11 @@
   border-top: 1px solid var(--border-light);
 }
 
+.metric-context {
+  margin-top: auto;
+  padding-top: var(--space-md);
+}
+
 @media (max-width: 1024px) {
   .results-metric-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -46,12 +86,30 @@
 }
 
 @media (max-width: 640px) {
+  .card-grid-2 > .card,
+  #comparison-chart-container,
+  #variance-chart-container {
+    min-width: 0;
+    overflow: hidden;
+  }
+  #exp-header-actions .btn {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
   .results-hero-card {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-md);
   }
+  .results-hero-card > div:last-child {
+    text-align: left !important;
+  }
   .results-metric-grid {
     grid-template-columns: 1fr;
+  }
+  .results-context-strip {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

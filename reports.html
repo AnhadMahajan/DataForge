@@ -32,6 +32,23 @@
 
       <!-- State 1: Reports List View -->
       <div id="reports-list-state">
+        <div class="reports-toolbar mb-lg">
+          <div>
+            <div class="section-kicker">REPORT LIBRARY</div>
+            <div class="reports-count" id="reports-count">0 reports</div>
+          </div>
+          <div class="reports-filters">
+            <label class="sr-only" for="reports-search">Search reports</label>
+            <input class="input reports-search" id="reports-search" type="search" placeholder="Search reports" autocomplete="off">
+            <label class="sr-only" for="reports-verdict-filter">Filter by verdict</label>
+            <select class="select reports-verdict-filter" id="reports-verdict-filter">
+              <option value="all">All verdicts</option>
+              <option value="recommended">Recommended</option>
+              <option value="not_recommended">Not recommended</option>
+              <option value="inconclusive">Inconclusive</option>
+            </select>
+          </div>
+        </div>
         <div class="card p-0 mb-xl">
           <div id="reports-table-container"></div>
         </div>
