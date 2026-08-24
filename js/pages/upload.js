@@ -2,7 +2,7 @@ import { requireSession } from '../services/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { createDropzone } from '../components/dropzone.js';
 import { createDatasetFromCSV, getSampleDatasetCSV, getDatasets, getDatasetById, updateDatasetTarget, exportDatasetAsCSV } from '../services/dataset.js';
-import { renderBarChart } from '../components/charts.js';
+import { renderBarChart, renderCorrelationHeatmap } from '../components/charts.js';
 import { renderDataTable } from '../components/tables.js';
 import { toast } from '../components/toast.js';
 import { downloadCSV } from '../utils/csv.js';
@@ -34,6 +34,7 @@ const metadataList = qs('#dataset-metadata-list');
 const targetSelectContainer = qs('#target-select-container');
 const reasonsList = qs('#diagnostic-reasons-list');
 const warningsList = qs('#diagnostic-warnings-list');
+const heatmapContainer = qs('#correlation-heatmap-container');
 const previewContainer = qs('#preview-table-container');
 const previewCountLabel = qs('#preview-count-label');
 
@@ -239,6 +240,35 @@ function renderAnalysisView(dataset) {
         el('span', {}, w),
       ]));
     });
+  }
+
+  // Render Correlation Matrix Heatmap
+  if (heatmapContainer) {
+    const numIndices = analysis.numericIndices || [];
+    const numFeatures = numIndices.map(idx => dataset.headers[idx]);
+    const numCount = numFeatures.length;
+
+    if (numCount >= 2) {
+      const matrix = Array.from({ length: numCount }, () => Array(numCount).fill(1));
+      const corrs = analysis.correlations || [];
+
+      for (let i = 0; i < numCount; i++) {
+        for (let j = 0; j < numCount; j++) {
+          if (i === j) {
+            matrix[i][j] = 1;
+          } else {
+            const f1 = numFeatures[i];
+            const f2 = numFeatures[j];
+            const found = corrs.find(c => (c.feature1 === f1 && c.feature2 === f2) || (c.feature1 === f2 && c.feature2 === f1));
+            matrix[i][j] = found ? found.coefficient : 0;
+          }
+        }
+      }
+
+      renderCorrelationHeatmap(heatmapContainer, numFeatures, matrix);
+    } else {
+      heatmapContainer.innerHTML = '<div class="text-small text-muted p-md text-center">Need at least 2 numeric features to generate correlation matrix.</div>';
+    }
   }
 
   // Preview Data Table

@@ -307,3 +307,126 @@ export function renderRunVarianceChart(container, runs, options = {}) {
 
   return canvas;
 }
+
+/**
+ * Render a Pearson Correlation Matrix Heatmap
+ * @param {HTMLElement} container - DOM container element
+ * @param {string[]} features - Array of feature names
+ * @param {number[][]} matrix - 2D square matrix of correlation coefficients (-1 to 1)
+ * @param {Object} options - Custom options (height, title, cellSize)
+ */
+export function renderCorrelationHeatmap(container, features, matrix, options = {}) {
+  const n = features.length;
+  if (!n || !matrix || matrix.length !== n) {
+    container.innerHTML = '<div class="text-small text-muted p-md text-center">Insufficient numeric features for correlation heatmap.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  const { title = '' } = options;
+  if (title) {
+    container.appendChild(el('div', { className: 'card-title mb-md text-small font-semi' }, title));
+  }
+
+  const wrapper = el('div', { className: 'heatmap-wrapper overflow-x-auto' });
+  container.appendChild(wrapper);
+
+  const cellSize = Math.max(38, Math.min(64, Math.floor(400 / n)));
+  const labelMarginLeft = 120;
+  const labelMarginTop = 80;
+  const totalW = labelMarginLeft + n * cellSize + 20;
+  const totalH = labelMarginTop + n * cellSize + 20;
+
+  const canvas = el('canvas', {});
+  canvas.style.width = `${totalW}px`;
+  canvas.style.height = `${totalH}px`;
+  canvas.style.display = 'block';
+  wrapper.appendChild(canvas);
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = totalW * dpr;
+  canvas.height = totalH * dpr;
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Background
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // Render Top Labels (rotated 45deg)
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillStyle = '#444444';
+  features.forEach((feat, col) => {
+    const x = labelMarginLeft + col * cellSize + cellSize / 2;
+    const y = labelMarginTop - 10;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(-Math.PI / 4);
+    ctx.textAlign = 'left';
+    const truncated = feat.length > 12 ? feat.substring(0, 10) + '..' : feat;
+    ctx.fillText(truncated, 0, 0);
+    ctx.restore();
+  });
+
+  // Render Left Labels
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  features.forEach((feat, row) => {
+    const x = labelMarginLeft - 10;
+    const y = labelMarginTop + row * cellSize + cellSize / 2;
+    const truncated = feat.length > 14 ? feat.substring(0, 12) + '..' : feat;
+    ctx.fillText(truncated, x, y);
+  });
+
+  // Render Cells
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const val = matrix[r][c];
+      const cellX = labelMarginLeft + c * cellSize;
+      const cellY = labelMarginTop + r * cellSize;
+
+      // Determine cell fill color based on correlation value
+      let fillCol;
+      let textCol = '#ffffff';
+
+      if (r === c) {
+        fillCol = '#222222';
+      } else if (val >= 0) {
+        const alpha = Math.min(0.9, Math.max(0.08, val * 0.9));
+        fillCol = `rgba(26, 138, 92, ${alpha.toFixed(2)})`;
+        if (alpha < 0.45) textCol = '#222222';
+      } else {
+        const alpha = Math.min(0.9, Math.max(0.08, Math.abs(val) * 0.9));
+        fillCol = `rgba(196, 62, 62, ${alpha.toFixed(2)})`;
+        if (alpha < 0.45) textCol = '#222222';
+      }
+
+      ctx.fillStyle = fillCol;
+      ctx.fillRect(cellX + 1, cellY + 1, cellSize - 2, cellSize - 2);
+
+      // Cell border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cellX + 1, cellY + 1, cellSize - 2, cellSize - 2);
+
+      // Cell text
+      ctx.fillStyle = textCol;
+      ctx.font = '10px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const formatted = (val >= 0 ? '+' : '') + val.toFixed(2);
+      ctx.fillText(formatted, cellX + cellSize / 2, cellY + cellSize / 2);
+    }
+  }
+
+  // Legend at bottom
+  const legendY = labelMarginTop + n * cellSize + 15;
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillStyle = '#666666';
+  ctx.textAlign = 'left';
+  ctx.fillText('Emerald: Positive Correlation (+)  |  Burgundy: Negative Correlation (-)  |  Range: -1.00 to +1.00', labelMarginLeft, legendY);
+
+  return canvas;
+}
+
