@@ -1,142 +1,327 @@
-# DataForge — Synthetic Data Intelligence Engine
+# DataForge — Synthetic Data Intelligence & Generative Synthesis Engine
+
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3+-F7931E?style=flat&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES2022-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > **Measure before you train. Stop guessing with synthetic data.**
 
-DataForge is a client-side machine learning intelligence engine that analyzes tabular datasets, evaluates candidate augmentation strategies under controlled conditions, and tells you mathematically whether synthetic data actually improves downstream model generalization.
+DataForge is a high-performance, hybrid-runtime Machine Learning Intelligence and Generative Synthesis Engine. It analyzes tabular datasets, generates high-fidelity synthetic data, runs controlled multi-strategy augmentation trials on strictly held-out real test splits, and tells you mathematically whether synthetic data actually improves downstream model generalization.
+
+---
+
+## 📑 Table of Contents
+
+- [The Problem: Blind Augmentation](#-the-problem-blind-augmentation)
+- [Core Methodology: 4-Stage Scientific Pipeline](#-core-methodology-4-stage-scientific-pipeline)
+- [Generative Synthesis Suite](#-generative-synthesis-suite)
+- [Tabular Augmentation Algorithms](#-tabular-augmentation-algorithms)
+- [Statistical Fidelity & Privacy Auditing](#-statistical-fidelity--privacy-auditing)
+- [Hybrid Dual-Engine Architecture](#-hybrid-dual-engine-architecture)
+- [Multi-Page Application Overview](#-multi-page-application-overview)
+- [Native Backend REST API Reference](#-native-backend-rest-api-reference)
+- [Getting Started](#-getting-started)
+- [Automated Testing & Verification](#-automated-testing--verification)
+- [Repository Structure](#-repository-structure)
+- [Scientific Integrity Guarantees](#-scientific-integrity-guarantees)
+- [License](#-license)
 
 ---
 
 ## ⚡ The Problem: Blind Augmentation
 
-In modern machine learning pipelines, teams frequently encounter class imbalance or small sample sizes and blindly apply synthetic data techniques like SMOTE or Gaussian noise injection. 
+In real-world machine learning workflows, engineers frequently encounter severe class imbalance, high data collection costs, or privacy constraints. The default reaction is often to blindly apply oversampling techniques (such as SMOTE or Gaussian jitter) without evaluating downstream generalization impact.
 
-However, conventional synthetic data tools suffer from three critical flaws:
-1. **Silent Boundary Distortion**: Generating synthetic samples near class decision boundaries frequently degrades majority class precision while masking the drop in overall accuracy.
-2. **Overfitting to Duplication**: Naive oversampling creates dense clusters of near-identical samples that cause classifiers to memorize synthetic artifacts rather than learning generalizable features.
-3. **Lack of Causal Explanations**: When performance drops, engineers rarely know *why*. Without diagnostic visibility, teams abandon augmentation altogether instead of adjusting the parameter space.
+This naive approach introduces three critical failure modes:
 
-**DataForge treats synthetic data as an empirical hypothesis to be tested and verified before deployment.**
+1. **Silent Decision Boundary Distortion**: Generating synthetic samples along class boundaries often inflates minority recall while severely degrading majority class precision—a failure that is frequently masked by overall accuracy metrics.
+2. **Overfitting to Synthetic Duplicates**: Naive oversampling creates dense clusters of near-identical records, leading classifiers to memorize synthetic artifacts rather than learning true underlying population distributions.
+3. **Absence of Causal Diagnostics**: When model performance drops post-augmentation, practitioners lack diagnostic tooling to explain *why*.
+
+**DataForge treats synthetic data as an empirical hypothesis to be validated, audited, and mathematically verified before model deployment.**
 
 ---
 
 ## 🔬 Core Methodology: 4-Stage Scientific Pipeline
 
 ```
-  ┌────────────────┐      ┌────────────────────┐      ┌───────────────────────┐      ┌─────────────────────────┐
-  │   01 OBSERVE   │ ───► │  02 HYPOTHESIZE    │ ───► │     03 EXPERIMENT     │ ───► │      04 RECOMMEND       │
-  │ Dataset Health │      │ Candidate Strategies│     │ Controlled Trials     │      │ Causal Report & Verdict │
-  └────────────────┘      └────────────────────┘      └───────────────────────┘      └─────────────────────────┘
+  ┌─────────────────┐      ┌─────────────────────┐      ┌─────────────────────────┐      ┌───────────────────────────┐
+  │   01 OBSERVE    │ ───► │   02 HYPOTHESIZE    │ ───► │      03 EXPERIMENT      │ ───► │       04 RECOMMEND        │
+  │ Dataset Health  │      │ Candidate Strategies│      │    Controlled Trials    │      │  Causal Report & Verdict  │
+  │ & Need Score    │      │ (Copula/SMOTE/etc.) │      │ (Zero-Leakage Repeats)  │      │ (Fidelity, Drift, Safety) │
+  └─────────────────┘      └─────────────────────┘      └─────────────────────────┘      └───────────────────────────┘
 ```
 
-1. **Observe**: Profile the raw dataset to compute class imbalance ratios, IQR outlier bounds, Pearson correlation matrices, and a composite **Augmentation Need Score (0–100)**.
-2. **Hypothesize**: Configure candidate augmentation strategies tailored to the dataset's feature space (e.g. SMOTE with k-nearest neighbors, jittered random oversampling, Gaussian perturbation).
-3. **Experiment**: Execute multi-run randomized trials ($N$ iterations) on strictly **held-out, unaugmented test splits** to benchmark candidate strategies against unaugmented baselines.
-4. **Recommend**: Receive plain-English explanations citing exact feature shifts, statistical significance tests ($p$-value estimates), class degradation flags, and an actionable verdict (`RECOMMENDED`, `USE WITH CAUTION`, `NOT RECOMMENDED`).
+### Stage 1: Observe (Diagnostic Profiling)
+- **RFC-4180 Ingestion**: Robust streaming CSV parser supporting dirty currencies (`$5,200.50`), percentages (`12%`), quotes, and missing tokens (`NaN`, `?`, `N/A`).
+- **Automated Feature Typing**: Differentiates continuous numeric variables from categorical and high-cardinality ID features.
+- **Statistical Health Profiler**: Computes class imbalance ratios, IQR outlier bounds, Pearson & Spearman correlation matrices, and missingness rates.
+- **Augmentation Need Score (0–100)**: A composite diagnostic metric derived from imbalance penalty, sample sparsity, and feature overlap.
+
+### Stage 2: Hypothesize (Candidate Generation)
+- Configures candidate tabular synthesis and oversampling algorithms tailored to the dataset's topological and statistical properties.
+- Parameter space tuning: nearest neighbor counts ($k$), sampling ratios ($\alpha$), noise perturbation variances ($\sigma$), and bandwidth multipliers ($h$).
+
+### Stage 3: Experiment (Controlled Empirical Trials)
+- **Strict Zero-Leakage Protocol**: Test partitions are isolated *before* any synthesis/augmentation and remain 100% untouched across all runs.
+- **Multi-Run Randomized Variance Tracking**: Evaluates means and standard deviations ($\mu \pm \sigma$) across randomized split seeds to guard against lucky splits.
+- **Universal Task Support**: Supports both **Classification** (Accuracy, Precision, Recall, F1, Per-Class Confusion Matrix) and **Continuous Regression** ($R^2$, RMSE, MAE, Pearson $r$).
+- **Multi-Model Suite**: Evaluates across Random Forest, Hist-Gradient Boosting, Logistic Regression / Ridge, Decision Trees, and $k$-NN.
+
+### Stage 4: Recommend (Causal Explanations & Actionable Verdicts)
+- **Statistical Significance**: Performs two-sample paired tests ($p$-value estimation) between baseline and candidate pipelines.
+- **Trade-off & Degradation Guardrails**: Flags precision/recall cannibalization (e.g. flagging majority class precision loss $>3.5\%$).
+- **Definitive Action Verdicts**: `RECOMMENDED`, `USE WITH CAUTION`, or `NOT RECOMMENDED`.
 
 ---
 
-## 🚀 Key Features
+## 🧬 Generative Synthesis Suite
 
-- **🛡️ Zero Data Leakage**: Test partitions are isolated *before* any augmentation and remain 100% untouched across all runs.
-- **📊 Multi-Run Variance Tracking**: Every evaluation measures standard deviations ($\mu \pm \sigma$) across randomized seeds to prevent false positives caused by lucky data splits.
-- **⚠️ Degradation & Trade-off Warnings**: Automatically flags when an augmentation strategy improves minority recall at the expense of significant majority precision loss ($>3.5\%$).
-- **✨ Synthetic Quality Metrics**: Evaluates Diversity Score (0–100), Duplicate Redundancy %, and Distribution Shift ($\Delta$) for each generated variant.
-- **🔒 Pure Client-Side Privacy**: Zero data leaves your browser. All parsing, mathematical analysis, model training, and storage run locally in client memory.
-- **📱 Fully Responsive Design**: Seamless experience across mobile phones (with frosted bottom navigation), tablets, and widescreen desktop monitors.
+DataForge includes standalone generative synthesizers capable of modeling and generating entirely new synthetic tabular datasets from scratch:
+
+| Algorithm | Method | Key Strength |
+|---|---|---|
+| **Gaussian Copula** | Probability Integral Transform (PIT) $\to$ empirical rank CDF $\to$ standard normal mapping $\to$ positive semi-definite Cholesky factorization $\to$ inverse empirical quantile sampling | Preserves exact non-linear marginal distributions and multi-attribute Pearson/Spearman joint covariance matrices. |
+| **Multivariate KDE** | Gaussian kernel smoothing with Silverman's Rule of Thumb bandwidth estimator $h = 0.9 \cdot \min(\sigma, \frac{\text{IQR}}{1.34}) \cdot n^{-1/5}$ | Non-parametric; fits arbitrary multi-modal distributions without normality assumptions. |
+| **Bayesian Network** | Mutual Information Directed Acyclic Graph (DAG) structure learning $\to$ topological ordering $\to$ conditional probability sampling | Captures causal and directional conditional dependencies between discrete/binned columns. |
+| **Variational Autoencoder** | Encoder-decoder neural network parameterized by latent Gaussian space $\mathcal{N}(\mu, \sigma^2)$ | Learns complex continuous-discrete latent representations. |
 
 ---
 
-## 📐 System Architecture & Multi-Page App (MPA)
+## 📈 Tabular Augmentation Algorithms
 
-DataForge is built with zero external runtime dependencies using vanilla web standards:
+To remediate minority class deficiency, DataForge provides advanced oversampling algorithms:
+
+1. **SMOTE (Synthetic Minority Over-sampling Technique)**: Generates synthetic points along line segments connecting $k$-nearest minority neighbors in Euclidean space:
+   $$\mathbf{x}_{\text{new}} = \mathbf{x}_i + \lambda (\mathbf{x}_{zi} - \mathbf{x}_i), \quad \lambda \sim \mathcal{U}(0, 1)$$
+2. **SMOTE-NC (Nominal Continuous)**: Extends SMOTE to mixed datasets by computing continuous standard deviations and categorical overlap penalties for Euclidean distance.
+3. **ADASYN (Adaptive Synthetic)**: Weighted sampling that produces more synthetic instances for minority samples that are harder to learn (near high-density majority regions).
+4. **SMOTE-Tomek**: Two-stage pipeline that applies SMOTE generation followed by Tomek Link identification to prune borderline artifacts and eliminate decision boundary overlap.
+5. **Random Oversampling**: Balanced uniform resampling with optional Gaussian noise injection.
+6. **Gaussian Jitter Perturbation**: Controlled normal noise perturbation calibrated to feature standard deviations.
+
+---
+
+## 🛡️ Statistical Fidelity & Privacy Auditing
+
+Every generated dataset is subjected to an exact statistical fidelity and privacy audit:
 
 ```
-DataForge/
-├── index.html               # Public Landing Page & Interactive Showcase
-├── signup.html              # User Registration with Strength Meter
-├── login.html               # Sign In & Session Guard
-├── dashboard.html           # Main Workspace & 1-Click Benchmark Demo
-├── upload.html              # Dataset Ingestion & Statistical Profiler
-├── experiment.html          # Multi-Strategy Experiment Configuration Lab
-├── results.html             # Comparative Evaluation Matrix & CSV Exporter
-├── reports.html             # Structured Scientific Narrative Reports
-├── settings.html            # Profile, Quota Bar & Workspace Backup/Export
-│
-├── css/
-│   ├── variables.css        # Design tokens & fluid clamp typography
-│   ├── reset.css            # Modern element reset
-│   ├── base.css             # Typography & global body styling
-│   ├── components.css       # Cards, pill badges, inputs, buttons, tables
-│   ├── layout.css           # Responsive sidebar, bottom nav, modal & grid
-│   ├── utilities.css        # Spacing, flexbox, typography helpers
-│   ├── animations.css       # Keyframes & smooth entry transitions
-│   └── pages/               # Page-specific stylesheets
-│
-├── js/
-│   ├── utils/               # Math, CSV parser, DOM, formatting, validation
-│   ├── services/            # Storage, Auth, Dataset, Analysis, Augmentation,
-│   │                        # Evaluation, Recommendations, Reports, Experiment
-│   ├── components/          # Charts (Canvas), Tables, Dropzone, Modals, Sidebar, Toast
-│   └── pages/               # Page controller scripts
-│
-├── docs/                    # Complete 8-part architectural specification
-├── server.js                # Lightweight zero-dependency local static server
-├── test-suite.js            # End-to-end Node.js automated test suite
-└── package.json             # ES Module project manifest
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        DATAFORGE STATISTICAL AUDIT SUITE                               │
+├────────────────────────────┬───────────────────────────────┬───────────────────────────┤
+│ Continuous Fidelity        │ Categorical Fidelity          │ Privacy & Memorization    │
+├────────────────────────────┼───────────────────────────────┼───────────────────────────┤
+│ • 2-Sample KS Test (D)     │ • Total Variation Dist (TVD)  │ • Distance to Closest     │
+│ • Wasserstein-1 (EMD)      │ • Marginal Category Prob Delta│   Record (DCR)            │
+│ • Covariance Frobenius Norm│ • Frequency Shift Diagnostics │ • Exact Match Check (0%)  │
+│ • Mean & Std Diff %        │ • Categorical Support Audit   │ • Median DCR Privacy Score│
+└────────────────────────────┴───────────────────────────────┴───────────────────────────┘
 ```
+
+- **TSTR Benchmark (Train on Synthetic, Test on Real)**: Trains downstream Scikit-Learn models exclusively on synthetic data and tests them against held-out real data to compute retention percentage:
+  $$\text{TSTR Retention} = \frac{\text{Metric}_{\text{Synthetic-Trained}}}{\text{Metric}_{\text{Real-Trained}}} \times 100\%$$
+
+---
+
+## 🏗️ Hybrid Dual-Engine Architecture
+
+DataForge uses a dual-engine architecture that runs locally in pure client-side mode, or connects to a high-performance native Python server:
+
+```
+                            ┌────────────────────────────────────────┐
+                            │         DataForge Frontend (MPA)       │
+                            │  Vanilla HTML5 + Vanilla CSS3 + ES6+   │
+                            │   Glassmorphic Monochrome Design UI    │
+                            └───────────────────┬────────────────────┘
+                                                │
+                       ┌────────────────────────┴────────────────────────┐
+                       ▼                                                 ▼
+        ┌─────────────────────────────┐                   ┌─────────────────────────────┐
+        │    Native Python Backend    │                   │   In-Browser Client Engine  │
+        │    FastAPI + Scikit-Learn   │                   │    WebAssembly + Workers    │
+        │    http://127.0.0.1:8000    │                   │   (Zero-Install Privacy)    │
+        ├─────────────────────────────┤                   ├─────────────────────────────┤
+        │ • Multi-core Scikit-Learn   │   Auto-Fallback   │ • Pyodide Scikit-Learn WASM │
+        │ • SciPy exact KS & EMD      │ ◄────────────────►│ • Pure JS Cholesky / Linalg │
+        │ • Pandas DataFrame engine   │   When Offline    │ • In-Browser Data Worker    │
+        │ • NumPy matrix acceleration │                   │ • LocalStorage persistence  │
+        └─────────────────────────────┘                   └─────────────────────────────┘
+```
+
+- **Pipeline Manager (`pipeline.js`)**: Probes `http://127.0.0.1:8000/api/health`. If the native backend is active, computation runs at full Scikit-Learn C-speed; if offline, it seamlessly falls back to Pyodide WebAssembly or the in-browser Web Worker.
+- **100% Reproducible Code Generation**: Automatically compiles end-to-end Python Scikit-Learn scripts ready to download or copy directly to your clipboard.
+
+---
+
+## 🖥️ Multi-Page Application Overview
+
+| Page | File | Primary Function |
+|---|---|---|
+| **Landing** | [`index.html`](index.html) | Product value proposition, interactive canvas showcase, feature walkthrough. |
+| **Auth** | [`signup.html`](signup.html) & [`login.html`](login.html) | Secure local session authentication, password strength meter. |
+| **Dashboard** | [`dashboard.html`](dashboard.html) | Overview workspace, 1-click synthetic benchmark demo, dataset health radar. |
+| **Upload** | [`upload.html`](upload.html) | CSV drag-and-drop, data type inference, IQR outlier detector, correlation heatmap, Need Score. |
+| **Experiment Lab** | [`experiment.html`](experiment.html) | Multi-strategy configuration, cross-validation parameters, algorithm selector. |
+| **Results Matrix** | [`results.html`](results.html) | Head-to-head performance matrix, rotated non-overlapping canvas bar charts, confusion matrices, feature drift overlays, CSV export. |
+| **Narrative Reports**| [`reports.html`](reports.html) | Formatted plain-English scientific narrative reports with verdicts, citations, and exportable PDF layout. |
+| **Synthesizer Lab** | [`synthesizer-lab.html`](synthesizer-lab.html) | Standalone generative synthesis studio (Copula, KDE, Bayes) with real-time fidelity & privacy audits. |
+| **Settings** | [`settings.html`](settings.html) | Profile preferences, storage quota monitoring, workspace JSON backup & restoration. |
+
+---
+
+## 🔌 Native Backend REST API Reference
+
+The FastAPI backend (`backend/main.py`) exposes high-performance endpoints:
+
+### `GET /api/health`
+Checks runtime availability and package versions.
+```json
+{
+  "status": "online",
+  "backend": "DataForge Native Python Engine",
+  "pythonVersion": "3.11.x",
+  "packages": { "numpy": "1.24.x", "scipy": "1.11.x", "pandas": "2.0.x", "scikit-learn": "1.3.x" }
+}
+```
+
+### `POST /api/synthesize`
+Generates synthetic tabular samples via Gaussian Copula or KDE.
+- **Request Body**: `{ headers: string[], data: any[][], algorithm: "copula" | "kde", rowCount: number, seed: number }`
+- **Response**: `{ syntheticHeaders: string[], syntheticData: any[][], rowCount: number, algorithm: string }`
+
+### `POST /api/audit`
+Executes statistical fidelity tests (KS-test, Wasserstein-1, DCR privacy score).
+- **Request Body**: `{ headers: string[], realData: any[][], syntheticData: any[][] }`
+- **Response**: `{ overallScore: number, numericFidelity: number, correlationFidelity: number, privacyScore: number, featureAudits: object[] }`
+
+### `POST /api/benchmark/tstr`
+Runs a downstream Scikit-Learn TSTR evaluation.
+- **Request Body**: `{ headers: string[], realData: any[][], syntheticData: any[][], targetCol: string, modelType: string, testSize: number, seed: number }`
+- **Response**: `{ baseline: object, synthetic: object, tstrRetention: number, taskType: string }`
+
+### `POST /api/experiment`
+Executes a multi-strategy, multi-run randomized benchmark.
+- **Request Body**: `{ headers: string[], data: any[][], targetCol: string, strategies: string[], runs: number, trainTestSplit: number, modelType: string, baseSeed: number }`
+- **Response**: `{ baseline: object, strategyResults: object[], recommendation: object, taskType: string }`
 
 ---
 
 ## 🛠️ Getting Started
 
-### Option 1: Zero-Dependency Node.js Server (Recommended)
-Clone the repository and launch the local server:
-```bash
-git clone https://github.com/AnhadMahajan/DataForge.git
-cd DataForge
-npm start
-```
-Then navigate to **`http://localhost:3000`** in your browser.
+### Prerequisites
+- **Node.js** (v16+) for local web serving and test runner
+- **Python** (v3.9+) with `pip` (optional, for native backend acceleration)
 
-### Option 2: Direct Browser Execution
-Open **`index.html`** directly in any modern web browser supporting ES Modules (Chrome, Firefox, Safari, Edge).
+### Option 1: Full-Stack Setup (Recommended)
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/AnhadMahajan/DataForge.git
+   cd DataForge
+   ```
+
+2. **Start the Frontend Web Server**:
+   ```bash
+   npm start
+   ```
+   *The application will open at `http://localhost:3005` (or port specified in `PORT`).*
+
+3. **Start the Native Python Backend** (in a separate terminal):
+   ```bash
+   # Install Python requirements
+   pip install fastapi uvicorn numpy scipy pandas scikit-learn
+
+   # Launch FastAPI Server
+   python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+   *Windows users can simply double-click `start-backend.bat`.*
+
+### Option 2: Pure Browser Client (Zero Backend)
+You can directly open `index.html` in any modern web browser that supports ES Modules (Chrome, Firefox, Edge, Safari). All parsing, synthesis, and evaluation will execute locally via client-side Web Workers and Pyodide.
 
 ---
 
-## 🧪 Automated Testing
+## 🧪 Automated Testing & Verification
 
-Run the full end-to-end automated test suite:
+DataForge includes automated test suites covering both frontend algorithms and backend API endpoints:
+
+### 1. JavaScript & Node.js E2E Test Suite
+Validates mathematical routines, linear algebra, dirty CSV ingestion, SMOTE/ADASYN/Tomek algorithms, and classification pipelines:
 ```bash
 npm test
 ```
-The test suite validates:
-- [x] Mathematical utilities, IQR outlier detection, and cryptographic hashing
-- [x] RFC-4180 CSV parser and data type inference
-- [x] Local storage CRUD, namespacing, and authentication session guards
-- [x] Dataset health metrics and Augmentation Need Score calculation
-- [x] SMOTE, Random Oversampling, and Gaussian Noise augmentation algorithms
-- [x] Stratified cross-validation and k-NN / Decision Tree classification
-- [x] Statistical recommendation engine and narrative report compiler
+
+### 2. Native Python FastAPI Test Suite
+Validates API endpoints, Gaussian Copula sampling, fidelity audits, and continuous regression benchmarks:
+```bash
+python test_backend.py
+```
 
 ---
 
-## 📚 Specification Documentation
+## 📁 Repository Structure
 
-Comprehensive architectural and design documents are located in [`docs/`](docs/):
+```
+DataForge/
+├── backend/
+│   ├── main.py                  # FastAPI server with REST API routes
+│   └── engine/
+│       ├── synthesizer.py       # Gaussian Copula & Silverman KDE generators
+│       ├── fidelity.py          # KS test, Wasserstein distance, DCR privacy audit
+│       ├── evaluator.py         # Scikit-Learn TSTR classification & regression
+│       └── experiment.py        # Multi-run randomized cross-validation pipeline
+│
+├── js/
+│   ├── components/              # Canvas charts, command palette, dropzone, sidebar, toast, tables
+│   ├── pages/                   # Page controllers for each view
+│   ├── services/                # Dataset, augmentation, synthesizer, fidelity, pipeline, auth, storage
+│   ├── utils/                   # Math, linear algebra, CSV parser, DOM helpers, formatting, validation
+│   └── workers/                 # Pyodide WebAssembly worker, standard data worker
+│
+├── css/
+│   ├── variables.css            # Design tokens, color palette, fluid typography
+│   ├── reset.css                # Element normalization
+│   ├── base.css                 # Typography & body styles
+│   ├── components.css           # Cards, buttons, tables, badges, inputs
+│   ├── layout.css               # Responsive sidebar, navigation, grid systems
+│   ├── animations.css           # Keyframes & micro-transitions
+│   └── pages/                   # Page-specific stylesheets
+│
+├── dashboard.html               # Main Workspace view
+├── experiment.html              # Multi-Strategy Experiment Lab
+├── index.html                   # Public Landing Page & Showcase
+├── login.html                   # Authentication Login
+├── package.json                 # ES Module project manifest
+├── reports.html                 # Scientific Narrative Reports
+├── results.html                 # Performance & Comparison Matrix
+├── server.js                    # Zero-dependency local Node.js server
+├── settings.html                # Workspace Backup & Quota settings
+├── signup.html                  # User Registration
+├── start-backend.bat            # Quick-launch batch file for FastAPI
+├── synthesizer-lab.html         # Generative Synthesis Studio
+├── test_backend.py              # Python API endpoint verification
+├── test-suite.js                # Node.js end-to-end algorithm test suite
+└── upload.html                  # Dataset Ingestion & Profiler
+```
 
-| Document | Purpose |
-|---|---|
-| [**01-VISION.md**](docs/01-VISION.md) | Problem statement, value proposition, and design principles |
-| [**02-DESIGN-SYSTEM.md**](docs/02-DESIGN-SYSTEM.md) | Monochrome glassmorphism tokens, typography, and contrast rules |
-| [**03-ARCHITECTURE.md**](docs/03-ARCHITECTURE.md) | Service layer architecture, directory structure, module contracts |
-| [**04-PAGES-AND-FLOWS.md**](docs/04-PAGES-AND-FLOWS.md) | Detailed specifications for all 9 application views and state transitions |
-| [**05-DATA-LAYER.md**](docs/05-DATA-LAYER.md) | LocalStorage schema, data models, persistence, and backup protocols |
-| [**06-CORE-ENGINE.md**](docs/06-CORE-ENGINE.md) | Mathematical formulation of SMOTE, Noise, k-NN, and Recommendations |
-| [**07-BUILD-ORDER.md**](docs/07-BUILD-ORDER.md) | Phased implementation roadmap and verification checkpoints |
-| [**08-ANTI-PATTERNS.md**](docs/08-ANTI-PATTERNS.md) | Scientific integrity guardrails and anti-slop guidelines |
+---
+
+## 🔒 Scientific Integrity Guarantees
+
+- **Zero Test Contamination**: Test splits are partitioned *before* candidate generation and never exposed to synthesizers or oversamplers.
+- **Variance Disclosure**: Every performance metric is reported with variance ($\mu \pm \sigma$) across multi-seed evaluations to prevent selective reporting.
+- **Conservative Recommendations**: Candidate strategies must outperform baselines with statistical confidence ($p < 0.05$) and maintain majority precision before receiving a `RECOMMENDED` verdict.
+- **Client-Side Privacy**: By default, no datasets are transmitted to external cloud servers; computation is localized to your machine.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for complete terms and conditions.
+
+---
+
+*Built with empirical rigor by [Anhad Mahajan](https://github.com/AnhadMahajan).*
