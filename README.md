@@ -10,6 +10,10 @@
 
 DataForge is a high-performance, hybrid-runtime Machine Learning Intelligence and Generative Synthesis Engine. It analyzes tabular datasets, generates high-fidelity synthetic data, runs controlled multi-strategy augmentation trials on strictly held-out real test splits, and tells you mathematically whether synthetic data actually improves downstream model generalization.
 
+<p align="center">
+  <img src="images/Screenshot%202026-08-25%20180848.png" alt="DataForge Landing Page Hero" width="100%" />
+</p>
+
 ---
 
 ## 📑 Table of Contents
@@ -20,7 +24,14 @@ DataForge is a high-performance, hybrid-runtime Machine Learning Intelligence an
 - [Tabular Augmentation Algorithms](#-tabular-augmentation-algorithms)
 - [Statistical Fidelity & Privacy Auditing](#-statistical-fidelity--privacy-auditing)
 - [Hybrid Dual-Engine Architecture](#-hybrid-dual-engine-architecture)
-- [Multi-Page Application Overview](#-multi-page-application-overview)
+- [Multi-Page Application & Visual Tour](#-multi-page-application--visual-tour)
+  - [1. Landing & Product Overview](#1-landing--product-overview)
+  - [2. Researcher Onboarding & Authentication](#2-researcher-onboarding--authentication)
+  - [3. Intelligence Dashboard & Workspace Hub](#3-intelligence-dashboard--workspace-hub)
+  - [4. Dataset Ingestion & Diagnostic Profiler](#4-dataset-ingestion--diagnostic-profiler)
+  - [5. Controlled Experimentation Lab](#5-controlled-experimentation-lab)
+  - [6. Empirical Evaluation & Results Matrix](#6-empirical-evaluation--results-matrix)
+  - [7. Workspace Settings & Vault Manager](#7-workspace-settings--vault-manager)
 - [Native Backend REST API Reference](#-native-backend-rest-api-reference)
 - [Getting Started](#-getting-started)
 - [Automated Testing & Verification](#-automated-testing--verification)
@@ -122,7 +133,7 @@ Every generated dataset is subjected to an exact statistical fidelity and privac
 ```
 
 - **TSTR Benchmark (Train on Synthetic, Test on Real)**: Trains downstream Scikit-Learn models exclusively on synthetic data and tests them against held-out real data to compute retention percentage:
-  $$\text{TSTR Retention} = \frac{\text{Metric}_{\text{Synthetic-Trained}}}{\text{Metric}_{\text{Real-Trained}}} \times 100\%$$
+   $$\text{TSTR Retention} = \frac{\text{Metric}_{\text{Synthetic-Trained}}}{\text{Metric}_{\text{Real-Trained}}} \times 100\%$$
 
 ---
 
@@ -156,19 +167,110 @@ DataForge uses a dual-engine architecture that runs locally in pure client-side 
 
 ---
 
-## 🖥️ Multi-Page Application Overview
+## 🖥️ Multi-Page Application & Visual Tour
+
+DataForge provides a multi-page interface tailored for machine learning researchers and data scientists:
 
 | Page | File | Primary Function |
 |---|---|---|
-| **Landing** | [`index.html`](index.html) | Product value proposition, interactive canvas showcase, feature walkthrough. |
-| **Auth** | [`signup.html`](signup.html) & [`login.html`](login.html) | Secure local session authentication, password strength meter. |
-| **Dashboard** | [`dashboard.html`](dashboard.html) | Overview workspace, 1-click synthetic benchmark demo, dataset health radar. |
-| **Upload** | [`upload.html`](upload.html) | CSV drag-and-drop, data type inference, IQR outlier detector, correlation heatmap, Need Score. |
+| **Landing** | [`index.html`](index.html) | Product value proposition, interactive showcase, workflow entry point. |
+| **Auth** | [`signup.html`](signup.html) & [`login.html`](login.html) | Secure local session authentication, password entropy analysis. |
+| **Dashboard** | [`dashboard.html`](dashboard.html) | Central command center, 1-click synthetic benchmark demo, dataset health radar. |
+| **Upload** | [`upload.html`](upload.html) | CSV drag-and-drop ingestion, automated typing, outlier detection, Need Score. |
 | **Experiment Lab** | [`experiment.html`](experiment.html) | Multi-strategy configuration, cross-validation parameters, algorithm selector. |
-| **Results Matrix** | [`results.html`](results.html) | Head-to-head performance matrix, rotated non-overlapping canvas bar charts, confusion matrices, feature drift overlays, CSV export. |
-| **Narrative Reports**| [`reports.html`](reports.html) | Formatted plain-English scientific narrative reports with verdicts, citations, and exportable PDF layout. |
-| **Synthesizer Lab** | [`synthesizer-lab.html`](synthesizer-lab.html) | Standalone generative synthesis studio (Copula, KDE, Bayes) with real-time fidelity & privacy audits. |
-| **Settings** | [`settings.html`](settings.html) | Profile preferences, storage quota monitoring, workspace JSON backup & restoration. |
+| **Results Matrix** | [`results.html`](results.html) | Head-to-head evaluation matrix, held-out delta cards, confusion matrices, CSV export. |
+| **Narrative Reports**| [`reports.html`](reports.html) | Scientific narrative reports with verdicts, citations, and exportable PDF layout. |
+| **Synthesizer Lab** | [`synthesizer-lab.html`](synthesizer-lab.html) | Standalone generative studio (Copula, KDE, Bayes) with real-time fidelity audits. |
+| **Settings** | [`settings.html`](settings.html) | Researcher profile preferences, storage quota monitoring, JSON workspace vault. |
+
+---
+
+### 1. Landing & Product Overview
+The landing page introduces the core thesis of DataForge—treating synthetic data augmentation as an empirical hypothesis to be validated with mathematical rigor before model training.
+
+<p align="center">
+  <img src="images/Screenshot%202026-08-25%20180848.png" alt="DataForge Landing Page Hero" width="100%" />
+</p>
+
+- **Value Proposition**: Clear overview of how DataForge replaces blind oversampling with empirical validation.
+- **Direct Navigation**: 1-click entry to the workflow, feature highlights, and interactive preview canvas.
+
+---
+
+### 2. Researcher Onboarding & Authentication
+A dedicated, privacy-first researcher authentication interface with client-side credential hashing and password strength verification.
+
+<p align="center">
+  <img src="images/Screenshot%202026-08-25%20180908.png" alt="Researcher Onboarding & Account Creation" width="100%" />
+</p>
+
+- **Scientific Guarantees**: Highlights the 0% data leakage policy and zero-overhead client execution.
+- **Security**: Real-time password entropy meter with character requirement validation.
+
+---
+
+### 3. Intelligence Dashboard & Workspace Hub
+The central command hub gives researchers an immediate birds-eye view of their datasets, recent experiments, and recommended data strategies.
+
+<p align="center">
+  <img src="images/Screenshot%202026-08-25%20181132.png" alt="Research Dashboard & Workspace Hub" width="100%" />
+</p>
+
+- **Live Metrics**: Vault datasets count, total experiment runs, and maximum observed F1 gain.
+- **Empirical Recommendation**: Highlights top-performing strategies (e.g. *Random Oversampling* or *SMOTE-NC*) with statistical confidence ratings.
+- **Augmentation Impact Overview & Health Radar**: Visual distribution charts and diagnostic radar assessing class imbalance and outlier presence.
+
+---
+
+### 4. Dataset Ingestion & Diagnostic Profiler
+A robust data ingestion studio supporting drag-and-drop CSV upload and built-in benchmark datasets for instant exploration.
+
+<p align="center">
+  <img src="images/Screenshot%202026-08-25%20180938.png" alt="Dataset Ingestion & Diagnostic Profiler" width="100%" />
+</p>
+
+- **Streaming CSV Parser**: Ingests files up to 5MB with automatic handling of quotes, dirty formats, and missing values.
+- **Benchmark Sample Loader**: Instant 1-click loading of the *Customer Churn Risk* benchmark dataset (280 rows, imbalanced classes, simulated outliers).
+- **Vault History**: Lists previously ingested datasets for fast switching across experiments.
+
+---
+
+### 5. Controlled Experimentation Lab
+Configure and calibrate multiple synthetic data and oversampling strategies to run concurrently against unaugmented baselines.
+
+<p align="center">
+  <img src="images/Screenshot%202026-08-25%20181002.png" alt="Scientific Experimentation Lab" width="100%" />
+</p>
+
+- **Experiment Setup**: Dataset health score indicator, class imbalance ratio (e.g. 7.54:1), and pipeline readiness verification.
+- **Multi-Strategy Selection**: Select and run **SMOTE-NC**, **ADASYN**, **SMOTE-Tomek**, and **Random Oversampling** in parallel.
+- **Interactive Hyperparameter Sliders**: Dynamic adjustment of $k$-nearest neighbors ($k=5$), boundary cleaning flags, and Gaussian jitter variance percentages.
+
+---
+
+### 6. Empirical Evaluation & Results Matrix
+The analytical core of DataForge, displaying statistical verdicts, comparative metrics on strictly held-out test splits, and export utilities.
+
+<p align="center">
+  <img src="images/Screenshot%202026-08-25%20181118.png" alt="Empirical Evaluation & Results Matrix" width="100%" />
+</p>
+
+- **Actionable Verdict Banner**: Prominently displays clear guidance (e.g., `Augmentation Recommended` with high statistical confidence $p = 0.05$).
+- **Held-Out Metric Delta Cards**: Side-by-side comparison of **Macro F1-Score** (+1.5% gain), **Accuracy**, **Precision**, and **Recall** (+4.5% gain) against baseline.
+- **Export & Report Actions**: Direct export of results matrix CSV, augmented datasets, synthetic datasets, and 1-click generation of narrative scientific reports.
+
+---
+
+### 7. Workspace Settings & Vault Manager
+Manage researcher credentials, audit local storage quotas, and monitor hybrid runtime engine execution states.
+
+<p align="center">
+  <img src="images/Screenshot%202026-08-25%20181153.png" alt="Workspace Settings & Vault Manager" width="100%" />
+</p>
+
+- **Researcher Profile**: Custom user credentials and workspace identification.
+- **Runtime Engine Status**: Visual indicator showing whether the **Browser Python (Pyodide)** or **Native FastAPI Backend** is actively powering the workspace.
+- **Data & Storage Quotas**: Manage client-side LocalStorage quotas, import/export workspace JSON vaults, and customize evaluation defaults.
 
 ---
 
