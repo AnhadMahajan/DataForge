@@ -125,17 +125,20 @@
           </div>
         </section>
 
-        <!-- Cross-Experiment Comparative Benchmark -->
-        <section class="section" id="compare-section">
-          <div class="flex items-center justify-between mb-md flex-wrap gap-sm">
-            <div>
-              <h2 class="section-title">Cross-Experiment Benchmark Comparison</h2>
-              <p class="text-secondary text-small">Compare candidate strategies and generalization gains across different runs and model architectures.</p>
+        <!-- Python Script Export Section -->
+        <section class="section">
+          <div class="card">
+            <div class="flex items-center justify-between mb-md flex-wrap gap-sm">
+              <div>
+                <h2 class="card-title">🐍 100% Reproducible Python Script</h2>
+                <p class="text-secondary text-small">Download or copy the exact Python code to run this benchmark in Jupyter Notebook or Google Colab.</p>
+              </div>
+              <div class="flex gap-sm">
+                <button type="button" id="btn-copy-py-exp" class="btn btn-secondary btn-sm">📋 Copy Python Code</button>
+                <button type="button" id="btn-download-py-exp" class="btn btn-secondary btn-sm">📥 Download .py</button>
+              </div>
             </div>
-            <div id="compare-select-container" style="min-width: 240px;"></div>
-          </div>
-          <div class="card" id="compare-card-container">
-            <!-- Rendered via JS -->
+            <pre class="p-md background-subtle rounded text-small font-mono" style="max-height: 280px; overflow-y: auto; white-space: pre-wrap;" id="results-python-script"></pre>
           </div>
         </section>
       </div>

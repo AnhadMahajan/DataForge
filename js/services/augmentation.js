@@ -26,25 +26,33 @@ function getColumnRanges(data, numericIndices) {
 
 /**
  * Calculate distance between two rows supporting both continuous and nominal features.
+ * Guards against NaN/missing values by skipping them in the distance calculation.
  */
 function calcMixedRowDistance(rowA, rowB, numericIndices, categoricalIndices = [], colRanges = {}) {
   let distSq = 0;
+  let validFeatures = 0;
+
   numericIndices.forEach(idx => {
     const vA = Number(rowA[idx]);
     const vB = Number(rowB[idx]);
-    if (!isNaN(vA) && !isNaN(vB)) {
+    if (!isNaN(vA) && !isNaN(vB) && vA !== null && vB !== null) {
       const r = colRanges[idx] || 1;
       distSq += ((vA - vB) / r) ** 2;
+      validFeatures++;
     }
   });
 
   categoricalIndices.forEach(idx => {
     const vA = String(rowA[idx] ?? '');
     const vB = String(rowB[idx] ?? '');
-    if (vA !== vB) {
+    if (vA !== '' && vB !== '' && vA !== vB) {
       distSq += 1;
     }
+    if (vA !== '' && vB !== '') validFeatures++;
   });
+
+  // Avoid 0/0: if no valid features, return a large distance
+  if (validFeatures === 0) return Infinity;
 
   return Math.sqrt(distSq);
 }
@@ -85,8 +93,10 @@ export function applySMOTE(data, labels, numericIndices, options = {}) {
           idx,
           dist: calcMixedRowDistance(origRow, data[idx], numericIndices, categoricalIndices, colRanges),
         }))
+        .filter(d => isFinite(d.dist)) // Filter out Infinity distances (rows with no valid features)
         .sort((a, b) => a.dist - b.dist);
 
+      if (distances.length === 0) continue; // Skip if no valid neighbors
       const neighborEntry = distances[Math.floor(rng() * currentK)] || distances[0];
       const neighborRow = data[neighborEntry.idx];
 

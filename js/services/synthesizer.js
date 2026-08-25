@@ -43,6 +43,10 @@ function fitGaussianCopula(data, numericIndices, categoricalIndices, headers, op
       return;
     }
     const sorted = [...values].sort((a, b) => a - b);
+    if (sorted[0] === sorted[sorted.length - 1]) {
+      numericMarginals[idx] = { type: 'constant', value: sorted[0], min: sorted[0], max: sorted[0], mean: sorted[0], std: 0 };
+      return;
+    }
     numericMarginals[idx] = {
       type: 'empirical',
       cdf: buildEmpiricalCDF(values),

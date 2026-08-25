@@ -1,13 +1,8 @@
-/**
- * DataForge — Synthesizer Lab Page Controller
- * Orchestrates the UI for the Synthesizer Lab:
- * dataset selection, algorithm config, synthesis execution, and results rendering.
- */
-
 import { initSidebar } from '../components/sidebar.js';
 import { getCurrentUser } from '../services/auth.js';
-import { getDatasets } from '../services/dataset.js';
+import { getDatasets, cleanDataset } from '../services/dataset.js';
 import { synthesizeDataset } from '../services/synthesizer.js';
+import { runPipeline, runTSTRBenchmark, auditFidelity, generateStandalonePythonScript } from '../services/pipeline.js';
 import { correlationMatrix } from '../utils/linalg.js';
 import { generateCSV } from '../utils/csv.js';
 import { renderDataTable } from '../components/tables.js';
@@ -200,9 +195,17 @@ async function runSynthesis() {
     else categoricalIndices.push(idx);
   });
 
+  // Auto-clean working dataset if missing values exist
+  let workingData = fullData;
+  const totalMissing = selectedDataset.columns.reduce((acc, c) => acc + (c.stats.nullCount || 0), 0);
+  if (totalMissing > 0) {
+    const cleanRes = cleanDataset(selectedDataset);
+    workingData = cleanRes.cleanedData;
+  }
+
   try {
     const result = await synthesizeDataset({
-      data: fullData,
+      data: workingData,
       headers,
       numericIndices,
       categoricalIndices,
@@ -234,55 +237,161 @@ function renderResults(result) {
   const section = document.getElementById('results-section');
   section.classList.remove('hidden');
 
-  renderQualityReport(result.qualityReport);
+  // Compute exact statistical fidelity audit
+  const numIdx = selectedDataset.analysisResult?.numericIndices || [];
+  const catIdx = selectedDataset.analysisResult?.categoricalIndices || [];
+  const auditReport = auditFidelity(
+    selectedDataset.fullData,
+    result.syntheticData,
+    selectedDataset.headers,
+    numIdx,
+    catIdx
+  );
+
+  renderQualityReport(auditReport);
   renderCorrelationComparison(result);
   renderDistributionCharts(result);
   renderPreviewTable(result);
   renderMetadata(result.metadata);
   initDownload(result);
+  initTSTRBenchmark(result);
+  initPythonExport(result);
 
   // Scroll to results
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function renderQualityReport(quality) {
-  const corrScore = Math.round((quality.correlationFidelity || 0) * 100);
-  const distScore = Math.round((quality.distributionFidelity || 0) * 100);
-  const divScore = quality.diversityScore || 0;
-  // Invert redundancy: lower is better → higher gauge score
-  const redScore = Math.max(0, 100 - (quality.redundancyScore || 0));
+function renderQualityReport(auditReport) {
+  const corrScore = Math.round((auditReport.correlationFidelity || 0) * 100);
+  const distScore = Math.round((auditReport.numericFidelity || 0) * 100);
+  const catScore = Math.round((auditReport.categoricalFidelity || 0) * 100);
+  const privScore = Math.round(auditReport.privacyScore || 100);
 
   renderQualityGauge(document.getElementById('gauge-correlation'), corrScore, {
     label: 'Correlation', size: 130, thresholds: [50, 80],
   });
   renderQualityGauge(document.getElementById('gauge-distribution'), distScore, {
-    label: 'Distribution', size: 130, thresholds: [50, 80],
+    label: 'KS Fidelity', size: 130, thresholds: [50, 80],
   });
-  renderQualityGauge(document.getElementById('gauge-diversity'), divScore, {
-    label: 'Diversity', size: 130, thresholds: [30, 60],
+  renderQualityGauge(document.getElementById('gauge-diversity'), catScore, {
+    label: 'Category Match', size: 130, thresholds: [50, 80],
   });
-  renderQualityGauge(document.getElementById('gauge-redundancy'), redScore, {
-    label: 'Uniqueness', size: 130, thresholds: [50, 80],
+  renderQualityGauge(document.getElementById('gauge-redundancy'), privScore, {
+    label: 'Privacy / DCR', size: 130, thresholds: [70, 90],
   });
 
   // Summary text
   const summaryEl = document.getElementById('quality-summary');
-  const overall = Math.round((corrScore + distScore + divScore + redScore) / 4);
+  const overall = auditReport.overallScore;
   let verdict = 'Poor';
   let verdictClass = 'text-negative';
-  if (overall >= 75) { verdict = 'Excellent'; verdictClass = 'text-positive'; }
-  else if (overall >= 55) { verdict = 'Good'; verdictClass = 'text-neutral'; }
-  else if (overall >= 35) { verdict = 'Moderate'; verdictClass = 'text-caution'; }
+  if (overall >= 75) { verdict = 'High Fidelity'; verdictClass = 'text-positive'; }
+  else if (overall >= 55) { verdict = 'Moderate Fidelity'; verdictClass = 'text-neutral'; }
+  else if (overall >= 35) { verdict = 'Low Fidelity'; verdictClass = 'text-caution'; }
 
   summaryEl.innerHTML = `
-    Overall synthesis quality: <strong class="${verdictClass}">${verdict} (${overall}/100)</strong><br>
+    Fidelity & Privacy Audit: <strong class="${verdictClass}">${verdict} (${overall}/100)</strong><br>
     <span class="text-secondary">
-      Correlation fidelity: ${corrScore}% · 
-      Distribution fidelity: ${distScore}% · 
-      Diversity: ${divScore}/100 · 
-      Uniqueness: ${redScore}% (${quality.redundancyScore}% near-duplicates)
+      Covariance Preservation: ${corrScore}% · 
+      Marginal Distribution KS Score: ${distScore}% · 
+      Categorical TVD Score: ${catScore}% · 
+      Privacy Score: ${privScore}% (Median DCR: ${auditReport.dcrStats?.medianDCR}, Memorization Risk: ${auditReport.dcrStats?.memorizationRiskPercent}%)
     </span>
   `;
+}
+
+// ---- Real Scikit-Learn TSTR Benchmark ----
+function initTSTRBenchmark(result) {
+  const btn = document.getElementById('run-tstr-btn');
+  const progressBox = document.getElementById('tstr-progress-box');
+  const progressStatus = document.getElementById('tstr-progress-status');
+  const resultsBox = document.getElementById('tstr-results-box');
+
+  if (!btn) return;
+
+  btn.onclick = async () => {
+    btn.disabled = true;
+    progressBox.classList.remove('hidden');
+    resultsBox.classList.add('hidden');
+    progressStatus.textContent = 'Initializing Scikit-Learn in WebAssembly (Pyodide)...';
+
+    try {
+      const tstrResult = await runTSTRBenchmark({
+        realData: selectedDataset.fullData,
+        syntheticData: result.syntheticData,
+        headers: selectedDataset.headers,
+        targetCol: selectedDataset.targetColumn,
+        modelType: 'random_forest',
+        testSize: 0.25,
+        seed: 42,
+        onProgress: (stage, pct) => {
+          progressStatus.textContent = `${stage} (${pct}%)`;
+        },
+      });
+
+      // Render TSTR results
+      document.getElementById('tstr-base-acc').textContent = `${(tstrResult.baseline.accuracy * 100).toFixed(1)}%`;
+      document.getElementById('tstr-synth-acc').textContent = `${(tstrResult.synthetic.accuracy * 100).toFixed(1)}%`;
+      document.getElementById('tstr-retention-score').textContent = `${tstrResult.tstrRetention}%`;
+
+      const detailsEl = document.getElementById('tstr-metrics-details');
+      detailsEl.innerHTML = `
+        <div class="mt-sm p-sm background-subtle rounded">
+          <strong>Scikit-Learn RandomForestClassifier Benchmark:</strong><br>
+          • Baseline Real F1: ${(tstrResult.baseline.f1 * 100).toFixed(1)}% | Synthetic-Trained F1: ${(tstrResult.synthetic.f1 * 100).toFixed(1)}% (Delta: ${(tstrResult.deltaF1 * 100).toFixed(1)}%)<br>
+          • Evaluated on ${tstrResult.testRealSamples} held-out real samples. Classes: ${tstrResult.classes.join(', ')}
+        </div>
+      `;
+
+      resultsBox.classList.remove('hidden');
+      showToast('Real Scikit-Learn TSTR benchmark finished!', 'success');
+    } catch (err) {
+      console.error('[TSTR] Failed:', err);
+      showToast(`TSTR benchmark failed: ${err.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+      progressBox.classList.add('hidden');
+    }
+  };
+}
+
+// ---- Python Script Export ----
+function initPythonExport(result) {
+  const codeEl = document.getElementById('python-script-code');
+  const copyBtn = document.getElementById('copy-py-btn');
+  const downloadBtn = document.getElementById('download-py-btn');
+
+  if (!codeEl) return;
+
+  const pythonScript = generateStandalonePythonScript({
+    datasetName: selectedDataset?.name || 'dataset',
+    targetCol: selectedDataset?.targetColumn || 'target',
+    modelType: 'random_forest',
+    testSize: 0.25,
+    seed: 42,
+  });
+
+  codeEl.textContent = pythonScript;
+
+  copyBtn.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(pythonScript);
+      showToast('Python script copied to clipboard!', 'success');
+    } catch (e) {
+      showToast('Failed to copy. Please select and copy manually.', 'error');
+    }
+  };
+
+  downloadBtn.onclick = () => {
+    const blob = new Blob([pythonScript], { type: 'text/x-python;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `benchmark_${selectedDataset?.name || 'dataset'}.py`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Python script downloaded (.py)!', 'success');
+  };
 }
 
 function renderCorrelationComparison(result) {

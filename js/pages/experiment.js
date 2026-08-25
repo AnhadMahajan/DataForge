@@ -4,8 +4,9 @@
 
 import { requireSession } from '../services/auth.js';
 import { initSidebar } from '../components/sidebar.js';
-import { getDatasets, getDatasetById } from '../services/dataset.js';
+import { getDatasets, getDatasetById, validateForPipeline, cleanDataset } from '../services/dataset.js';
 import { runExperiment } from '../services/experiment.js';
+import { runPipeline, cancelPipeline } from '../services/pipeline.js';
 import { toast } from '../components/toast.js';
 import { qs, show, hide } from '../utils/dom.js';
 
@@ -28,6 +29,7 @@ const modelTypeSelect = qs('#model-type');
 const progressOverlay = qs('#progress-overlay');
 const progressStatus = qs('#progress-status');
 const progressBarFill = qs('#progress-bar-fill');
+const btnCancelExp = qs('#btn-cancel-exp');
 
 // Strategy card elements
 const strategyCards = {
@@ -80,9 +82,47 @@ function updateDatasetPreview() {
   const ds = getDatasetById(userId, dsId);
   if (ds) {
     expNameInput.value = `${ds.name}_Augmentation_Study`;
+    const validation = validateForPipeline(ds);
+    const targetColIdx = ds.headers.indexOf(ds.targetColumn);
+    const targetColObj = ds.columns[targetColIdx];
+    const isTargetNumeric = targetColObj?.type === 'numeric';
+    const targetUnique = new Set(ds.fullData.map(r => r[targetColIdx])).size;
+    const isRegression = isTargetNumeric && targetUnique > 10;
+
+    // Dynamically populate model options based on task type
+    if (modelTypeSelect) {
+      const curVal = modelTypeSelect.value;
+      if (isRegression) {
+        modelTypeSelect.innerHTML = `
+          <option value="random_forest" ${curVal === 'random_forest' ? 'selected' : ''}>Random Forest Regressor (100 Trees)</option>
+          <option value="gradient_boosting" ${curVal === 'gradient_boosting' ? 'selected' : ''}>Gradient Boosting Regressor</option>
+          <option value="ridge" ${curVal === 'ridge' || curVal === 'logistic_regression' ? 'selected' : ''}>Ridge Linear Regression</option>
+          <option value="decision_tree" ${curVal === 'decision_tree' ? 'selected' : ''}>Decision Tree Regressor</option>
+          <option value="knn" ${curVal === 'knn' ? 'selected' : ''}>k-Nearest Neighbors Regressor</option>
+        `;
+      } else {
+        modelTypeSelect.innerHTML = `
+          <option value="random_forest" ${curVal === 'random_forest' || !curVal ? 'selected' : ''}>Random Forest Classifier (100 Trees)</option>
+          <option value="gradient_boosting" ${curVal === 'gradient_boosting' ? 'selected' : ''}>Gradient Boosting Classifier</option>
+          <option value="logistic_regression" ${curVal === 'logistic_regression' || curVal === 'ridge' ? 'selected' : ''}>Logistic Regression</option>
+          <option value="decision_tree" ${curVal === 'decision_tree' ? 'selected' : ''}>Decision Tree Classifier</option>
+          <option value="knn" ${curVal === 'knn' ? 'selected' : ''}>k-Nearest Neighbors Classifier</option>
+        `;
+      }
+    }
+
+    const issuesSummary = validation.issues.length > 0
+      ? `<div class="mt-xs text-small ${validation.valid ? 'text-primary' : 'delta-negative'}">${validation.valid ? '⚠️ Warnings: ' : '❌ Issues: '}${validation.issues.map(i => i.message).join('; ')}</div>`
+      : '<div class="mt-xs text-small text-muted">✅ Pipeline Ready: 0 issues detected</div>';
+
+    const taskBadge = isRegression
+      ? '<span class="pill pill-neutral ml-xs">📈 Regression (Continuous Target)</span>'
+      : '<span class="pill pill-neutral ml-xs">🏷️ Classification</span>';
+
     datasetSummaryBox.innerHTML = `
-      <strong>${ds.name}</strong> • ${ds.rowCount} rows • ${ds.columnCount - 1} features • Target: <code>${ds.targetColumn}</code>
+      <strong>${ds.name}</strong> • ${ds.rowCount} rows • ${ds.columnCount - 1} features • Target: <code>${ds.targetColumn}</code> ${taskBadge}
       <br><span class="text-caption">Health Score: ${ds.healthScore}/100 • Imbalance: ${ds.analysisResult?.imbalanceRatio || 1}:1</span>
+      ${issuesSummary}
     `;
     show(datasetSummaryBox);
   } else {
@@ -92,6 +132,15 @@ function updateDatasetPreview() {
 
 datasetSelect.addEventListener('change', updateDatasetPreview);
 if (datasets.length > 0) updateDatasetPreview();
+
+// Cancel Button Handler
+if (btnCancelExp) {
+  btnCancelExp.addEventListener('click', () => {
+    cancelPipeline();
+    progressOverlay.classList.remove('active');
+    toast.info('Experiment run cancelled.');
+  });
+}
 
 // Form Submit Handler
 form.addEventListener('submit', async (e) => {
@@ -107,6 +156,27 @@ form.addEventListener('submit', async (e) => {
   if (!dataset) {
     toast.error('Selected dataset not found.');
     return;
+  }
+
+  // Pre-flight Pipeline Validation Check
+  const validation = validateForPipeline(dataset);
+  if (!validation.valid) {
+    const errorMsgs = validation.issues.filter(i => i.severity === 'error').map(i => i.message).join('\n• ');
+    toast.error(`Dataset is not pipeline-ready:\n• ${errorMsgs}`);
+    return;
+  }
+
+  // Auto-clean if missing values exist
+  let workingDataset = dataset;
+  const totalMissing = dataset.columns.reduce((acc, c) => acc + (c.stats.nullCount || 0), 0);
+  if (totalMissing > 0) {
+    const cleanRes = cleanDataset(dataset);
+    workingDataset = {
+      ...dataset,
+      fullData: cleanRes.cleanedData,
+      sampleRows: cleanRes.cleanedData.slice(0, 100),
+      rowCount: cleanRes.cleanedRowCount,
+    };
   }
 
   // Collect selected strategies
@@ -140,7 +210,7 @@ form.addEventListener('submit', async (e) => {
 
   const result = await runExperiment({
     userId,
-    dataset,
+    dataset: workingDataset,
     name: expNameInput.value.trim() || `${dataset.name}_Experiment`,
     strategies: selectedStrategies,
     strategyParams,

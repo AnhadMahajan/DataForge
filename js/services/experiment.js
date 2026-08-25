@@ -1,22 +1,11 @@
 /**
  * DataForge — Experiment Orchestration Service
- * Runs baseline training, applies candidate augmentation strategies,
- * evaluates held-out test performance, and computes recommendations.
+ * Executes real Scikit-Learn evaluation pipelines via Native Python or Pyodide.
  */
 
 import * as storage from './storage.js';
-import {
-  applySMOTE,
-  applyADASYN,
-  applySMOTETomek,
-  applyRandomOversampling,
-  applyNoiseInjection,
-  computeSyntheticQuality,
-} from './augmentation.js';
-import { runControlledEvaluation, compareEvaluations } from './evaluation.js';
-import { generateRecommendation } from './recommendations.js';
-import { generateUUID, mean, std, computeKolmogorovSmirnov, computeWassersteinDistance } from '../utils/math.js';
-import { generateCSV } from '../utils/csv.js';
+import { runExperimentPipeline } from './pipeline.js';
+import { generateUUID } from '../utils/math.js';
 
 const EXPERIMENTS_PREFIX = 'experiments_';
 
@@ -45,18 +34,17 @@ export function deleteExperiment(userId, experimentId) {
 }
 
 /**
- * Run a full controlled experiment pipeline.
- * Calls onProgress(stageText, percent) to update UI smoothly.
+ * Run a full controlled experiment pipeline using real Python Scikit-Learn.
  */
 export async function runExperiment({
   userId,
   dataset,
   name,
-  strategies = ['smote', 'adasyn', 'smote_tomek', 'oversampling', 'noise_injection'],
+  strategies = ['smote', 'adasyn', 'oversampling', 'noise_injection'],
   strategyParams = {},
-  runs = 5,
+  runs = 3,
   trainTestSplit = 0.8,
-  modelType = 'knn',
+  modelType = 'random_forest',
   baseSeed = 42,
   onProgress = () => {},
 }) {
@@ -82,180 +70,41 @@ export async function runExperiment({
     recommendation: null,
   };
 
-  const { headers, columns, fullData, targetColumn, analysisResult } = dataset;
-  const targetIndex = headers.indexOf(targetColumn);
-
-  // Extract raw rows & labels (preserving original feature indices)
-  const dataRows = fullData.map(r => r.filter((_, idx) => idx !== targetIndex));
-  const labels = fullData.map(r => String(r[targetIndex] ?? 'UNKNOWN'));
-
-  // Separate feature columns (excluding target)
-  const featureHeaders = headers.filter((_, idx) => idx !== targetIndex);
-  const numericIndices = [];
-  const categoricalIndices = [];
-  const idIndices = [];
-
-  let colCounter = 0;
-  headers.forEach((_, idx) => {
-    if (idx !== targetIndex) {
-      const col = columns[idx];
-      const isId = analysisResult?.idIndices?.includes(idx);
-      if (isId) {
-        idIndices.push(colCounter);
-      }
-      if (col.type === 'numeric') {
-        numericIndices.push(colCounter);
-      } else {
-        categoricalIndices.push(colCounter);
-      }
-      colCounter++;
-    }
-  });
+  const { headers, fullData, targetColumn } = dataset;
 
   try {
-    // Stage 1: Run Baseline Evaluation
-    onProgress('Training baseline model on unaugmented data...', 15);
-    const baseline = await runControlledEvaluation({
-      data: dataRows,
-      labels,
-      numericIndices,
-      categoricalIndices,
-      idIndices,
-      augmentFn: null,
+    onProgress('Dispatching Scikit-Learn experiment pipeline to Python runtime...', 15);
+
+    const pipelineResult = await runExperimentPipeline({
+      headers,
+      data: fullData,
+      targetCol: targetColumn,
+      strategies,
+      strategyParams,
       runs,
       trainTestSplit,
       modelType,
       baseSeed,
+      onProgress: (stage, pct) => {
+        onProgress(stage, pct);
+      },
     });
-    experimentRecord.baseline = baseline;
 
-    // Stage 2: Evaluate Augmentation Strategies
-    const strategyResults = [];
-    const stepSize = 65 / (strategies.length || 1);
-    let currentProgress = 20;
-
-    for (let i = 0; i < strategies.length; i++) {
-      const stratType = strategies[i];
-      onProgress(`Evaluating strategy: ${stratType.toUpperCase()}...`, Math.round(currentProgress));
-
-      let augmentFn = null;
-      let params = strategyParams[stratType] || {};
-
-      if (stratType === 'smote') {
-        augmentFn = (d, l, numIdx, opt) => applySMOTE(d, l, numIdx, { ...params, ...opt, categoricalIndices });
-      } else if (stratType === 'adasyn') {
-        augmentFn = (d, l, numIdx, opt) => applyADASYN(d, l, numIdx, { ...params, ...opt, categoricalIndices });
-      } else if (stratType === 'smote_tomek') {
-        augmentFn = (d, l, numIdx, opt) => applySMOTETomek(d, l, numIdx, { ...params, ...opt, categoricalIndices });
-      } else if (stratType === 'oversampling') {
-        augmentFn = (d, l, numIdx, opt) => applyRandomOversampling(d, l, numIdx, { ...params, ...opt, categoricalIndices });
-      } else if (stratType === 'noise_injection') {
-        augmentFn = (d, l, numIdx, opt) => applyNoiseInjection(d, l, numIdx, { ...params, ...opt });
-      }
-
-      // Generate synthetic samples on full data to produce downloadable CSVs & quality metrics
-      const sampleAug = augmentFn
-        ? augmentFn(dataRows, labels, numericIndices, { seed: baseSeed, categoricalIndices })
-        : { syntheticData: [], syntheticLabels: [], augmentedData: dataRows, augmentedLabels: labels };
-
-      const qualityMetrics = computeSyntheticQuality(dataRows, sampleAug.syntheticData, numericIndices, categoricalIndices);
-
-      // Reconstruct full rows with Target column for downloadable CSVs
-      const augmentedFullRows = sampleAug.augmentedData.map((row, rIdx) => {
-        const fullRow = [...row];
-        fullRow.splice(targetIndex, 0, sampleAug.augmentedLabels[rIdx]);
-        return fullRow;
-      });
-
-      const syntheticFullRows = (sampleAug.syntheticData || []).map((row, rIdx) => {
-        const fullRow = [...row];
-        fullRow.splice(targetIndex, 0, sampleAug.syntheticLabels[rIdx]);
-        return fullRow;
-      });
-
-      const augmentedCSV = generateCSV(headers, augmentedFullRows);
-      const syntheticCSV = generateCSV(headers, syntheticFullRows);
-
-      // Run controlled evaluation on training splits
-      const evalResult = await runControlledEvaluation({
-        data: dataRows,
-        labels,
-        numericIndices,
-        categoricalIndices,
-        idIndices,
-        augmentFn,
-        runs,
-        trainTestSplit,
-        modelType,
-        baseSeed,
-      });
-
-      const comparison = compareEvaluations(baseline, evalResult);
-
-      // Compute per-feature statistical drift metrics (KS-Test & Wasserstein)
-      const featureDrift = [];
-      numericIndices.forEach(fIdx => {
-        const featName = featureHeaders[fIdx] || `Feature_${fIdx}`;
-        const origVals = dataRows.map(r => Number(r[fIdx])).filter(v => !isNaN(v));
-        const synthVals = (sampleAug.syntheticData || []).map(r => Number(r[fIdx])).filter(v => !isNaN(v));
-
-        const origM = origVals.length > 0 ? mean(origVals) : 0;
-        const origS = origVals.length > 1 ? std(origVals) : 1;
-        const synthM = synthVals.length > 0 ? mean(synthVals) : origM;
-        const synthS = synthVals.length > 1 ? std(synthVals) : origS;
-
-        const ks = computeKolmogorovSmirnov(origVals, synthVals);
-        const w1 = computeWassersteinDistance(origVals, synthVals);
-
-        featureDrift.push({
-          featureName: featName,
-          featureIndex: fIdx,
-          originalMean: Number(origM.toFixed(2)),
-          originalStd: Number(origS.toFixed(2)),
-          syntheticMean: Number(synthM.toFixed(2)),
-          syntheticStd: Number(synthS.toFixed(2)),
-          ksStatistic: ks.statistic,
-          driftSeverity: ks.driftSeverity,
-          wassersteinDistance: w1,
-        });
-      });
-
-      strategyResults.push({
-        strategyType: stratType,
-        strategyParams: params,
-        evaluation: evalResult,
-        comparison,
-        qualityMetrics,
-        featureDrift,
-        syntheticData: sampleAug.syntheticData || [],
-        syntheticCount: sampleAug.syntheticCount || 0,
-        augmentedRowCount: augmentedFullRows.length,
-        augmentedCSV,
-        syntheticCSV,
-      });
-
-      currentProgress += stepSize;
-    }
-
-    // Stage 3: Recommendation Engine
-    onProgress('Synthesizing statistical recommendations...', 90);
-    const recommendation = generateRecommendation(dataset, baseline, strategyResults);
-
-    experimentRecord.strategyResults = strategyResults;
-    experimentRecord.recommendation = recommendation;
+    experimentRecord.baseline = pipelineResult.baseline;
+    experimentRecord.strategyResults = pipelineResult.strategyResults || [];
+    experimentRecord.recommendation = pipelineResult.recommendation;
     experimentRecord.status = 'completed';
     experimentRecord.completedAt = new Date().toISOString();
 
-    // Persist to user's experiments
+    // Persist to user's experiments collection
     const storageKey = `${EXPERIMENTS_PREFIX}${userId}`;
     storage.addToCollection(storageKey, experimentRecord);
 
-    onProgress('Experiment completed.', 100);
+    onProgress('Experiment completed successfully.', 100);
     return { success: true, data: experimentRecord };
   } catch (err) {
-    console.error('[Experiment] Failed:', err);
+    console.error('[ExperimentService] Execution failed:', err);
     experimentRecord.status = 'failed';
     return { success: false, error: { message: err.message || 'Experiment execution failed.' } };
   }
 }
-

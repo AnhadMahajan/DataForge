@@ -10,9 +10,18 @@
 export function parseCSV(text, options = {}) {
   const { delimiter = null, hasHeader = true } = options;
 
+  // Strip BOM (Byte Order Mark) from UTF-8 files
+  let cleanText = text;
+  if (cleanText.charCodeAt(0) === 0xFEFF) {
+    cleanText = cleanText.slice(1);
+  }
+
+  // Normalize line endings to \n
+  cleanText = cleanText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
   // Auto-detect delimiter if not provided
-  const detectedDelimiter = delimiter || detectDelimiter(text);
-  const lines = splitCSVLines(text);
+  const detectedDelimiter = delimiter || detectDelimiter(cleanText);
+  const lines = splitCSVLines(cleanText);
 
   if (lines.length === 0) {
     return { success: false, error: { code: 'EMPTY_CSV', message: 'The CSV file is empty.' } };
@@ -48,11 +57,28 @@ export function parseCSV(text, options = {}) {
 
   // Helper to clean numeric string representations like $1,234.50 or 45%
   const cleanNumericCandidate = (str) => {
-    if (typeof str !== 'string') return str;
+    if (typeof str === 'number') return isNaN(str) ? null : str;
+    if (typeof str !== 'string') return null;
     const s = str.trim();
-    if (s === '' || s.toLowerCase() === 'nan' || s.toLowerCase() === 'null') return null;
-    const stripped = s.replace(/^[\$€£₹]\s*/, '').replace(/%$/, '').replace(/,/g, '').trim();
-    if (stripped === '') return null;
+    if (s === '') return null;
+    // Detect null/nan/na/missing/none variants
+    const lower = s.toLowerCase();
+    if (lower === 'nan' || lower === 'null' || lower === 'na' || lower === 'n/a' ||
+        lower === 'none' || lower === 'missing' || lower === '-' || lower === '?') return null;
+    // Strip currency symbols, commas, spaces, leading/trailing whitespace
+    const stripped = s
+      .replace(/^[\$€£₹¥₩₫]\s*/g, '')
+      .replace(/\s*%$/, '')
+      .replace(/,/g, '')
+      .replace(/\s+/g, '')
+      .trim();
+    if (stripped === '' || stripped === '-') return null;
+    // Handle parenthesized negatives: (123.45) → -123.45
+    const parenMatch = stripped.match(/^\(([\d.]+)\)$/);
+    if (parenMatch) {
+      const num = Number(parenMatch[1]);
+      return isNaN(num) ? null : -num;
+    }
     const num = Number(stripped);
     return isNaN(num) ? null : num;
   };
@@ -180,25 +206,48 @@ function parseLine(line, delimiter) {
  * Infer whether each column is 'numeric', 'categorical', or 'text'.
  */
 function inferColumnTypes(rows, headers) {
+  const nullPatterns = /^(|nan|null|na|n\/a|none|missing|\?|-)$/i;
+
   return headers.map((_, colIdx) => {
-    const values = rows
-      .map(row => row[colIdx]?.trim())
-      .filter(v => v !== '' && v !== undefined && v !== null && v.toLowerCase() !== 'nan' && v.toLowerCase() !== 'null');
+    const rawValues = rows.map(row => {
+      const v = row[colIdx];
+      if (v === undefined || v === null) return null;
+      const s = String(v).trim();
+      return nullPatterns.test(s) ? null : s;
+    });
+
+    const values = rawValues.filter(v => v !== null);
 
     if (values.length === 0) return 'text';
 
+    // Count how many values can be parsed as numbers (with currency/percent stripping)
     const numericCount = values.filter(v => {
-      const stripped = v.replace(/^[\$€£₹]\s*/, '').replace(/%$/, '').replace(/,/g, '').trim();
-      return stripped !== '' && !isNaN(Number(stripped));
+      const stripped = v
+        .replace(/^[\$€£₹¥₩₫]\s*/g, '')
+        .replace(/\s*%$/, '')
+        .replace(/,/g, '')
+        .replace(/\s+/g, '')
+        .trim();
+      if (stripped === '' || stripped === '-') return false;
+      // Handle parenthesized negatives
+      if (/^\([\d.]+\)$/.test(stripped)) return true;
+      return !isNaN(Number(stripped));
     }).length;
     const numericRatio = numericCount / values.length;
 
+    // Higher threshold for numeric: >80% of non-null values must be parseable as numbers
     if (numericRatio > 0.80) return 'numeric';
 
-    // Categorical: fewer unique values relative to total
-    const uniqueValues = new Set(values);
-    const uniqueRatio = uniqueValues.size / values.length;
+    // Boolean-like columns (true/false, yes/no, 0/1) → categorical
+    const uniqueValues = new Set(values.map(v => v.toLowerCase()));
+    if (uniqueValues.size <= 2) {
+      const boolPatterns = new Set(['true', 'false', 'yes', 'no', '0', '1', 't', 'f', 'y', 'n']);
+      const allBool = [...uniqueValues].every(v => boolPatterns.has(v));
+      if (allBool) return 'categorical';
+    }
 
+    // Categorical: fewer unique values relative to total
+    const uniqueRatio = uniqueValues.size / values.length;
     if (uniqueRatio < 0.5 || uniqueValues.size <= 30) return 'categorical';
 
     return 'text';

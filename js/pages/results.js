@@ -9,6 +9,7 @@ import { requireSession } from '../services/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { getExperimentById, getExperiments } from '../services/experiment.js';
 import { getDatasetById } from '../services/dataset.js';
+import { generateStandalonePythonScript } from '../services/pipeline.js';
 import {
   renderGroupedBarChart,
   renderRunVarianceChart,
@@ -221,37 +222,73 @@ function renderResults(exp) {
     ]));
   });
 
+  // Check Task Type (Classification vs Regression)
+  const isRegression = exp.taskType === 'regression' || baseAgg.r2 !== undefined || exp.config?.taskType === 'regression';
+
   // 2. Metrics Comparison Grid (Baseline vs Best Strategy)
   metricsGrid.innerHTML = '';
-  const metricItems = [
-    { name: 'Macro F1-Score', base: baseAgg.f1.mean, aug: bestAgg.f1.mean },
-    { name: 'Accuracy', base: baseAgg.accuracy.mean, aug: bestAgg.accuracy.mean },
-    { name: 'Precision', base: baseAgg.precision.mean, aug: bestAgg.precision.mean },
-    { name: 'Recall', base: baseAgg.recall.mean, aug: bestAgg.recall.mean },
-  ];
+  const metricItems = isRegression
+    ? [
+        { name: 'R² Score (Fit)', base: baseAgg.r2?.mean ?? baseAgg.accuracy?.mean ?? 0, aug: bestAgg.r2?.mean ?? bestAgg.accuracy?.mean ?? 0, isPercent: true, context: 'Primary variance explained metric' },
+        { name: 'RMSE Error', base: baseAgg.rmse?.mean ?? 0, aug: bestAgg.rmse?.mean ?? 0, isPercent: false, isLowerBetter: true, context: 'Root mean squared error (lower is better)' },
+        { name: 'MAE Error', base: baseAgg.mae?.mean ?? 0, aug: bestAgg.mae?.mean ?? 0, isPercent: false, isLowerBetter: true, context: 'Mean absolute error (lower is better)' },
+        { name: 'Pearson Correlation (r)', base: baseAgg.pearsonR?.mean ?? 0, aug: bestAgg.pearsonR?.mean ?? 0, isPercent: false, context: 'Prediction to ground truth linear correlation' },
+      ]
+    : [
+        { name: 'Macro F1-Score', base: baseAgg.f1.mean, aug: bestAgg.f1.mean, isPercent: true, context: 'Primary selection metric' },
+        { name: 'Accuracy', base: baseAgg.accuracy.mean, aug: bestAgg.accuracy.mean, isPercent: true, context: 'Held-out evaluation metric' },
+        { name: 'Precision', base: baseAgg.precision.mean, aug: bestAgg.precision.mean, isPercent: true, context: 'Held-out evaluation metric' },
+        { name: 'Recall', base: baseAgg.recall.mean, aug: bestAgg.recall.mean, isPercent: true, context: 'Held-out evaluation metric' },
+      ];
 
   metricItems.forEach(item => {
-    const diffPct = item.base > 0 ? ((item.aug - item.base) / item.base) * 100 : 0;
+    let diffPct = 0;
+    if (item.base !== 0) {
+      diffPct = item.isLowerBetter
+        ? ((item.base - item.aug) / Math.abs(item.base)) * 100
+        : ((item.aug - item.base) / Math.abs(item.base)) * 100;
+    }
     const delta = formatDelta(diffPct);
+    const augValStr = item.isPercent ? formatPercent(item.aug) : item.aug.toFixed(2);
+    const baseValStr = item.isPercent ? formatPercent(item.base) : item.base.toFixed(2);
 
     const card = el('div', { className: 'metric-comparison-card' }, [
       el('div', { className: 'card-title text-small text-muted font-medium' }, item.name),
-      el('div', { className: 'metric-value mt-xs', style: { fontSize: '2rem' } }, formatPercent(item.aug)),
+      el('div', { className: 'metric-value mt-xs', style: { fontSize: '2rem' } }, augValStr),
       el('div', { className: 'metric-delta-row' }, [
-        el('span', { className: 'text-caption text-muted' }, `Baseline: ${formatPercent(item.base)}`),
+        el('span', { className: 'text-caption text-muted' }, `Baseline: ${baseValStr}`),
         el('span', { className: `pill ${delta.className} text-caption` }, delta.text),
       ]),
-      el('div', { className: 'metric-context text-caption text-muted' }, item === metricItems[0] ? 'Primary selection metric' : 'Held-out evaluation metric'),
+      el('div', { className: 'metric-context text-caption text-muted' }, item.context),
     ]);
     metricsGrid.appendChild(card);
   });
 
   // 3. Multi-Strategy Comparison Chart
-  const chartLabels = ['Macro F1', 'Accuracy', 'Precision', 'Recall'];
+  const chartLabels = isRegression
+    ? ['R² Score', 'RMSE Rel', 'MAE Rel', 'Pearson r']
+    : ['Macro F1', 'Accuracy', 'Precision', 'Recall'];
+
+  const getSeriesValues = (agg) => {
+    if (isRegression) {
+      const r2Val = Math.max(0, agg.r2?.mean ?? agg.accuracy?.mean ?? 0);
+      const rmseVal = Math.max(0, 1 - Math.min(1, (agg.rmse?.mean || 0) / (baseAgg.rmse?.mean || 1)));
+      const maeVal = Math.max(0, 1 - Math.min(1, (agg.mae?.mean || 0) / (baseAgg.mae?.mean || 1)));
+      const rVal = Math.max(0, agg.pearsonR?.mean ?? 0);
+      return [r2Val, rmseVal, maeVal, rVal];
+    }
+    return [
+      agg.f1.mean,
+      agg.accuracy.mean,
+      agg.precision.mean,
+      agg.recall.mean,
+    ];
+  };
+
   const chartSeries = [
     {
       name: 'Baseline (Raw)',
-      values: [baseAgg.f1.mean, baseAgg.accuracy.mean, baseAgg.precision.mean, baseAgg.recall.mean],
+      values: getSeriesValues(baseAgg),
       color: '#333333',
     },
   ];
@@ -260,12 +297,7 @@ function renderResults(exp) {
   strategyResults.forEach((s, idx) => {
     chartSeries.push({
       name: formatStrategy(s.strategyType),
-      values: [
-        s.evaluation.aggregated.f1.mean,
-        s.evaluation.aggregated.accuracy.mean,
-        s.evaluation.aggregated.precision.mean,
-        s.evaluation.aggregated.recall.mean,
-      ],
+      values: getSeriesValues(s.evaluation.aggregated),
       color: colors[idx % colors.length],
     });
   });
@@ -275,66 +307,118 @@ function renderResults(exp) {
   // 4. Per-Run Variance Line Chart
   const runVarianceData = baseline.runs.map((r, i) => ({
     run: i + 1,
-    baseline: r.f1,
-    augmented: bestStratRes ? bestStratRes.evaluation.runs[i].f1 : r.f1,
+    baseline: isRegression ? (r.r2 ?? r.accuracy) : r.f1,
+    augmented: bestStratRes ? (isRegression ? (bestStratRes.evaluation.runs[i]?.r2 ?? bestStratRes.evaluation.runs[i]?.accuracy) : bestStratRes.evaluation.runs[i]?.f1) : (isRegression ? (r.r2 ?? r.accuracy) : r.f1),
   }));
   renderRunVarianceChart(varianceChartContainer, runVarianceData, { height: 240 });
 
   // 5. Strategy Matrix Table
-  const matrixHeaders = ['Strategy', 'Synthetic Rows', 'Macro F1', 'Δ from Baseline', 'Significance (p)', 'Verdict'];
+  const matrixHeaders = isRegression
+    ? ['Strategy', 'Synthetic Rows', 'R² Score', 'RMSE', 'Δ Score', 'Verdict']
+    : ['Strategy', 'Synthetic Rows', 'Macro F1', 'Δ from Baseline', 'Significance (p)', 'Verdict'];
+
   const matrixRows = strategyResults.map(s => {
-    const dF1 = s.comparison.percentageImprovement;
-    const signPill = s.comparison.isSignificant ? 'p < 0.05 (Valid)' : 'p ≥ 0.05 (High noise)';
+    const dScore = s.comparison.percentageImprovement;
     const vText = s.comparison.percentageImprovement > 1 ? 'Recommended' : (s.comparison.percentageImprovement < -1 ? 'Degraded' : 'Marginal');
 
-    return [
-      formatStrategy(s.strategyType),
-      `+${s.syntheticCount} rows`,
-      formatPercent(s.evaluation.aggregated.f1.mean),
-      `${dF1 > 0 ? '+' : ''}${dF1.toFixed(1)}%`,
-      signPill,
-      vText,
-    ];
+    if (isRegression) {
+      const r2Str = formatPercent(s.evaluation.aggregated.r2?.mean ?? s.evaluation.aggregated.accuracy?.mean ?? 0);
+      const rmseStr = (s.evaluation.aggregated.rmse?.mean || 0).toFixed(2);
+      return [
+        formatStrategy(s.strategyType),
+        `+${s.syntheticCount} rows`,
+        r2Str,
+        rmseStr,
+        `${dScore > 0 ? '+' : ''}${dScore.toFixed(1)}%`,
+        vText,
+      ];
+    } else {
+      const signPill = s.comparison.isSignificant ? 'p < 0.05 (Valid)' : 'p ≥ 0.05 (High noise)';
+      return [
+        formatStrategy(s.strategyType),
+        `+${s.syntheticCount} rows`,
+        formatPercent(s.evaluation.aggregated.f1.mean),
+        `${dScore > 0 ? '+' : ''}${dScore.toFixed(1)}%`,
+        signPill,
+        vText,
+      ];
+    }
   });
   renderDataTable(matrixTableContainer, matrixHeaders, matrixRows, { pageSize: 5 });
 
-  // 6. Per-Class Breakdown Table
-  const classHeaders = ['Class Label', 'Baseline Recall', 'Augmented Recall', 'Δ Recall', 'Impact'];
-  const classRows = (rec.perClassImpact || []).map(p => {
-    const baseRec = baseline.runs.map(r => r.perClass[p.className]?.recall || 0);
-    const avgBase = baseRec.reduce((a, b) => a + b, 0) / baseRec.length;
-    const avgAug = avgBase + (p.delta / 100);
+  // 6. Per-Class / Target Breakdown Table
+  const classHeaders = isRegression
+    ? ['Target Variable', 'Baseline R²', 'Baseline RMSE', 'Augmented R²', 'Augmented RMSE', 'Δ R² Gain']
+    : ['Class Label', 'Baseline Precision', 'Baseline Recall', 'Baseline F1', 'Augmented F1', 'Δ F1'];
 
-    return [
-      p.className,
-      formatPercent(avgBase),
-      formatPercent(avgAug),
-      `${p.delta > 0 ? '+' : ''}${p.delta}%`,
-      p.impact.toUpperCase(),
-    ];
-  });
+  let classRows = [];
+  if (isRegression) {
+    const targetName = dataset?.targetColumn || 'Target';
+    const bR2 = baseAgg.r2?.mean ?? baseAgg.accuracy?.mean ?? 0;
+    const bRMSE = baseAgg.rmse?.mean ?? 0;
+    const aR2 = bestAgg.r2?.mean ?? bestAgg.accuracy?.mean ?? 0;
+    const aRMSE = bestAgg.rmse?.mean ?? 0;
+    const dR2 = (aR2 - bR2) * 100;
+
+    classRows = [[
+      targetName,
+      formatPercent(bR2),
+      bRMSE.toFixed(2),
+      formatPercent(aR2),
+      aRMSE.toFixed(2),
+      `${dR2 > 0 ? '+' : ''}${dR2.toFixed(1)}%`,
+    ]];
+  } else {
+    const allClasses = baseline.aggregated?.confusionMatrix?.classes || [];
+    classRows = allClasses.map(cName => {
+      const baseClassMetric = baseline.aggregated?.confusionMatrix?.perClassMetrics?.[cName] || {};
+      const augClassMetric = bestStratRes?.evaluation?.aggregated?.confusionMatrix?.perClassMetrics?.[cName] || {};
+
+      const bPrec = baseClassMetric.precision || 0;
+      const bRec = baseClassMetric.sensitivity || baseClassMetric.recall || 0;
+      const bF1 = baseline.runs.map(r => r.perClass?.[cName]?.f1 || 0).reduce((a, b) => a + b, 0) / (baseline.runs.length || 1);
+      const aF1 = (bestStratRes?.evaluation?.runs || []).map(r => r.perClass?.[cName]?.f1 || 0).reduce((a, b) => a + b, 0) / (bestStratRes?.evaluation?.runs?.length || 1);
+      const dF1 = bF1 > 0 ? ((aF1 - bF1) / bF1 * 100) : (aF1 > 0 ? 100 : 0);
+
+      return [
+        String(cName),
+        formatPercent(bPrec),
+        formatPercent(bRec),
+        formatPercent(bF1),
+        formatPercent(aF1),
+        `${dF1 > 0 ? '+' : ''}${dF1.toFixed(1)}%`,
+      ];
+    });
+  }
   renderDataTable(classTableContainer, classHeaders, classRows, { pageSize: 5 });
 
   // 7. Synthetic Data Quality Audit Cards
   qualityCardsContainer.innerHTML = '';
-  const qm = bestStratRes?.qualityMetrics || { diversityScore: 82, redundancyScore: 0, distributionShift: 0.08 };
+  const avgKS = bestStratRes?.featureDrift?.length > 0
+    ? (bestStratRes.featureDrift.reduce((acc, f) => acc + (f.ksStatistic || 0), 0) / bestStratRes.featureDrift.length)
+    : 0.08;
+  const avgW1 = bestStratRes?.featureDrift?.length > 0
+    ? (bestStratRes.featureDrift.reduce((acc, f) => acc + (f.wassersteinDistance || 0), 0) / bestStratRes.featureDrift.length)
+    : 0.05;
+
+  const ksFidelityScore = Math.max(0, Math.round((1 - avgKS) * 100));
 
   qualityCardsContainer.appendChild(el('div', { className: 'card' }, [
-    el('div', { className: 'text-caption text-muted' }, 'Diversity Score'),
-    el('div', { className: 'metric-value mt-xs' }, `${qm.diversityScore}/100`),
-    el('div', { className: 'text-small text-secondary mt-xs' }, 'Variance across synthetic feature manifolds'),
+    el('div', { className: 'text-caption text-muted' }, 'Marginal Distribution Fidelity'),
+    el('div', { className: 'metric-value mt-xs' }, `${ksFidelityScore}%`),
+    el('div', { className: 'text-small text-secondary mt-xs' }, `Average KS divergence: ${avgKS.toFixed(3)} (lower is better)`),
   ]));
 
   qualityCardsContainer.appendChild(el('div', { className: 'card' }, [
-    el('div', { className: 'text-caption text-muted' }, 'Duplicate Redundancy'),
-    el('div', { className: 'metric-value mt-xs' }, `${qm.redundancyScore}%`),
-    el('div', { className: 'text-small text-secondary mt-xs' }, 'Proximity to exact training duplicates'),
+    el('div', { className: 'text-caption text-muted' }, 'Wasserstein-1 Shift'),
+    el('div', { className: 'metric-value mt-xs' }, `${avgW1.toFixed(3)}`),
+    el('div', { className: 'text-small text-secondary mt-xs' }, 'Average physical distribution shift across features'),
   ]));
 
   qualityCardsContainer.appendChild(el('div', { className: 'card' }, [
-    el('div', { className: 'text-caption text-muted' }, 'Distribution Shift'),
-    el('div', { className: 'metric-value mt-xs' }, String(qm.distributionShift)),
-    el('div', { className: 'text-small text-secondary mt-xs' }, 'Normalized deviation from original ground truth'),
+    el('div', { className: 'text-caption text-muted' }, 'Augmentation Sample Volume'),
+    el('div', { className: 'metric-value mt-xs' }, `+${bestStratRes?.syntheticCount || 0}`),
+    el('div', { className: 'text-small text-secondary mt-xs' }, `Total training samples: ${bestStratRes?.augmentedRowCount || dataset?.rowCount || 0}`),
   ]));
 
   // 8. Confusion Matrix Visualizer Controller
@@ -383,6 +467,27 @@ function renderResults(exp) {
       const isBase = currentConfStrat === 'baseline';
       const targetEval = isBase ? baseline : (strategyResults.find(s => s.strategyType === currentConfStrat)?.evaluation || baseline);
       const matrixData = targetEval?.aggregated?.confusionMatrix;
+
+      if (isRegression) {
+        const r2Val = formatPercent(targetEval.aggregated?.r2?.mean ?? targetEval.aggregated?.accuracy?.mean ?? 0);
+        const rmseVal = (targetEval.aggregated?.rmse?.mean || 0).toFixed(2);
+        const maeVal = (targetEval.aggregated?.mae?.mean || 0).toFixed(2);
+        const rVal = (targetEval.aggregated?.pearsonR?.mean || 0).toFixed(3);
+
+        confMatrixContainer.innerHTML = `
+          <div class="card p-md" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px;">
+            <h4 class="text-small font-semi text-primary mb-sm">Continuous Target Regression Fit (${formatStrategy(currentConfStrat)})</h4>
+            <div class="grid grid-cols-2 gap-sm">
+              <div class="p-sm background-subtle rounded"><div class="text-caption text-muted">Coefficient of Determination (R²)</div><div class="text-large font-bold mt-xs">${r2Val}</div></div>
+              <div class="p-sm background-subtle rounded"><div class="text-caption text-muted">Root Mean Squared Error (RMSE)</div><div class="text-large font-bold mt-xs">${rmseVal}</div></div>
+              <div class="p-sm background-subtle rounded"><div class="text-caption text-muted">Mean Absolute Error (MAE)</div><div class="text-large font-bold mt-xs">${maeVal}</div></div>
+              <div class="p-sm background-subtle rounded"><div class="text-caption text-muted">Pearson Correlation (r)</div><div class="text-large font-bold mt-xs">${rVal}</div></div>
+            </div>
+          </div>
+        `;
+        if (confMatrixMetricsStrip) confMatrixMetricsStrip.innerHTML = '';
+        return;
+      }
 
       if (!matrixData) {
         confMatrixContainer.innerHTML = '<div class="text-small text-muted p-md text-center">No confusion matrix recorded for this evaluation.</div>';
@@ -604,4 +709,46 @@ function renderResults(exp) {
       }
     }
   }
+
+  // 10. Render 100% Reproducible Python Script
+  const pyCodeEl = qs('#results-python-script');
+  const btnCopyPy = qs('#btn-copy-py-exp');
+  const btnDownloadPy = qs('#btn-download-py-exp');
+
+  if (pyCodeEl) {
+    const pythonScript = generateStandalonePythonScript({
+      datasetName: exp.name || 'dataset',
+      targetCol: dataset?.targetColumn || 'target',
+      modelType: exp.config?.modelType || 'random_forest',
+      testSize: exp.config?.trainTestSplit ? (1 - exp.config.trainTestSplit) : 0.25,
+      seed: exp.config?.baseSeed || 42,
+    });
+
+    pyCodeEl.textContent = pythonScript;
+
+    if (btnCopyPy) {
+      btnCopyPy.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(pythonScript);
+          toast.success('Python script copied to clipboard!');
+        } catch (e) {
+          toast.error('Failed to copy. Please select and copy manually.');
+        }
+      };
+    }
+
+    if (btnDownloadPy) {
+      btnDownloadPy.onclick = () => {
+        const blob = new Blob([pythonScript], { type: 'text/x-python;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reproduce_${exp.name}.py`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('Python reproduction script downloaded (.py)!');
+      };
+    }
+  }
 }
+

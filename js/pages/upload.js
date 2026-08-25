@@ -1,7 +1,17 @@
 import { requireSession } from '../services/auth.js';
 import { initSidebar } from '../components/sidebar.js';
 import { createDropzone } from '../components/dropzone.js';
-import { createDatasetFromCSV, getSampleDatasetCSV, getDatasets, getDatasetById, updateDatasetTarget, exportDatasetAsCSV } from '../services/dataset.js';
+import {
+  createDatasetFromCSV,
+  getSampleDatasetCSV,
+  getDatasets,
+  getDatasetById,
+  updateDatasetTarget,
+  exportDatasetAsCSV,
+  validateForPipeline,
+  cleanDataset,
+} from '../services/dataset.js';
+import * as storage from '../services/storage.js';
 import { renderBarChart, renderCorrelationHeatmap } from '../components/charts.js';
 import { renderDataTable } from '../components/tables.js';
 import { toast } from '../components/toast.js';
@@ -143,10 +153,44 @@ function renderAnalysisView(dataset) {
     },
   }, '📥 Export CSV');
 
+  // Pipeline Pre-flight Validation
+  const validation = validateForPipeline(dataset);
+  const totalMissing = dataset.columns.reduce((acc, c) => acc + (c.stats.nullCount || 0), 0);
+
+  if (totalMissing > 0) {
+    const btnClean = el('button', {
+      className: 'btn btn-secondary btn-sm',
+      onClick: async () => {
+        toast.info('Auto-cleaning missing values and outliers...');
+        const cleanRes = cleanDataset(dataset);
+        dataset.fullData = cleanRes.cleanedData;
+        dataset.sampleRows = cleanRes.cleanedData.slice(0, 100);
+        dataset.rowCount = cleanRes.cleanedRowCount;
+
+        // Recompute stats on cleaned columns
+        const { analyzeDataset } = await import('../services/analysis.js');
+        dataset.columns.forEach((col, colIdx) => {
+          const colVals = dataset.fullData.map(r => r[colIdx]).filter(v => v !== null && v !== undefined && v !== '');
+          col.stats.nullCount = dataset.rowCount - colVals.length;
+        });
+
+        const reAnalysis = analyzeDataset(dataset);
+        dataset.analysisResult = reAnalysis;
+        dataset.healthScore = Math.max(0, 100 - reAnalysis.augmentationNeedScore);
+
+        const storageKey = `datasets_${userId}`;
+        storage.updateInCollection(storageKey, dataset.id, dataset);
+        toast.success(`Dataset cleaned! ${cleanRes.cleanLog.length} operations performed.`);
+        renderAnalysisView(dataset);
+      },
+    }, `🧹 Auto-Clean (${totalMissing} missing)`);
+    headerActions.appendChild(btnClean);
+  }
+
   const btnStartExp = el('a', {
-    className: 'btn btn-primary btn-sm',
+    className: `btn ${validation.valid ? 'btn-primary' : 'btn-secondary'} btn-sm`,
     href: `experiment.html?datasetId=${dataset.id}`,
-  }, 'Configure Experiment →');
+  }, validation.valid ? 'Configure Experiment →' : '⚠️ Configure Experiment →');
 
   headerActions.appendChild(btnBack);
   headerActions.appendChild(btnExportCSV);
@@ -230,14 +274,21 @@ function renderAnalysisView(dataset) {
 
   // Diagnostic Warnings List
   warningsList.innerHTML = '';
-  const warnings = analysis.warnings || [];
+  const warnings = [...(analysis.warnings || [])];
+  if (validation.issues) {
+    validation.issues.forEach(iss => {
+      warnings.push(`[${iss.severity.toUpperCase()}] ${iss.message}`);
+    });
+  }
+
   if (warnings.length === 0) {
-    warningsList.appendChild(el('div', { className: 'text-small text-muted' }, 'No data health warnings detected.'));
+    warningsList.appendChild(el('div', { className: 'text-small text-muted' }, 'No data health warnings detected. Dataset is 100% pipeline ready!'));
   } else {
     warnings.forEach(w => {
+      const isErr = w.startsWith('[ERROR]');
       warningsList.appendChild(el('div', { className: 'analysis-reason-item mb-sm' }, [
-        el('span', { className: 'font-semi delta-negative' }, '!'),
-        el('span', {}, w),
+        el('span', { className: `font-semi ${isErr ? 'delta-negative' : 'text-primary'}` }, isErr ? '✕' : '!'),
+        el('span', { className: isErr ? 'font-semi' : '' }, w),
       ]));
     });
   }

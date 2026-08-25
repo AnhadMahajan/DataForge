@@ -72,9 +72,20 @@ export function analyzeDataset(dataset) {
     // Check for ID column characteristics
     const uniqueVals = new Set(nonNullVals);
     const uniqueRatio = uniqueVals.size / (nonNullVals.length || 1);
-    const isIdByName = idPattern.test(col.name.trim());
-    const isIdByCardinality = uniqueRatio > 0.92 && rowCount >= 20 && col.type !== 'numeric';
-    const isIdColumn = isIdByName || isIdByCardinality;
+    const isIdByName = idPattern.test(col.name.trim().toLowerCase());
+    const isIdByCardinality = uniqueRatio > 0.95 && rowCount >= 20 && col.type !== 'numeric';
+    
+    // Check if numeric column is integer-sequential (1,2,3... or 0,1,2...)
+    let isIdBySequence = false;
+    if (col.type === 'numeric' && uniqueRatio > 0.98 && nonNullVals.length >= 20) {
+      const nums = nonNullVals.map(Number).filter(v => !isNaN(v));
+      if (nums.length === nonNullVals.length && nums.every(v => Number.isInteger(v))) {
+        const sorted = [...nums].sort((a, b) => a - b);
+        const isSeq = sorted[sorted.length - 1] - sorted[0] === sorted.length - 1;
+        if (isSeq || isIdByName) isIdBySequence = true;
+      }
+    }
+    const isIdColumn = isIdByName || isIdByCardinality || isIdBySequence;
 
     if (isIdColumn) {
       idIndices.push(colIdx);
@@ -84,13 +95,13 @@ export function analyzeDataset(dataset) {
       numericIndices.push(colIdx);
       const values = nonNullVals.map(Number).filter(v => !isNaN(v));
 
-      const distribution = detectDistribution(values);
-      const outlierRes = detectOutliers(values);
+      const distribution = values.length > 0 ? detectDistribution(values) : 'unknown';
+      const outlierRes = values.length > 0 ? detectOutliers(values) : { count: 0, outliers: [] };
       const outlierPercentage = Number(((outlierRes.count / (values.length || 1)) * 100).toFixed(1));
 
       // Noise estimate: ratio of standard deviation to range normalized
-      const r = max(values) - min(values);
-      const s = std(values);
+      const r = values.length > 0 ? (max(values) - min(values)) : 0;
+      const s = values.length > 1 ? std(values) : 0;
       const noiseEstimate = r > 0 ? Number(Math.min(1, (s / r) * 1.5).toFixed(2)) : 0;
 
       featureAnalysis.push({
@@ -133,16 +144,17 @@ export function analyzeDataset(dataset) {
       const vals2 = [];
 
       fullData.forEach(r => {
-        const v1 = r[idx1];
-        const v2 = r[idx2];
-        if (typeof v1 === 'number' && typeof v2 === 'number' && !isNaN(v1) && !isNaN(v2)) {
+        const v1 = Number(r[idx1]);
+        const v2 = Number(r[idx2]);
+        if (!isNaN(v1) && !isNaN(v2) && r[idx1] !== null && r[idx2] !== null) {
           vals1.push(v1);
           vals2.push(v2);
         }
       });
 
       if (vals1.length > 2) {
-        const rCoeff = Number(pearsonCorrelation(vals1, vals2).toFixed(3));
+        const rawCoeff = pearsonCorrelation(vals1, vals2);
+        const rCoeff = Number((isNaN(rawCoeff) ? 0 : rawCoeff).toFixed(3));
         correlations.push({
           feature1: headers[idx1],
           feature2: headers[idx2],

@@ -32,10 +32,16 @@ export function createDatasetEncoder(data, numericIndices, categoricalIndices = 
   const numericStats = {};
   numericIndices.forEach(idx => {
     if (idIndices.includes(idx)) return;
-    const vals = data.map(r => Number(r[idx])).filter(v => !isNaN(v) && v !== null);
+    const vals = data.map(r => {
+      const v = r[idx];
+      if (v === null || v === undefined || v === '') return NaN;
+      const num = Number(v);
+      return isNaN(num) ? NaN : num;
+    }).filter(v => !isNaN(v));
+    const s = vals.length > 1 ? std(vals) : 1;
     numericStats[idx] = {
       median: vals.length > 0 ? median(vals) : 0,
-      std: vals.length > 1 ? (std(vals) || 1) : 1,
+      std: (s > 0 && isFinite(s)) ? s : 1, // Guard against zero/NaN std
       mean: vals.length > 0 ? mean(vals) : 0,
     };
   });
@@ -43,9 +49,12 @@ export function createDatasetEncoder(data, numericIndices, categoricalIndices = 
   const categoricalMaps = {};
   categoricalIndices.forEach(idx => {
     if (idIndices.includes(idx)) return;
-    const rawVals = data.map(r => r[idx]).filter(v => v !== null && v !== undefined && v !== '');
+    const rawVals = data.map(r => r[idx])
+      .filter(v => v !== null && v !== undefined && v !== '')
+      .map(v => String(v)); // Ensure string type for consistent encoding
     const defaultMode = rawVals.length > 0 ? mode(rawVals) : 'UNKNOWN';
-    const uniqueVals = Array.from(new Set(rawVals)).slice(0, 20); // Top 20 categories per column
+    // Use up to 50 categories (raised from 20 to handle real-world datasets)
+    const uniqueVals = Array.from(new Set(rawVals)).slice(0, 50);
 
     categoricalMaps[idx] = {
       defaultMode,
@@ -64,8 +73,9 @@ export function createDatasetEncoder(data, numericIndices, categoricalIndices = 
       if (isNaN(v) || v === null || v === undefined) {
         v = stat.median;
       }
-      // Scaled feature
-      vector.push((v - stat.mean) / stat.std);
+      // Scaled feature with guarded division
+      const stdVal = stat.std > 0 ? stat.std : 1;
+      vector.push((v - stat.mean) / stdVal);
     });
 
     // 2. Nominal Features (One-Hot Encoded)
@@ -84,6 +94,11 @@ export function createDatasetEncoder(data, numericIndices, categoricalIndices = 
       }
     });
 
+    // Safety: if the vector is empty, add a single zero feature to prevent crashes
+    if (vector.length === 0) {
+      vector.push(0.0);
+    }
+
     return vector;
   }
 
@@ -96,6 +111,7 @@ export function createDatasetEncoder(data, numericIndices, categoricalIndices = 
     encodeMatrix,
   };
 }
+
 
 // ---- Classifier 1: k-Nearest Neighbors ----
 

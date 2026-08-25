@@ -56,11 +56,11 @@ export function generateReportFromExperiment(userId, experiment, dataset) {
     },
     {
       heading: '5. Causal Explanation Engine',
-      content: recommendation.explanations.join('\n\n') || 'Baseline and augmented distributions produced equivalent decision boundaries across test splits.',
+      content: (recommendation.explanations || []).join('\n\n') || 'Baseline and augmented distributions produced equivalent decision boundaries across test splits.',
     },
     {
       heading: '6. Risk & Degradation Analysis',
-      content: recommendation.risks.length > 0
+      content: (recommendation.risks && recommendation.risks.length > 0)
         ? recommendation.risks.map(r => `⚠️ ${r}`).join('\n')
         : 'No class-level degradation or excess variance was detected across repeated seeds.',
     },

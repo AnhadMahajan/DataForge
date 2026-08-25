@@ -213,6 +213,60 @@
           <div id="dist-charts" class="synth-dist-grid"></div>
         </section>
 
+        <!-- Real Scikit-Learn (TSTR) Benchmark Section -->
+        <section class="card" id="tstr-section">
+          <div class="flex items-center justify-between mb-md">
+            <div>
+              <div class="card-title">Downstream ML Benchmark (TSTR: Train on Synthetic, Test on Real)</div>
+              <p class="text-secondary text-small">Trains a real Scikit-Learn model in Python (Pyodide WebAssembly) on synthetic data and tests it on a held-out real test set.</p>
+            </div>
+            <button type="button" id="run-tstr-btn" class="btn btn-primary btn-sm">
+              <span id="run-tstr-text">🚀 Run Real Scikit-Learn TSTR</span>
+            </button>
+          </div>
+          
+          <div id="tstr-progress-box" class="p-md background-subtle rounded text-small text-secondary hidden mb-md">
+            <div class="spinner mb-xs" style="margin: 0 auto;"></div>
+            <div id="tstr-progress-status" class="text-center">Initializing Python runtime...</div>
+          </div>
+
+          <div id="tstr-results-box" class="hidden">
+            <div class="card-grid-3 mb-md">
+              <div class="p-md background-subtle rounded text-center">
+                <div class="text-caption text-secondary">Baseline Sklearn Accuracy</div>
+                <div class="stat-number mt-xs font-mono" id="tstr-base-acc">—</div>
+                <div class="text-caption text-muted">Trained on Real Data</div>
+              </div>
+              <div class="p-md background-subtle rounded text-center">
+                <div class="text-caption text-secondary">Synthetic-Trained Accuracy</div>
+                <div class="stat-number mt-xs font-mono" id="tstr-synth-acc">—</div>
+                <div class="text-caption text-muted">Tested on Real Test Set</div>
+              </div>
+              <div class="p-md background-subtle rounded text-center">
+                <div class="text-caption text-secondary">TSTR Retention Score</div>
+                <div class="stat-number mt-xs font-mono text-primary" id="tstr-retention-score">—</div>
+                <div class="text-caption text-muted">Scientific ML Utility</div>
+              </div>
+            </div>
+            <div id="tstr-metrics-details" class="text-small text-secondary"></div>
+          </div>
+        </section>
+
+        <!-- Python Script Export Section -->
+        <section class="card" id="python-export-section">
+          <div class="flex items-center justify-between mb-md">
+            <div>
+              <div class="card-title">🐍 100% Reproducible Python Script</div>
+              <p class="text-secondary text-small">Download or copy the exact Python code to run this benchmark in Jupyter Notebook or Google Colab.</p>
+            </div>
+            <div class="flex gap-sm">
+              <button type="button" id="copy-py-btn" class="btn btn-secondary btn-sm">📋 Copy Code</button>
+              <button type="button" id="download-py-btn" class="btn btn-secondary btn-sm">📥 Download .py</button>
+            </div>
+          </div>
+          <pre class="p-md background-subtle rounded text-small font-mono" style="max-height: 280px; overflow-y: auto; white-space: pre-wrap;" id="python-script-code"></pre>
+        </section>
+
         <!-- Preview Table -->
         <section class="card">
           <div class="flex items-center justify-between mb-md">

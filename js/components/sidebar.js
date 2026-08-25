@@ -5,6 +5,7 @@
 
 import { el, icon, qs } from '../utils/dom.js';
 import { getCurrentUser, logout } from '../services/auth.js';
+import { checkNativeBackend } from '../services/pipeline.js';
 import { initCommandPalette, openCommandPalette } from './command-palette.js';
 
 // ---- Lucide-style SVG icon paths ----
@@ -120,8 +121,17 @@ export function initSidebar(containerId = 'sidebar') {
           el('div', { className: 'sidebar-user-email' }, user?.email || ''),
         ]),
       ]),
+      // Backend Status Pill
+      el('div', {
+        id: 'sidebar-backend-badge',
+        className: 'mt-xs p-xs rounded text-caption flex items-center gap-xs',
+        style: { background: 'var(--bg-card-hover)', border: '1px solid var(--border-light)' },
+      }, [
+        el('span', { id: 'backend-status-dot', style: { width: '8px', height: '8px', borderRadius: '50%', background: '#ffaa00' } }),
+        el('span', { id: 'backend-status-text', className: 'text-muted' }, 'Detecting Python...'),
+      ]),
       el('button', {
-        className: 'nav-item mt-sm w-full',
+        className: 'nav-item mt-xs w-full',
         onClick: () => {
           logout();
         },
@@ -131,6 +141,22 @@ export function initSidebar(containerId = 'sidebar') {
       ]),
     ]),
   ]);
+
+  // Check backend status async and update badge
+  checkNativeBackend().then(res => {
+    const dot = sidebar.querySelector('#backend-status-dot');
+    const text = sidebar.querySelector('#backend-status-text');
+    if (dot && text) {
+      if (res.online) {
+        dot.style.background = '#10b981'; // Green
+        text.textContent = 'Native Python (FastAPI)';
+        text.style.color = '#10b981';
+      } else {
+        dot.style.background = '#3b82f6'; // Blue
+        text.textContent = 'Browser Python (Pyodide)';
+      }
+    }
+  });
 
   // If container is body, prepend the sidebar
   if (containerId === 'sidebar' && qs('#sidebar')) {
