@@ -117,15 +117,50 @@ export function renderBarChart(container, data, options = {}) {
  * labels = ['Accuracy', 'Precision', 'F1']
  */
 export function renderGroupedBarChart(container, labels, series, options = {}) {
-  const { height = 240, title = '' } = options;
-  const canvas = el('canvas', { height });
-  canvas.style.width = '100%';
-  canvas.style.height = `${height}px`;
+  const { title = '' } = options;
+
+  // Dynamically compute legend height to decide total canvas height
+  const barCount = series.length;
+  const needsRotatedLabels = barCount > 3;
 
   container.innerHTML = '';
   if (title) {
     container.appendChild(el('div', { className: 'card-title mb-md text-small font-semi' }, title));
   }
+
+  // Create a temporary canvas to measure legend line wrapping
+  const tmpCanvas = document.createElement('canvas');
+  const tmpCtx = tmpCanvas.getContext('2d');
+  tmpCtx.font = '11px Inter, sans-serif';
+
+  const estWidth = container.clientWidth || 400;
+  const legendItemWidths = series.map(s => {
+    const textW = tmpCtx.measureText(s.name).width;
+    return 10 + 6 + textW + 20; // swatch + gap + text + spacing
+  });
+
+  const availLegendW = estWidth - 50; // padding.left roughly
+  let legendRows = 1;
+  let rowW = 0;
+  legendItemWidths.forEach(w => {
+    if (rowW + w > availLegendW && rowW > 0) {
+      legendRows++;
+      rowW = w;
+    } else {
+      rowW += w;
+    }
+  });
+
+  const legendRowHeight = 18;
+  const legendTotalH = legendRows * legendRowHeight + 6;
+  const labelAreaH = needsRotatedLabels ? 50 : 14; // extra space above bars for rotated labels
+  const height = options.height
+    ? Math.max(options.height, 180 + legendTotalH + labelAreaH)
+    : 240 + (legendRows - 1) * legendRowHeight + (needsRotatedLabels ? 30 : 0);
+
+  const canvas = el('canvas', { height });
+  canvas.style.width = '100%';
+  canvas.style.height = `${height}px`;
   container.appendChild(canvas);
 
   const rect = canvas.getBoundingClientRect();
@@ -137,7 +172,12 @@ export function renderGroupedBarChart(container, labels, series, options = {}) {
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  const padding = { top: 30, right: 20, bottom: 45, left: 45 };
+  const padding = {
+    top: legendTotalH + 8 + (needsRotatedLabels ? 40 : 14),
+    right: 20,
+    bottom: 45,
+    left: 45,
+  };
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
@@ -145,7 +185,6 @@ export function renderGroupedBarChart(container, labels, series, options = {}) {
   const maxVal = 1.0;
   const groupCount = labels.length;
   const groupGap = chartW / groupCount;
-  const barCount = series.length;
   const barW = Math.min(24, (groupGap * 0.7) / barCount);
   const totalBarWidth = barW * barCount;
 
@@ -178,11 +217,27 @@ export function renderGroupedBarChart(container, labels, series, options = {}) {
       ctx.fillStyle = s.color || CHART_COLORS.baseline;
       ctx.fillRect(x, y, barW - 2, barH);
 
-      // Label on bar top
-      ctx.textAlign = 'center';
+      // Value label on bar top — rotate when bars are narrow to prevent overlap
+      const labelText = `${(val * 100).toFixed(1)}%`;
       ctx.fillStyle = '#0a0a0a';
-      ctx.font = '10px JetBrains Mono, monospace';
-      ctx.fillText(`${(val * 100).toFixed(1)}%`, x + (barW - 2) / 2, y - 5);
+      ctx.font = '9px JetBrains Mono, monospace';
+
+      if (needsRotatedLabels) {
+        // Draw label rotated -60° anchored just above the bar top
+        ctx.save();
+        const lx = x + (barW - 2) / 2;
+        const ly = y - 4;
+        ctx.translate(lx, ly);
+        ctx.rotate(-Math.PI / 3); // -60 degrees
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labelText, 0, 0);
+        ctx.restore();
+      } else {
+        // Horizontal label (plenty of room)
+        ctx.textAlign = 'center';
+        ctx.fillText(labelText, x + (barW - 2) / 2, y - 5);
+      }
     });
 
     // Group Label
@@ -192,16 +247,26 @@ export function renderGroupedBarChart(container, labels, series, options = {}) {
     ctx.fillText(label, padding.left + gIdx * groupGap + groupGap / 2, padding.top + chartH + 20);
   });
 
-  // Legend at top
+  // Legend at top — wraps to multiple rows if needed
+  ctx.font = '11px Inter, sans-serif';
   let legendX = padding.left;
+  let legendY = 10;
   series.forEach(s => {
+    const textW = ctx.measureText(s.name).width;
+    const itemW = 10 + 6 + textW + 20;
+
+    // Wrap to next row if overflowing
+    if (legendX + itemW > width - padding.right && legendX > padding.left) {
+      legendX = padding.left;
+      legendY += legendRowHeight;
+    }
+
     ctx.fillStyle = s.color || CHART_COLORS.baseline;
-    ctx.fillRect(legendX, 10, 10, 10);
+    ctx.fillRect(legendX, legendY, 10, 10);
     ctx.fillStyle = '#333333';
-    ctx.font = '11px Inter, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(s.name, legendX + 14, 19);
-    legendX += ctx.measureText(s.name).width + 30;
+    ctx.fillText(s.name, legendX + 14, legendY + 9);
+    legendX += itemW;
   });
 
   return canvas;
