@@ -42,12 +42,15 @@ if (user) {
   }
 }
 
+import { getBackendUrl, setBackendUrl, checkNativeBackend } from '../services/pipeline.js';
+
 // Tab Switching
 const navBtns = qsa('.settings-nav-btn');
 const tabs = {
   profile: qs('#tab-profile'),
   preferences: qs('#tab-preferences'),
   storage: qs('#tab-storage'),
+  backend: qs('#tab-backend'),
   about: qs('#tab-about'),
 };
 
@@ -58,11 +61,14 @@ navBtns.forEach(btn => {
     const tabName = btn.dataset.tab;
 
     Object.entries(tabs).forEach(([k, pane]) => {
-      if (k === tabName) show(pane);
-      else hide(pane);
+      if (pane) {
+        if (k === tabName) show(pane);
+        else hide(pane);
+      }
     });
 
     if (tabName === 'storage') updateStorageStats();
+    if (tabName === 'backend') updateBackendUI();
   });
 });
 
@@ -245,5 +251,120 @@ if (btnClear) {
         }, 600);
       },
     });
+  });
+}
+
+// =============================================================================
+// Backend & Cloud Deployment Controls
+// =============================================================================
+const customBackendInput = qs('#custom-backend-url');
+const btnSaveBackend = qs('#btn-save-backend');
+const btnTestBackend = qs('#btn-test-backend');
+const btnResetBackend = qs('#btn-reset-backend');
+const backendTestResult = qs('#backend-test-result');
+const indicatorDot = qs('#backend-indicator-dot');
+const indicatorText = qs('#backend-indicator-text');
+const indicatorPill = qs('#backend-indicator-pill');
+
+async function updateBackendUI() {
+  const currentUrl = getBackendUrl();
+  if (customBackendInput) {
+    customBackendInput.value = localStorage.getItem('dataforge_backend_url') || '';
+  }
+
+  if (indicatorDot && indicatorText) {
+    indicatorDot.style.background = '#ffaa00';
+    indicatorText.textContent = 'Probing execution engine...';
+  }
+
+  const res = await checkNativeBackend();
+  if (indicatorDot && indicatorText && indicatorPill) {
+    if (res.online) {
+      indicatorDot.style.background = '#10b981';
+      indicatorText.textContent = `Native Python Server (FastAPI on ${res.url})`;
+      indicatorPill.textContent = 'Active Server';
+      indicatorPill.className = 'pill pill-positive ml-auto';
+    } else {
+      indicatorDot.style.background = '#3b82f6';
+      indicatorText.textContent = 'In-Browser WebAssembly (Pyodide)';
+      indicatorPill.textContent = 'Offline Sandbox Ready';
+      indicatorPill.className = 'pill ml-auto';
+    }
+  }
+}
+
+if (btnSaveBackend) {
+  btnSaveBackend.addEventListener('click', async () => {
+    const val = customBackendInput.value.trim();
+    setBackendUrl(val);
+    toast.success(val ? 'Custom backend URL saved.' : 'Reset to default in-browser WebAssembly mode.');
+    await updateBackendUI();
+  });
+}
+
+if (btnResetBackend) {
+  btnResetBackend.addEventListener('click', async () => {
+    setBackendUrl('');
+    if (customBackendInput) customBackendInput.value = '';
+    toast.info('Backend configuration reset to default.');
+    await updateBackendUI();
+  });
+}
+
+if (btnTestBackend) {
+  btnTestBackend.addEventListener('click', async () => {
+    const val = customBackendInput?.value?.trim();
+    const testUrl = val || (window.location.protocol === 'https:' ? null : 'http://127.0.0.1:8000');
+
+    if (!testUrl) {
+      if (backendTestResult) {
+        show(backendTestResult);
+        backendTestResult.style.background = 'rgba(59, 130, 246, 0.1)';
+        backendTestResult.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+        backendTestResult.style.color = '#60a5fa';
+        backendTestResult.innerHTML = '<strong>In-Browser Mode:</strong> WebAssembly (Pyodide) is active. No external server required.';
+      }
+      return;
+    }
+
+    if (backendTestResult) {
+      show(backendTestResult);
+      backendTestResult.style.background = 'rgba(255, 170, 0, 0.1)';
+      backendTestResult.style.border = '1px solid rgba(255, 170, 0, 0.3)';
+      backendTestResult.style.color = '#ffaa00';
+      backendTestResult.textContent = `Testing connection to ${testUrl}...`;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+      const res = await fetch(`${testUrl}/api/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (backendTestResult) {
+          backendTestResult.style.background = 'rgba(16, 185, 129, 0.1)';
+          backendTestResult.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+          backendTestResult.style.color = '#10b981';
+          backendTestResult.innerHTML = `<strong>Connected Successfully:</strong> ${data.backend || 'FastAPI Server'} (${data.pythonVersion || 'Python'}) — Packages: ${Object.keys(data.packages || {}).join(', ')}`;
+        }
+        toast.success('Connection successful!');
+      } else {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+    } catch (err) {
+      if (backendTestResult) {
+        backendTestResult.style.background = 'rgba(239, 68, 68, 0.1)';
+        backendTestResult.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        backendTestResult.style.color = '#ef4444';
+        backendTestResult.innerHTML = `<strong>Connection Failed:</strong> ${err.message}. Ensure CORS is enabled and HTTPS is used if on Vercel.`;
+      }
+      toast.error('Could not connect to backend server.');
+    }
   });
 }

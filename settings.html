@@ -73,6 +73,16 @@
             <span>Data &amp; Storage</span>
           </button>
 
+          <button class="settings-nav-btn" data-tab="backend">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+              <line x1="6" y1="6" x2="6.01" y2="6"/>
+              <line x1="6" y1="18" x2="6.01" y2="18"/>
+            </svg>
+            <span>Backend &amp; Cloud</span>
+          </button>
+
           <button class="settings-nav-btn" data-tab="about">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
@@ -228,7 +238,42 @@
             </div>
           </section>
 
-          <!-- Tab 4: Engine Specifications -->
+          <!-- Tab 4: Backend & Cloud Deployment -->
+          <section id="tab-backend" class="card" style="display: none;">
+            <div class="card-title mb-xs">Python Backend &amp; Cloud Deployment</div>
+            <p class="text-secondary text-small mb-lg">
+              DataForge operates on a <strong>Hybrid Architecture</strong>: on cloud platforms like Vercel, it runs completely in-browser via <strong>WebAssembly (Pyodide)</strong> with zero servers needed. You can also connect to a dedicated FastAPI Python server.
+            </p>
+
+            <div class="stack stack-md">
+              <div class="form-group">
+                <label class="form-label">Active Engine Mode</label>
+                <div class="flex items-center gap-sm p-sm rounded" style="background: var(--bg-card-hover); border: 1px solid var(--border-light);">
+                  <span id="backend-indicator-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; flex-shrink: 0;"></span>
+                  <span id="backend-indicator-text" class="font-medium">Browser WebAssembly (Pyodide)</span>
+                  <span id="backend-indicator-pill" class="pill ml-auto">Offline Ready</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="custom-backend-url" class="form-label">FastAPI Backend Endpoint URL</label>
+                <input type="url" id="custom-backend-url" class="input" placeholder="Leave empty for In-Browser WebAssembly, or e.g. https://api.dataforge.ai">
+                <span class="form-hint">
+                  Local default: <code>http://127.0.0.1:8000</code>. On Vercel (HTTPS), enter an HTTPS backend URL (e.g. Railway, Render, Fly.io, Hugging Face Spaces) or leave empty to use In-Browser Pyodide.
+                </span>
+              </div>
+
+              <div class="flex items-center gap-sm mt-sm">
+                <button type="button" id="btn-save-backend" class="btn btn-primary btn-sm">Save Backend URL</button>
+                <button type="button" id="btn-test-backend" class="btn btn-secondary btn-sm">Test Connection</button>
+                <button type="button" id="btn-reset-backend" class="btn btn-ghost btn-sm">Reset to Default</button>
+              </div>
+
+              <div id="backend-test-result" class="p-sm rounded text-caption mt-sm" style="display: none;"></div>
+            </div>
+          </section>
+
+          <!-- Tab 5: Engine Specifications -->
           <section id="tab-about" class="card hidden">
             <div class="card-title mb-xs">DataForge v1.0.0 (Evaluation Build)</div>
             <p class="text-secondary text-small mb-md">Client-Side Deterministic Synthetic Data Intelligence Engine</p>

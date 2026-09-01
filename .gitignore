@@ -54,3 +54,6 @@ __pycache__/
 env/
 venv/
 .pytest_cache/
+
+# Graphify Output
+graphify-out/

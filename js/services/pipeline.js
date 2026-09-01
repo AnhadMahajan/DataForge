@@ -10,9 +10,41 @@
 
 import { auditSyntheticFidelity } from './fidelity-audit.js';
 
-const NATIVE_BACKEND_URL = 'http://127.0.0.1:8000';
+const DEFAULT_LOCAL_BACKEND = 'http://127.0.0.1:8000';
 let nativeBackendCache = null; // null = untested, true/false = tested
 let nativeBackendInfo = null;
+
+/**
+ * Get active Backend URL (localStorage override, protocol-safe default, or null for browser Pyodide).
+ */
+export function getBackendUrl() {
+  if (typeof window !== 'undefined') {
+    const custom = localStorage.getItem('dataforge_backend_url');
+    if (custom !== null) {
+      return custom.trim() || null;
+    }
+    // If on https: (e.g. Vercel deployment), do not probe insecure http:// localhost by default
+    if (window.location.protocol === 'https:') {
+      return null;
+    }
+  }
+  return DEFAULT_LOCAL_BACKEND;
+}
+
+/**
+ * Save custom Backend URL to localStorage.
+ */
+export function setBackendUrl(url) {
+  if (typeof window !== 'undefined') {
+    if (!url || !url.trim()) {
+      localStorage.removeItem('dataforge_backend_url');
+    } else {
+      localStorage.setItem('dataforge_backend_url', url.trim());
+    }
+    nativeBackendCache = null;
+    nativeBackendInfo = null;
+  }
+}
 
 // ---- Standard Data Worker State ----
 let dataWorker = null;
@@ -27,14 +59,21 @@ const pendingPyodideTasks = new Map();
 let pyodideTaskCounter = 0;
 
 /**
- * Check if the native FastAPI Python backend is running locally.
+ * Check if the native or remote FastAPI Python backend is running.
  */
 export async function checkNativeBackend() {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    nativeBackendCache = false;
+    nativeBackendInfo = null;
+    return { online: false, info: null, mode: 'browser_pyodide' };
+  }
+
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
 
-    const res = await fetch(`${NATIVE_BACKEND_URL}/api/health`, {
+    const res = await fetch(`${backendUrl}/api/health`, {
       method: 'GET',
       signal: controller.signal,
     });
@@ -44,23 +83,25 @@ export async function checkNativeBackend() {
       const data = await res.json();
       nativeBackendCache = true;
       nativeBackendInfo = data;
-      return { online: true, info: data };
+      return { online: true, info: data, url: backendUrl, mode: 'native_python' };
     }
   } catch (err) {
     nativeBackendCache = false;
     nativeBackendInfo = null;
   }
-  return { online: false, info: null };
+  return { online: false, info: null, mode: 'browser_pyodide' };
 }
 
 /**
  * Get current backend status (cached or checked).
  */
 export function getBackendStatus() {
+  const backendUrl = getBackendUrl();
   return {
     isNative: nativeBackendCache === true,
     info: nativeBackendInfo,
-    url: NATIVE_BACKEND_URL,
+    url: backendUrl || 'In-Browser WebAssembly (Pyodide)',
+    isHttpsDeployment: typeof window !== 'undefined' && window.location.protocol === 'https:',
   };
 }
 
@@ -198,7 +239,7 @@ export async function runPipeline(task, payload, onProgress = () => {}) {
 export async function runPyodideTask(task, payload, onProgress = () => {}) {
   const w = getPyodideWorker();
   if (!w) {
-    throw new Error('Python WebAssembly runtime is not supported in this browser environment.');
+    return runSynchronous(task, payload, onProgress);
   }
 
   return new Promise((resolve, reject) => {
@@ -208,7 +249,7 @@ export async function runPyodideTask(task, payload, onProgress = () => {}) {
       w.postMessage({ taskId, task, payload });
     } catch (err) {
       pendingPyodideTasks.delete(taskId);
-      reject(new Error('Failed to post task to Pyodide Worker: ' + err.message));
+      runSynchronous(task, payload, onProgress).then(resolve).catch(reject);
     }
   });
 }
@@ -227,12 +268,12 @@ export async function runTSTRBenchmark({
   seed = 42,
   onProgress = () => {},
 }) {
-  // Check native backend first
+  // Check native or remote backend first
   const status = await checkNativeBackend();
-  if (status.online) {
+  if (status.online && status.url) {
     onProgress('Executing on Native Python Server (FastAPI + Scikit-Learn)...', 30);
     try {
-      const res = await fetch(`${NATIVE_BACKEND_URL}/api/benchmark/tstr`, {
+      const res = await fetch(`${status.url}/api/benchmark/tstr`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -285,12 +326,12 @@ export async function runExperimentPipeline({
   baseSeed = 42,
   onProgress = () => {},
 }) {
-  // Check native backend first
+  // Check native or remote backend first
   const status = await checkNativeBackend();
-  if (status.online) {
+  if (status.online && status.url) {
     onProgress('Executing on Native Python Backend (FastAPI + Scikit-Learn)...', 30);
     try {
-      const res = await fetch(`${NATIVE_BACKEND_URL}/api/experiment`, {
+      const res = await fetch(`${status.url}/api/experiment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -469,13 +510,221 @@ async function runSynchronous(task, payload, onProgress) {
     }
 
     case 'run_experiment': {
-      const { runExperiment } = await import('./experiment.js');
-      const result = await runExperiment({
-        ...payload,
-        onProgress: (msg, pct) => onProgress(msg, pct),
+      const {
+        headers,
+        data,
+        targetCol,
+        strategies = ['smote', 'adasyn', 'oversampling', 'noise_injection'],
+        strategyParams = {},
+        runs = 3,
+        trainTestSplit = 0.8,
+        modelType = 'random_forest',
+        baseSeed = 42,
+      } = payload;
+
+      const { analyzeDataset } = await import('./analysis.js');
+      const { runControlledEvaluation, compareEvaluations } = await import('./evaluation.js');
+      const { applySMOTE, applyADASYN, applySMOTETomek, applyRandomOversampling, applyNoiseInjection } = await import('./augmentation.js');
+      const { generateRecommendation } = await import('./recommendations.js');
+
+      const targetIdx = headers.indexOf(targetCol);
+      if (targetIdx === -1) throw new Error(`Target column "${targetCol}" not found in headers.`);
+
+      const labels = data.map(r => r[targetIdx]);
+      const featureData = data.map(r => r.filter((_, i) => i !== targetIdx));
+      const featureHeaders = headers.filter((_, i) => i !== targetIdx);
+
+      const numericIndices = [];
+      const categoricalIndices = [];
+      const idIndices = [];
+      const idPattern = /^(id|_id|uuid|guid|pk|ssn|email|index|key|identifier|client_id|customer_id|user_id|order_id|patient_id)$/i;
+
+      featureHeaders.forEach((h, idx) => {
+        if (idPattern.test(String(h).trim())) {
+          idIndices.push(idx);
+          return;
+        }
+        const sampleVals = featureData.slice(0, 50).map(r => r[idx]).filter(v => v !== null && v !== undefined && v !== '');
+        const numCount = sampleVals.filter(v => typeof v === 'number' || (!isNaN(Number(v)) && v !== '')).length;
+        if (sampleVals.length > 0 && numCount / sampleVals.length > 0.7) {
+          numericIndices.push(idx);
+        } else {
+          categoricalIndices.push(idx);
+        }
       });
-      if (!result.success) throw new Error(result.error?.message || 'Experiment failed');
-      return result.data;
+
+      onProgress('Evaluating Baseline Model...', 20);
+      const evalModelType = modelType === 'logistic_regression' ? 'logistic_regression' : modelType === 'decision_tree' ? 'decision_tree' : 'knn';
+
+      const baseline = await runControlledEvaluation({
+        data: featureData,
+        labels,
+        numericIndices,
+        categoricalIndices,
+        idIndices,
+        runs,
+        trainTestSplit,
+        modelType: evalModelType,
+        baseSeed,
+        augmentFn: null,
+      });
+
+      const strategyResults = [];
+      const totalStrats = strategies.length;
+
+      const { generateCSV } = await import('../utils/csv.js');
+      const { computeKolmogorovSmirnov, computeWassersteinDistance, mean, std } = await import('../utils/math.js');
+
+      for (let i = 0; i < totalStrats; i++) {
+        const strat = strategies[i];
+        const pct = Math.round(20 + ((i + 1) / (totalStrats || 1)) * 70);
+        onProgress(`Evaluating strategy: ${strat}...`, pct);
+
+        let augFn = null;
+        const opt = { ...(strategyParams[strat] || {}), categoricalIndices, seed: baseSeed };
+
+        if (strat === 'smote') augFn = (d, l, num, o) => applySMOTE(d, l, num, { ...o, ...opt });
+        else if (strat === 'adasyn') augFn = (d, l, num, o) => applyADASYN(d, l, num, { ...o, ...opt });
+        else if (strat === 'smote_tomek') augFn = (d, l, num, o) => applySMOTETomek(d, l, num, { ...o, ...opt });
+        else if (strat === 'oversampling') augFn = (d, l, num, o) => applyRandomOversampling(d, l, num, { ...o, ...opt });
+        else if (strat === 'noise_injection') augFn = (d, l, num, o) => applyNoiseInjection(d, l, num, { ...o, ...opt });
+
+        if (augFn) {
+          const sampleAug = augFn(featureData, labels, numericIndices, { seed: baseSeed, categoricalIndices });
+          
+          const augmentedFullRows = (sampleAug.augmentedData || []).map((row, rIdx) => {
+            const fullRow = [...row];
+            fullRow.splice(targetIdx, 0, sampleAug.augmentedLabels[rIdx]);
+            return fullRow;
+          });
+
+          const syntheticFullRows = (sampleAug.syntheticData || []).map((row, rIdx) => {
+            const fullRow = [...row];
+            fullRow.splice(targetIdx, 0, sampleAug.syntheticLabels[rIdx]);
+            return fullRow;
+          });
+
+          const augmentedCSV = generateCSV(headers, augmentedFullRows);
+          const syntheticCSV = generateCSV(headers, syntheticFullRows);
+
+          const featureDrift = [];
+          numericIndices.forEach(fIdx => {
+            const featName = featureHeaders[fIdx] || `Feature_${fIdx}`;
+            const origVals = featureData.map(r => Number(r[fIdx])).filter(v => !isNaN(v));
+            const synthVals = (sampleAug.syntheticData || []).map(r => Number(r[fIdx])).filter(v => !isNaN(v));
+
+            const origM = origVals.length > 0 ? mean(origVals) : 0;
+            const origS = origVals.length > 1 ? std(origVals) : 1;
+            const synthM = synthVals.length > 0 ? mean(synthVals) : origM;
+            const synthS = synthVals.length > 1 ? std(synthVals) : origS;
+
+            const ks = computeKolmogorovSmirnov(origVals, synthVals);
+            const w1 = computeWassersteinDistance(origVals, synthVals);
+
+            featureDrift.push({
+              featureName: featName,
+              featureIndex: fIdx,
+              originalMean: Number(origM.toFixed(2)),
+              originalStd: Number(origS.toFixed(2)),
+              syntheticMean: Number(synthM.toFixed(2)),
+              syntheticStd: Number(synthS.toFixed(2)),
+              ksStatistic: ks.statistic,
+              driftSeverity: ks.driftSeverity,
+              wassersteinDistance: w1,
+            });
+          });
+
+          const evalRes = await runControlledEvaluation({
+            data: featureData,
+            labels,
+            numericIndices,
+            categoricalIndices,
+            idIndices,
+            runs,
+            trainTestSplit,
+            modelType: evalModelType,
+            baseSeed,
+            augmentFn: augFn,
+          });
+
+          const comparison = compareEvaluations(baseline, evalRes);
+          strategyResults.push({
+            strategy: strat,
+            strategyType: strat,
+            strategyParams: opt,
+            results: evalRes,
+            evaluation: evalRes,
+            comparison,
+            featureDrift,
+            syntheticData: sampleAug.syntheticData || [],
+            syntheticCount: sampleAug.syntheticCount || 0,
+            augmentedRowCount: augmentedFullRows.length,
+            augmentedCSV,
+            syntheticCSV,
+          });
+        }
+      }
+
+      const rec = generateRecommendation({ analysisResult: {} }, baseline, strategyResults);
+      return {
+        baseline,
+        strategyResults,
+        recommendation: rec,
+        backend: 'In-Browser JavaScript Engine',
+      };
+    }
+
+    case 'tstr_benchmark': {
+      const { realData, syntheticData, headers, targetCol, modelType = 'random_forest', testSize = 0.25, seed = 42 } = payload;
+      const { createDatasetEncoder, createModel } = await import('./evaluation.js');
+      const { accuracy } = await import('../utils/math.js');
+
+      const targetIdx = headers.indexOf(targetCol);
+      if (targetIdx === -1) throw new Error(`Target column "${targetCol}" not found.`);
+
+      const realY = realData.map(r => r[targetIdx]);
+      const realX_raw = realData.map(r => r.filter((_, i) => i !== targetIdx));
+      const synthY = syntheticData.map(r => r[targetIdx]);
+      const synthX_raw = syntheticData.map(r => r.filter((_, i) => i !== targetIdx));
+      const featHeaders = headers.filter((_, i) => i !== targetIdx);
+
+      const splitIdx = Math.max(1, Math.floor(realData.length * (1 - testSize)));
+      const trainRealRaw = realX_raw.slice(0, splitIdx);
+      const trainRealY = realY.slice(0, splitIdx);
+      const testRealRaw = realX_raw.slice(splitIdx);
+      const testRealY = realY.slice(splitIdx);
+
+      const numIdx = [];
+      const catIdx = [];
+      featHeaders.forEach((h, i) => {
+        const val = realX_raw[0]?.[i];
+        if (typeof val === 'number' || !isNaN(Number(val))) numIdx.push(i);
+        else catIdx.push(i);
+      });
+
+      const encoder = createDatasetEncoder(realX_raw, numIdx, catIdx, []);
+      const trainRealEncoded = encoder.encodeMatrix(trainRealRaw);
+      const testRealEncoded = encoder.encodeMatrix(testRealRaw);
+      const synthEncoded = encoder.encodeMatrix(synthX_raw);
+
+      const evalModelType = modelType === 'logistic_regression' ? 'logistic_regression' : 'knn';
+      const mBaseline = createModel(evalModelType);
+      mBaseline.fit(trainRealEncoded, trainRealY);
+      const predsBase = mBaseline.predict(testRealEncoded);
+      const baseAcc = accuracy(testRealY, predsBase);
+
+      const mTstr = createModel(evalModelType);
+      mTstr.fit(synthEncoded, synthY);
+      const predsTstr = mTstr.predict(testRealEncoded);
+      const tstrAcc = accuracy(testRealY, predsTstr);
+
+      return {
+        baselineAccuracy: baseAcc,
+        tstrAccuracy: tstrAcc,
+        retentionRate: baseAcc > 0 ? (tstrAcc / baseAcc) * 100 : 100,
+        gap: tstrAcc - baseAcc,
+        backend: 'In-Browser JavaScript Engine',
+      };
     }
 
     default:

@@ -122,13 +122,15 @@ export function initSidebar(containerId = 'sidebar') {
         ]),
       ]),
       // Backend Status Pill
-      el('div', {
+      el('a', {
         id: 'sidebar-backend-badge',
-        className: 'mt-xs p-xs rounded text-caption flex items-center gap-xs',
-        style: { background: 'var(--bg-card-hover)', border: '1px solid var(--border-light)' },
+        href: 'settings.html',
+        className: 'mt-xs p-xs rounded text-caption flex items-center gap-xs no-underline',
+        style: { background: 'var(--bg-card-hover)', border: '1px solid var(--border-light)', cursor: 'pointer', transition: 'all 0.2s ease' },
+        title: 'Click to configure Backend API in Settings',
       }, [
-        el('span', { id: 'backend-status-dot', style: { width: '8px', height: '8px', borderRadius: '50%', background: '#ffaa00' } }),
-        el('span', { id: 'backend-status-text', className: 'text-muted' }, 'Detecting Python...'),
+        el('span', { id: 'backend-status-dot', style: { width: '8px', height: '8px', borderRadius: '50%', background: '#ffaa00', flexShrink: '0' } }),
+        el('span', { id: 'backend-status-text', className: 'text-muted truncate' }, 'Detecting Engine...'),
       ]),
       el('button', {
         className: 'nav-item mt-xs w-full',
@@ -153,7 +155,8 @@ export function initSidebar(containerId = 'sidebar') {
         text.style.color = '#10b981';
       } else {
         dot.style.background = '#3b82f6'; // Blue
-        text.textContent = 'Browser Python (Pyodide)';
+        text.textContent = 'Browser Wasm (Pyodide)';
+        text.style.color = '#60a5fa';
       }
     }
   });
