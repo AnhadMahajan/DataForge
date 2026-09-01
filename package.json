@@ -4,7 +4,8 @@
   "description": "DataForge — Synthetic Data Intelligence Engine",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
+    "dev": "node dev-server.js",
+    "serve": "node dev-server.js",
     "test": "node test-suite.js"
   }
 }

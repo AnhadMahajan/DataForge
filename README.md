@@ -399,7 +399,7 @@ DataForge/
 ├── package.json                 # ES Module project manifest
 ├── reports.html                 # Scientific Narrative Reports
 ├── results.html                 # Performance & Comparison Matrix
-├── server.js                    # Zero-dependency local Node.js server
+├── dev-server.js                # Zero-dependency local development Node.js server
 ├── settings.html                # Workspace Backup & Quota settings
 ├── signup.html                  # User Registration
 ├── start-backend.bat            # Quick-launch batch file for FastAPI
