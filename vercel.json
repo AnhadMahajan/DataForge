@@ -1,4 +1,7 @@
 {
+  "framework": null,
+  "buildCommand": "echo 'Static build ready'",
+  "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
