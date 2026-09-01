@@ -14,10 +14,16 @@
   - Frontend Web Server: `http://localhost:3005`
   - Native Python FastAPI: `http://127.0.0.1:8000` (OpenAPI docs at `http://127.0.0.1:8000/docs`)
 
+- **Deployment & Cloud Hosting:**
+  - Vercel App: Linked via GitHub (`AnhadMahajan/DataForge` on `main`)
+  - Config: `vercel.json` (enables `cleanUrls`, custom security headers, worker headers)
+  - Cloud Execution Mode: In-browser WebAssembly (Pyodide) automatically activates under HTTPS / Vercel without throwing mixed-content errors.
+  - Remote FastAPI Backend: Configurable in Workspace Settings (`settings.html#backend`) for custom cloud FastAPI endpoints (Railway, Render, Fly.io, Hugging Face Spaces).
+
 ---
 
 ## 🎯 Architecture Summary
-1. **Dispatcher (`js/services/pipeline.js`)**: Decouples UI from runtime; dispatches to native FastAPI or in-browser Pyodide worker.
+1. **Dispatcher (`js/services/pipeline.js`)**: Decouples UI from runtime; detects environment protocol (HTTPS vs HTTP localhost), checks native FastAPI or custom backend, and seamlessly falls back to Pyodide WebAssembly with zero install.
 2. **Scikit-Learn ML Engines**:
    - Classification: `RandomForestClassifier`, `HistGradientBoostingClassifier`, `LogisticRegression`, `DecisionTreeClassifier`, `KNeighborsClassifier`.
    - Regression: `RandomForestRegressor`, `HistGradientBoostingRegressor`, `Ridge`, `DecisionTreeRegressor`, `KNeighborsRegressor`.
