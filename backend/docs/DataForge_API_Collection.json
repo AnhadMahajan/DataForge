@@ -1,0 +1,121 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "DataForge — Express & MongoDB MVC API Suite",
+  "collectionId": "dataforge-eval-2026",
+  "dateExported": "2026-10-25",
+  "version": "1.2",
+  "folders": [
+    {
+      "id": "f_health",
+      "name": "1. Health & Telemetry",
+      "package": ""
+    },
+    {
+      "id": "f_auth",
+      "name": "2. Authentication & RBAC (Person 2)",
+      "package": ""
+    },
+    {
+      "id": "f_datasets",
+      "name": "3. Dataset Ingestion (Person 3)",
+      "package": ""
+    },
+    {
+      "id": "f_synthesis",
+      "name": "4. Synthesis Core (Person 1 - User)",
+      "package": ""
+    },
+    {
+      "id": "f_eval",
+      "name": "5. Fidelity & TSTR Benchmark (Person 1 - User)",
+      "package": ""
+    },
+    {
+      "id": "f_export",
+      "name": "6. Export Engine (Person 4)",
+      "package": ""
+    }
+  ],
+  "requests": [
+    {
+      "name": "Healthcheck & System Telemetry",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/health",
+      "containerId": "f_health"
+    },
+    {
+      "name": "User Registration",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/auth/register",
+      "containerId": "f_auth",
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Alex Rivera\",\n  \"email\": \"alex@dataforge.ai\",\n  \"password\": \"SecurePass123!\"\n}"
+      }
+    },
+    {
+      "name": "User Login",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/auth/login",
+      "containerId": "f_auth",
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"alex@dataforge.ai\",\n  \"password\": \"SecurePass123!\"\n}"
+      }
+    },
+    {
+      "name": "Get Datasets List",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/datasets",
+      "containerId": "f_datasets"
+    },
+    {
+      "name": "Run Gaussian Copula Synthesis",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/synthesis/run",
+      "containerId": "f_synthesis",
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Credit Risk Gaussian Copula Batch\",\n  \"algorithm\": \"copula\",\n  \"rowCount\": 50,\n  \"headers\": [\"income\", \"credit_score\", \"debt_ratio\", \"approved\"],\n  \"data\": [\n    [45000, 680, 0.22, \"1\"],\n    [32000, 590, 0.45, \"0\"],\n    [82000, 780, 0.15, \"1\"],\n    [24000, 540, 0.60, \"0\"],\n    [61000, 720, 0.28, \"1\"],\n    [29000, 570, 0.52, \"0\"],\n    [95000, 810, 0.12, \"1\"]\n  ],\n  \"seed\": 42\n}"
+      }
+    },
+    {
+      "name": "List Synthesis Jobs",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/synthesis/jobs",
+      "containerId": "f_synthesis"
+    },
+    {
+      "name": "Fidelity & Privacy Audit",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/evaluation/audit",
+      "containerId": "f_eval",
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"headers\": [\"income\", \"credit_score\", \"approved\"],\n  \"realData\": [\n    [45000, 680, \"1\"],\n    [32000, 590, \"0\"],\n    [82000, 780, \"1\"],\n    [24000, 540, \"0\"]\n  ],\n  \"syntheticData\": [\n    [46200, 675, \"1\"],\n    [31500, 595, \"0\"],\n    [80900, 772, \"1\"],\n    [24800, 538, \"0\"]\n  ]\n}"
+      }
+    },
+    {
+      "name": "TSTR ML Benchmark (Train-on-Synthetic, Test-on-Real)",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/evaluation/tstr",
+      "containerId": "f_eval",
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Credit Approval Empirical TSTR Proof\",\n  \"targetCol\": \"approved\",\n  \"headers\": [\"income\", \"credit_score\", \"approved\"],\n  \"realData\": [\n    [45000, 680, \"1\"],\n    [52000, 710, \"1\"],\n    [28000, 580, \"0\"],\n    [64000, 740, \"1\"],\n    [31000, 600, \"0\"],\n    [85000, 790, \"1\"],\n    [22000, 520, \"0\"],\n    [92000, 810, \"1\"]\n  ],\n  \"syntheticData\": [\n    [46000, 675, \"1\"],\n    [51500, 705, \"1\"],\n    [29000, 585, \"0\"],\n    [63500, 735, \"1\"],\n    [31800, 602, \"0\"],\n    [84200, 788, \"1\"]\n  ],\n  \"testSize\": 0.25,\n  \"seed\": 42\n}"
+      }
+    },
+    {
+      "name": "Get Evaluation Reports",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/evaluation/reports",
+      "containerId": "f_eval"
+    },
+    {
+      "name": "Export Synthesized Dataset to CSV",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/export/csv",
+      "containerId": "f_export"
+    }
+  ]
+}
