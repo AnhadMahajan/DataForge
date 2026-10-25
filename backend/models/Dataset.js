@@ -34,9 +34,17 @@ const columnProfileSchema = new mongoose.Schema(
     std: { type: Number, default: null },
     skewness: { type: Number, default: null },
     classBalance: {
-      // { [categoryLabel]: occurrenceCount } — categorical columns only
-      type: mongoose.Schema.Types.Mixed,
-      default: null,
+      // Ordered category frequencies — categorical columns only (null otherwise).
+      // Stored as an array (not a label-keyed object) so labels containing '.' or '$' are safe.
+      type: [
+        {
+          _id: false,
+          value: { type: String },
+          count: { type: Number, min: 0 },
+          pct: { type: Number, min: 0, max: 100 },
+        },
+      ],
+      default: undefined,
     },
   },
   { _id: false }

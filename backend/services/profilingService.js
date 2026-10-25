@@ -149,11 +149,108 @@ export function coerceValue(value, dataType) {
 
 const round = (x, digits = 4) => (x === null || !Number.isFinite(x) ? null : Number(x.toFixed(digits)));
 
+// Cap on distinct categories reported in classBalance (remaining ones are aggregated)
+export const MAX_CLASS_BALANCE_CATEGORIES = 50;
+export const OTHER_CATEGORY_LABEL = '__other__';
+
+/**
+ * Summary statistics for a numeric sample.
+ *  - std:      sample standard deviation (n - 1 denominator)
+ *  - skewness: adjusted Fisher-Pearson coefficient G1 (same as pandas.Series.skew)
+ * @param {number[]} nums - finite numbers
+ */
+export function computeNumericStats(nums) {
+  const n = nums.length;
+  if (n === 0) {
+    return { min: null, max: null, mean: null, std: null, skewness: null };
+  }
+
+  let min = Infinity;
+  let max = -Infinity;
+  let sum = 0;
+  for (const x of nums) {
+    if (x < min) min = x;
+    if (x > max) max = x;
+    sum += x;
+  }
+  const mean = sum / n;
+
+  // Constant column: avoid floating-point noise producing spurious std / skew
+  if (min === max) {
+    return { min, max, mean: min, std: 0, skewness: n >= 3 ? 0 : null };
+  }
+
+  // Second pass for central moments (numerically stabler than single-pass sums)
+  let m2 = 0;
+  let m3 = 0;
+  for (const x of nums) {
+    const d = x - mean;
+    const d2 = d * d;
+    m2 += d2;
+    m3 += d2 * d;
+  }
+
+  const std = n > 1 ? Math.sqrt(m2 / (n - 1)) : 0;
+
+  let skewness = null;
+  if (n >= 3) {
+    const popVar = m2 / n;
+    const g1 = m3 / n / Math.pow(popVar, 1.5);
+    skewness = (Math.sqrt(n * (n - 1)) / (n - 2)) * g1;
+  }
+
+  return {
+    min: round(min, 6),
+    max: round(max, 6),
+    mean: round(mean, 6),
+    std: round(std, 6),
+    skewness: round(skewness, 6),
+  };
+}
+
+/**
+ * Category frequency counts, sorted by descending count.
+ * Categories beyond MAX_CLASS_BALANCE_CATEGORIES are aggregated into OTHER_CATEGORY_LABEL.
+ * @param {string[]} values - non-null categorical values
+ * @returns {Array<{ value: string, count: number, pct: number }>}
+ */
+export function computeClassBalance(values, maxCategories = MAX_CLASS_BALANCE_CATEGORIES) {
+  const total = values.length;
+  if (total === 0) return [];
+
+  const counts = new Map();
+  for (const v of values) counts.set(v, (counts.get(v) || 0) + 1);
+
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])));
+  const top = sorted.slice(0, maxCategories);
+  const restCount = sorted.slice(maxCategories).reduce((acc, [, c]) => acc + c, 0);
+
+  const balance = top.map(([value, count]) => ({
+    value: String(value),
+    count,
+    pct: round((count / total) * 100, 2),
+  }));
+
+  if (restCount > 0) {
+    balance.push({
+      value: OTHER_CATEGORY_LABEL,
+      count: restCount,
+      pct: round((restCount / total) * 100, 2),
+    });
+  }
+
+  return balance;
+}
+
 /**
  * Profile raw tabular data.
+ * Infers column types, then computes missing-value rates, unique counts,
+ * numeric statistics (min, max, mean, std, skewness) and categorical class balance.
+ * For datetime columns, min/max are epoch milliseconds.
+ *
  * @param {string[]} headers - column names
  * @param {Array<Array<*>>} rows - row-major 2D matrix aligned with headers
- * @returns {{ rowCount: number, columnCount: number, columns: object[] }}
+ * @returns {{ rowCount: number, columnCount: number, columns: object[], summary: object }}
  */
 export function profileRawData(headers, rows) {
   if (!Array.isArray(headers) || !Array.isArray(rows)) {
@@ -168,6 +265,7 @@ export function profileRawData(headers, rows) {
 
     let nullCount = 0;
     const uniques = new Set();
+    const present = [];
 
     for (const raw of rawValues) {
       const v = coerceValue(raw, dataType);
@@ -176,22 +274,65 @@ export function profileRawData(headers, rows) {
         continue;
       }
       uniques.add(v);
+      present.push(v);
     }
 
-    return {
+    const profile = {
       name: String(name),
       dataType,
       nullCount,
       missingPct: rowCount ? round((nullCount / rowCount) * 100, 2) : 0,
       uniqueCount: uniques.size,
+      min: null,
+      max: null,
+      mean: null,
+      std: null,
+      skewness: null,
+      classBalance: null,
     };
+
+    if (dataType === 'numeric') {
+      Object.assign(profile, computeNumericStats(present));
+    } else if (dataType === 'datetime') {
+      // Manual loop: Math.min(...arr) overflows the call stack on large columns
+      for (const iso of present) {
+        const t = Date.parse(iso);
+        if (profile.min === null || t < profile.min) profile.min = t;
+        if (profile.max === null || t > profile.max) profile.max = t;
+      }
+    } else {
+      profile.classBalance = computeClassBalance(present);
+    }
+
+    return profile;
   });
+
+  const totalCells = rowCount * headers.length;
+  const totalMissing = columns.reduce((acc, c) => acc + c.nullCount, 0);
 
   return {
     rowCount,
     columnCount: headers.length,
     columns,
+    summary: {
+      numericColumns: columns.filter((c) => c.dataType === 'numeric').length,
+      categoricalColumns: columns.filter((c) => c.dataType === 'categorical').length,
+      datetimeColumns: columns.filter((c) => c.dataType === 'datetime').length,
+      totalCells,
+      totalMissing,
+      missingPct: totalCells ? round((totalMissing / totalCells) * 100, 2) : 0,
+    },
   };
+}
+
+/**
+ * Convert a raw row matrix into typed values using an existing column profile
+ * (numbers for numeric columns, ISO strings for datetimes, null for missing).
+ */
+export function coerceRows(rows, columns) {
+  return rows.map((row) =>
+    columns.map((col, i) => coerceValue(Array.isArray(row) ? row[i] : undefined, col.dataType))
+  );
 }
 
 export default {
@@ -200,5 +341,8 @@ export default {
   parseDatetime,
   inferColumnType,
   coerceValue,
+  computeNumericStats,
+  computeClassBalance,
   profileRawData,
+  coerceRows,
 };
