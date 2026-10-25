@@ -9,6 +9,8 @@ import Dataset from '../models/Dataset.js';
 import { profileRawData, coerceRows } from '../services/profilingService.js';
 
 const PREVIEW_ROWS = 20;
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
 // MongoDB hard limit is 16MB per document; keep headroom for metadata & profiles
 const MAX_DOCUMENT_BYTES = 15.5 * 1024 * 1024;
 const CANDIDATE_DELIMITERS = [',', ';', '\t', '|'];
@@ -25,6 +27,19 @@ function assertDbConnected(res) {
     res.status(503);
     throw new Error('Database unavailable. Please ensure MongoDB is running and try again.');
   }
+}
+
+/**
+ * Parse a positive integer query param, clamped to [min, max].
+ */
+function parseIntParam(value, fallback, min, max) {
+  const n = parseInt(value, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(Math.max(n, min), max);
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -302,6 +317,44 @@ export async function uploadDataset(req, res, next) {
         createdBy: dataset.createdBy,
         createdAt: dataset.createdAt,
       },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * @desc    List datasets (metadata + column profiles, raw matrix excluded) with pagination
+ * @route   GET /api/datasets?page=1&limit=20&search=sales
+ * @access  Public / Authenticated
+ */
+export async function getDatasets(req, res, next) {
+  try {
+    assertDbConnected(res);
+
+    const page = parseIntParam(req.query.page, 1, 1, 1e6);
+    const limit = parseIntParam(req.query.limit, DEFAULT_PAGE_SIZE, 1, MAX_PAGE_SIZE);
+    const skip = (page - 1) * limit;
+
+    const query = {};
+    if (req.user?._id) query.createdBy = req.user._id;
+    if (typeof req.query.search === 'string' && req.query.search.trim()) {
+      query.name = { $regex: escapeRegex(req.query.search.trim()), $options: 'i' };
+    }
+
+    // dataMatrix is select:false on the schema, so it is never loaded here
+    const [datasets, total] = await Promise.all([
+      Dataset.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Dataset.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      count: datasets.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit) || 1,
+      data: datasets,
     });
   } catch (err) {
     next(err);
