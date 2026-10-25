@@ -4,20 +4,22 @@
  */
 
 import express from 'express';
+import {
+  registerUser,
+  loginUser,
+  getMe,
+  updatePassword,
+} from '../controllers/authController.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Fallback mock handlers until Person 2 pushes full controller
-router.post('/register', (req, res) => {
-  res.status(200).json({ success: true, message: 'Auth endpoint ready for Person 2 integration' });
-});
+// Public routes
+router.post('/register', registerUser);
+router.post('/login', loginUser);
 
-router.post('/login', (req, res) => {
-  res.status(200).json({ success: true, message: 'Auth endpoint ready for Person 2 integration' });
-});
-
-router.get('/me', (req, res) => {
-  res.status(200).json({ success: true, message: 'Auth endpoint ready for Person 2 integration' });
-});
+// Protected routes (JWT Bearer Token required)
+router.get('/me', protect, getMe);
+router.put('/password', protect, updatePassword);
 
 export default router;
