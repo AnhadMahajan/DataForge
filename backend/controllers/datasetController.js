@@ -410,3 +410,44 @@ export async function getDatasetById(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * @desc    Delete a dataset by ID with existence check
+ * @route   DELETE /api/datasets/:id
+ * @access  Public / Authenticated
+ */
+export async function deleteDataset(req, res, next) {
+  try {
+    assertDbConnected(res);
+
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(404);
+      throw new Error(`Dataset with ID ${id} not found`);
+    }
+
+    const dataset = await Dataset.findById(id);
+
+    if (!dataset) {
+      res.status(404);
+      throw new Error(`Dataset with ID ${id} not found`);
+    }
+
+    await dataset.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: `Dataset ${id} removed successfully`,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export default {
+  uploadDataset,
+  getDatasets,
+  getDatasetById,
+  deleteDataset,
+};
