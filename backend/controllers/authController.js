@@ -122,4 +122,53 @@ export async function getMe(req, res, next) {
   }
 }
 
+/**
+ * @desc    Update password for authenticated user
+ * @route   PUT /api/auth/password
+ * @access  Private (Protected)
+ */
+export async function updatePassword(req, res, next) {
+  try {
+    const { currentPassword, oldPassword, newPassword, password } = req.body;
+    const oldPass = currentPassword || oldPassword;
+    const newPass = newPassword || password;
+
+    if (!oldPass || !newPass) {
+      res.status(400);
+      throw new Error('Please provide both current password and new password');
+    }
+
+    if (newPass.length < 6) {
+      res.status(400);
+      throw new Error('New password must be at least 6 characters long');
+    }
+
+    // Get user from database with password field
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    // Validate current password
+    const isMatch = await user.matchPassword(oldPass);
+    if (!isMatch) {
+      res.status(401);
+      throw new Error('Current password is incorrect');
+    }
+
+    // Set new password (pre-save middleware handles hashing)
+    user.password = newPass;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
 
