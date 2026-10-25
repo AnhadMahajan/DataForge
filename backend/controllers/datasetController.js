@@ -6,6 +6,7 @@
 import path from 'path';
 import mongoose from 'mongoose';
 import Dataset from '../models/Dataset.js';
+import { profileRawData, coerceRows } from '../services/profilingService.js';
 
 const PREVIEW_ROWS = 20;
 // MongoDB hard limit is 16MB per document; keep headroom for metadata & profiles
@@ -220,7 +221,7 @@ function parseUploadedFile(file) {
 /* ------------------------------------------------------------------ */
 
 /**
- * @desc    Upload a CSV/JSON dataset, parse it and persist to MongoDB
+ * @desc    Upload a CSV/JSON dataset, parse & auto-profile it, persist to MongoDB
  * @route   POST /api/datasets/upload
  * @access  Public / Authenticated
  */
@@ -250,7 +251,14 @@ export async function uploadDataset(req, res, next) {
       throw new Error('Dataset has a header row but no data rows');
     }
 
-    const docSize = mongoose.mongo.BSON.calculateObjectSize({ dataMatrix: rows });
+    // Automated schema profiling: type inference + quality & distribution stats
+    const profileStart = Date.now();
+    const profile = profileRawData(headers, rows);
+    // Store typed values (numbers, ISO datetimes, null for missing) for downstream synthesis
+    const typedRows = coerceRows(rows, profile.columns);
+    const profilingTimeMs = Date.now() - profileStart;
+
+    const docSize = mongoose.mongo.BSON.calculateObjectSize({ dataMatrix: typedRows });
     if (docSize > MAX_DOCUMENT_BYTES) {
       res.status(413);
       throw new Error(
@@ -261,17 +269,18 @@ export async function uploadDataset(req, res, next) {
     assertDbConnected(res);
 
     const originalName = req.file.originalname;
-    const name = (req.body?.name || path.parse(originalName).name || 'Untitled Dataset').toString().trim().slice(0, 120);
+    const requestedName = String(req.body?.name ?? '').trim();
+    const name = (requestedName || path.parse(originalName).name.trim() || 'Untitled Dataset').slice(0, 120);
 
     const dataset = await Dataset.create({
       name,
       filename: originalName,
       sizeBytes: req.file.size,
-      rowCount: rows.length,
-      columnCount: headers.length,
+      rowCount: profile.rowCount,
+      columnCount: profile.columnCount,
       headers,
-      columns: [],
-      dataMatrix: rows,
+      columns: profile.columns,
+      dataMatrix: typedRows,
       createdBy: req.user?._id || null,
     });
 
@@ -286,8 +295,10 @@ export async function uploadDataset(req, res, next) {
         columnCount: dataset.columnCount,
         headers: dataset.headers,
         columns: dataset.columns,
-        preview: rows.slice(0, PREVIEW_ROWS),
+        summary: profile.summary,
+        preview: typedRows.slice(0, PREVIEW_ROWS),
         warnings,
+        profilingTimeMs,
         createdBy: dataset.createdBy,
         createdAt: dataset.createdAt,
       },
