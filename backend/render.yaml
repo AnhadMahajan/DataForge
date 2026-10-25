@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: dataforge-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false # Set in Render Dashboard from MongoDB Atlas
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: https://data-forge-1hjbzop6b-anhadmahajans-projects.vercel.app
