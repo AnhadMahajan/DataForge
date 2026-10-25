@@ -360,3 +360,53 @@ export async function getDatasets(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * @desc    Get single dataset by ID with sample rows preview slice
+ * @route   GET /api/datasets/:id?rows=20&offset=0
+ * @access  Public / Authenticated
+ */
+export async function getDatasetById(req, res, next) {
+  try {
+    assertDbConnected(res);
+
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(404);
+      throw new Error(`Dataset with ID ${id} not found`);
+    }
+
+    const dataset = await Dataset.findById(id).select('+dataMatrix');
+
+    if (!dataset) {
+      res.status(404);
+      throw new Error(`Dataset with ID ${id} not found`);
+    }
+
+    // Configurable preview slice (default 20, max 100)
+    const limit = parseIntParam(req.query.rows, PREVIEW_ROWS, 1, 100);
+    const offset = parseIntParam(req.query.offset, 0, 0, dataset.rowCount);
+
+    const rawMatrix = dataset.dataMatrix || [];
+    const preview = rawMatrix.slice(offset, offset + limit);
+
+    // Convert Mongoose doc to plain object and replace large dataMatrix with preview slice
+    const datasetObj = dataset.toObject();
+    delete datasetObj.dataMatrix;
+    datasetObj.preview = preview;
+    datasetObj.previewMeta = {
+      offset,
+      limit,
+      returnedRows: preview.length,
+      totalRows: dataset.rowCount,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: datasetObj,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
