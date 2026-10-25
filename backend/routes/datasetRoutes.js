@@ -4,20 +4,26 @@
  */
 
 import express from 'express';
+import upload, { handleUploadErrors } from '../middlewares/uploadMiddleware.js';
+import {
+  uploadDataset,
+  getDatasets,
+  getDatasetById,
+  deleteDataset,
+} from '../controllers/datasetController.js';
 
 const router = express.Router();
 
-// Fallback handlers until Person 3 pushes full controller
-router.get('/', (req, res) => {
-  res.status(200).json({ success: true, count: 0, data: [], message: 'Dataset endpoint ready for Person 3 integration' });
-});
+// Upload CSV / JSON dataset and perform automated schema profiling
+router.post('/upload', upload.single('file'), handleUploadErrors, uploadDataset);
 
-router.post('/upload', (req, res) => {
-  res.status(200).json({ success: true, message: 'Upload endpoint ready for Person 3 integration' });
-});
+// Paginated dataset listing (metadata & profile summaries)
+router.route('/')
+  .get(getDatasets);
 
-router.get('/:id', (req, res) => {
-  res.status(200).json({ success: true, message: 'Dataset details ready for Person 3 integration' });
-});
+// Single dataset inspection (metadata + sample row preview) and deletion
+router.route('/:id')
+  .get(getDatasetById)
+  .delete(deleteDataset);
 
 export default router;
