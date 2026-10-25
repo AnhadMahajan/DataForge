@@ -101,3 +101,25 @@ export async function loginUser(req, res, next) {
   }
 }
 
+/**
+ * @desc    Get current authenticated user profile
+ * @route   GET /api/auth/me
+ * @access  Private (Protected)
+ */
+export async function getMe(req, res, next) {
+  try {
+    if (!req.user) {
+      res.status(401);
+      throw new Error('Not authorized, user profile not available');
+    }
+
+    res.status(200).json({
+      success: true,
+      user: req.user,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
