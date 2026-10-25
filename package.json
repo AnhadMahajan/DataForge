@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "node dev-server.js",
     "serve": "node dev-server.js",
+    "backend": "node backend/server.js",
+    "backend:dev": "node --watch backend/server.js",
+    "backend:test": "node backend/test-backend.js",
     "build": "echo 'Static assets ready'",
     "test": "node test-suite.js"
   }

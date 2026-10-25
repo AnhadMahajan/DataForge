@@ -57,3 +57,6 @@ venv/
 
 # Graphify Output
 graphify-out/
+
+# Screenshots
+screenshot_*.png
