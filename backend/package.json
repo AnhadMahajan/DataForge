@@ -1,0 +1,35 @@
+{
+  "name": "dataforge-backend",
+  "version": "2.0.0",
+  "description": "DataForge — Express.js & MongoDB MVC Backend for Synthetic Data Intelligence",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "keywords": [
+    "dataforge",
+    "synthetic-data",
+    "mvc",
+    "express",
+    "mongodb",
+    "tstr-benchmark",
+    "fidelity-audit"
+  ],
+  "author": "DataForge Team",
+  "license": "MIT"
+}
