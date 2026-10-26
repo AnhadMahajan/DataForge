@@ -5,7 +5,7 @@
 
 import http from 'http';
 
-function makeRequest(method, path, body = null) {
+function makeRequest(method, path, body = null, customHeaders = {}) {
   return new Promise((resolve, reject) => {
     const postData = body ? JSON.stringify(body) : '';
     const options = {
@@ -16,6 +16,7 @@ function makeRequest(method, path, body = null) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(postData),
+        ...customHeaders,
       },
     };
 
@@ -158,6 +159,54 @@ async function runTests() {
     '7. POST /api/export/sql (DDL + Batch DML):',
     sqlRes.status === 200 && hasSqlCreate ? 'PASS' : 'FAIL',
     `Contains CREATE TABLE & INSERT: ${hasSqlCreate}`
+  );
+
+  // 8. Authentication: Register & Login (Person 2)
+  const testUserEmail = `audit_tester_${Date.now()}@dataforge.ai`;
+  const regRes = await makeRequest('POST', '/api/auth/register', {
+    name: 'Integration Auditor',
+    email: testUserEmail,
+    password: 'Password123!',
+    role: 'researcher',
+  });
+  const authToken = regRes.body?.token;
+  console.log(
+    '8. POST /api/auth/register (JWT & Bcrypt):',
+    regRes.status === 201 && !!authToken ? 'PASS' : 'FAIL',
+    `User: ${regRes.body?.user?.name}, Role: ${regRes.body?.user?.role}`
+  );
+
+  // 9. Protected Endpoint: GET /api/auth/me (Person 2)
+  const meRes = await makeRequest('GET', '/api/auth/me', null, {
+    Authorization: `Bearer ${authToken}`,
+  });
+  console.log(
+    '9. GET /api/auth/me (Protected Route with Bearer Token):',
+    meRes.status === 200 && meRes.body?.user?.email === testUserEmail ? 'PASS' : 'FAIL',
+    `Verified Token for: ${meRes.body?.user?.email}`
+  );
+
+  // 10. Dataset Listing (Person 3)
+  const datasetsRes = await makeRequest('GET', '/api/datasets');
+  console.log(
+    '10. GET /api/datasets (Paginated Catalog):',
+    datasetsRes.status === 200 ? 'PASS' : 'FAIL',
+    `Status: ${datasetsRes.status}, Total Datasets: ${datasetsRes.body?.totalCount ?? datasetsRes.body?.datasets?.length ?? 0}`
+  );
+
+  // 11. In-Browser Frontend Compatibility: POST /api/benchmark/tstr
+  const compatTstrRes = await makeRequest('POST', '/api/benchmark/tstr', {
+    headers: testHeaders,
+    realData: testData,
+    syntheticData,
+    targetCol: 'approved',
+    testSize: 0.25,
+    seed: 42,
+  });
+  console.log(
+    '11. POST /api/benchmark/tstr (Frontend Hybrid Alias):',
+    compatTstrRes.status === 200 && compatTstrRes.body?.tstrRetention !== undefined ? 'PASS' : 'FAIL',
+    `Retention: ${compatTstrRes.body?.tstrRetention}%, Verdict: ${compatTstrRes.body?.verdict}`
   );
 
   console.log('--- All Backend Core Engines & Export Modules Operational ---');

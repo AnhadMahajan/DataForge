@@ -1,5 +1,6 @@
 import * as storage from './storage.js';
 import { generateUUID, hashString } from '../utils/math.js';
+import { getBackendUrl } from './pipeline.js';
 
 const USERS_KEY = 'users';
 const SESSION_KEY = 'session';
@@ -14,13 +15,48 @@ async function hashPassword(password) {
 
 /**
  * Register a new user.
+ * Connects to Express & MongoDB backend when available; falls back to client storage.
  * Returns { success, data: { user, session } } or { success, error }
  */
 export async function signup(name, email, password) {
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedName = name.trim();
 
-  // Check for duplicate email
+  // 1. Attempt Server-Side Registration if Backend is Available
+  const backendUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : null;
+  if (backendUrl && typeof fetch === 'function') {
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.token) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('dataforge_token', resData.token);
+        }
+        const serverUser = {
+          id: resData.user?._id || generateUUID(),
+          name: resData.user?.name || trimmedName,
+          email: resData.user?.email || trimmedEmail,
+          role: resData.user?.role || 'user',
+          createdAt: resData.user?.createdAt || new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+        };
+        storage.addToCollection(USERS_KEY, serverUser);
+        const session = createSession(serverUser.id);
+        storage.set(SESSION_KEY, session);
+        return { success: true, data: { user: serverUser, session } };
+      } else if (!res.ok && resData.message && resData.message.toLowerCase().includes('already exists')) {
+        return { success: false, error: { code: 'EMAIL_EXISTS', message: resData.message } };
+      }
+    } catch (netErr) {
+      // Backend offline or unreachable: fall through to in-browser storage
+    }
+  }
+
+  // 2. Client-Side Fallback Registration
   const users = storage.getCollection(USERS_KEY);
   const existing = users.find(u => u.email === trimmedEmail);
   if (existing) {
@@ -38,7 +74,6 @@ export async function signup(name, email, password) {
     createdAt: now,
     lastLoginAt: now,
   };
-
 
   const writeResult = storage.addToCollection(USERS_KEY, user);
   if (!writeResult.success) return writeResult;
@@ -62,10 +97,48 @@ export async function signup(name, email, password) {
 
 /**
  * Authenticate an existing user.
+ * Connects to Express & MongoDB backend when available; falls back to client storage.
  * Returns { success, data: { user, session } } or { success, error }
  */
 export async function login(email, password) {
   const trimmedEmail = email.trim().toLowerCase();
+
+  // 1. Attempt Server-Side Login if Backend is Available
+  const backendUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : null;
+  if (backendUrl && typeof fetch === 'function') {
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmedEmail, password }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.token) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('dataforge_token', resData.token);
+        }
+        let user = storage.getCollection(USERS_KEY).find(u => u.email === trimmedEmail);
+        if (!user) {
+          user = {
+            id: resData.user?._id || generateUUID(),
+            name: resData.user?.name || trimmedEmail.split('@')[0],
+            email: resData.user?.email || trimmedEmail,
+            role: resData.user?.role || 'user',
+            createdAt: resData.user?.createdAt || new Date().toISOString(),
+            lastLoginAt: new Date().toISOString(),
+          };
+          storage.addToCollection(USERS_KEY, user);
+        }
+        const session = createSession(user.id);
+        storage.set(SESSION_KEY, session);
+        return { success: true, data: { user, session } };
+      }
+    } catch (netErr) {
+      // Backend offline or unreachable: fall through to client storage
+    }
+  }
+
+  // 2. Client-Side Fallback Authentication
   const users = storage.getCollection(USERS_KEY);
   const user = users.find(u => u.email === trimmedEmail);
 
@@ -74,7 +147,7 @@ export async function login(email, password) {
   }
 
   const passwordHash = await hashPassword(password);
-  if (user.passwordHash !== passwordHash) {
+  if (user.passwordHash && user.passwordHash !== passwordHash) {
     return { success: false, error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password.' } };
   }
 
@@ -95,6 +168,9 @@ export async function login(email, password) {
  */
 export function logout() {
   storage.remove(SESSION_KEY);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('dataforge_token');
+  }
   window.location.href = 'login.html';
 }
 

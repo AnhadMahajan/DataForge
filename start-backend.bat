@@ -1,7 +1,10 @@
 @echo off
-title DataForge Python Backend Server
+title DataForge Express & MongoDB Backend Server
 echo ===================================================
-echo Starting DataForge Native Python Backend (FastAPI)
+echo Starting DataForge Express.js & MongoDB MVC Backend
+echo Port: 5000 | Health: http://localhost:5000/api/health
 echo ===================================================
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+cd /d "%~dp0"
+npm run backend
 pause
+

@@ -55,6 +55,10 @@ app.get('/', (req, res) => {
   });
 });
 
+// Import Direct Controllers for In-Browser / Legacy Client Aliases
+import { runSynthesis } from './controllers/synthesisController.js';
+import { runFidelityAudit, runTstrBenchmark } from './controllers/evaluationController.js';
+
 // Mount MVC API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/synthesis', synthesisRoutes);
@@ -62,6 +66,11 @@ app.use('/api/evaluation', evaluationRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/datasets', datasetRoutes);
 app.use('/api/export', exportRoutes);
+
+// Compatibility Endpoints for Hybrid In-Browser / Legacy Client Calls
+app.post('/api/synthesize', runSynthesis);
+app.post('/api/audit', runFidelityAudit);
+app.post('/api/benchmark/tstr', runTstrBenchmark);
 
 // Error Handling Middlewares
 app.use(notFoundHandler);

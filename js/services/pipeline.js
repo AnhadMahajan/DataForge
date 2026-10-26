@@ -10,7 +10,7 @@
 
 import { auditSyntheticFidelity } from './fidelity-audit.js';
 
-const DEFAULT_LOCAL_BACKEND = 'http://127.0.0.1:8000';
+const DEFAULT_LOCAL_BACKEND = 'http://localhost:5000';
 let nativeBackendCache = null; // null = untested, true/false = tested
 let nativeBackendInfo = null;
 

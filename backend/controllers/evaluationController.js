@@ -106,8 +106,10 @@ export async function runTstrBenchmark(req, res, next) {
         modelType,
         tstrBenchmark: tstrResult,
         fidelity: fidelityMetrics,
+        ...tstrResult,
         createdAt: new Date().toISOString(),
       },
+      ...tstrResult,
     });
   } catch (err) {
     next(err);

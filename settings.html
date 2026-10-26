@@ -240,9 +240,9 @@
 
           <!-- Tab 4: Backend & Cloud Deployment -->
           <section id="tab-backend" class="card" style="display: none;">
-            <div class="card-title mb-xs">Python Backend &amp; Cloud Deployment</div>
+            <div class="card-title mb-xs">Express.js &amp; MongoDB Backend Deployment</div>
             <p class="text-secondary text-small mb-lg">
-              DataForge operates on a <strong>Hybrid Architecture</strong>: on cloud platforms like Vercel, it runs completely in-browser via <strong>WebAssembly (Pyodide)</strong> with zero servers needed. You can also connect to a dedicated FastAPI Python server.
+              DataForge operates on a <strong>Hybrid MVC Architecture</strong>: connects directly to the Express.js &amp; MongoDB backend for synthesis, fidelity benchmarks, and multi-format exports, with in-browser <strong>WebAssembly (Pyodide)</strong> as an instant fallback.
             </p>
 
             <div class="stack stack-md">
@@ -256,10 +256,10 @@
               </div>
 
               <div class="form-group">
-                <label for="custom-backend-url" class="form-label">FastAPI Backend Endpoint URL</label>
-                <input type="url" id="custom-backend-url" class="input" placeholder="Leave empty for In-Browser WebAssembly, or e.g. https://api.dataforge.ai">
+                <label for="custom-backend-url" class="form-label">Express.js Backend Endpoint URL</label>
+                <input type="url" id="custom-backend-url" class="input" placeholder="http://localhost:5000 or e.g. https://dataforge-backend.onrender.com">
                 <span class="form-hint">
-                  Local default: <code>http://127.0.0.1:8000</code>. On Vercel (HTTPS), enter an HTTPS backend URL (e.g. Railway, Render, Fly.io, Hugging Face Spaces) or leave empty to use In-Browser Pyodide.
+                  Local default: <code>http://localhost:5000</code>. On Vercel (HTTPS), enter your deployed HTTPS backend URL (e.g. Render, Railway) or leave empty for In-Browser Pyodide.
                 </span>
               </div>
 

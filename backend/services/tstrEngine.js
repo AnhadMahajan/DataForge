@@ -178,6 +178,13 @@ export async function executeTstrBenchmark({
     verdict = 'DEGRADED_REJECT';
   }
 
+  // Retention & Delta
+  const tstrRetention = baselineMetrics.accuracy > 0
+    ? Number(((synthMetrics.accuracy / baselineMetrics.accuracy) * 100).toFixed(1))
+    : 100;
+
+  const uniqueLabels = Array.from(new Set([...yReal, ...ySynth]));
+
   return {
     targetColumn: targetCol,
     baselineAccuracy: baselineMetrics.accuracy,
@@ -185,10 +192,22 @@ export async function executeTstrBenchmark({
     syntheticAccuracy: synthMetrics.accuracy,
     syntheticF1: synthMetrics.f1,
     macroF1Lift,
+    deltaF1: macroF1Lift,
+    tstrRetention,
+    baseline: {
+      accuracy: baselineMetrics.accuracy,
+      f1: baselineMetrics.f1,
+    },
+    synthetic: {
+      accuracy: synthMetrics.accuracy,
+      f1: synthMetrics.f1,
+    },
+    classes: uniqueLabels,
     confusionMatrix: synthMetrics.confusionMatrix,
     verdict,
     testSize,
     testSampleCount: XRealTest.length,
+    testRealSamples: XRealTest.length,
     trainSampleCount: XSynth.length,
   };
 }
