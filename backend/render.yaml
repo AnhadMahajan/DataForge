@@ -1,17 +1,26 @@
+# =========================================================================
+# DataForge Backend — Render Cloud Blueprint
+# Platform: Render.com Web Service (Free Tier Specification)
+# Docs: https://render.com/docs/blueprint-spec
+# =========================================================================
+
 services:
   - type: web
     name: dataforge-backend
     env: node
     plan: free
+    region: oregon
     buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
       - key: MONGO_URI
-        sync: false # Set in Render Dashboard from MongoDB Atlas
+        sync: false # Set in Render Dashboard: mongodb+srv://<user>:<password>@cluster.mongodb.net/dataforge?retryWrites=true&w=majority
       - key: JWT_SECRET
         generateValue: true
       - key: CLIENT_URL

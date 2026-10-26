@@ -1,0 +1,352 @@
+{
+  "info": {
+    "_postman_id": "dataforge-postman-v2-eval",
+    "name": "DataForge — Synthetic Data MVC Backend API",
+    "description": "Comprehensive Postman Collection for DataForge Express + MongoDB MVC Engine (Person 4 Suite: Export, Telemetry, Auditing & Evaluation).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "AUTH_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "DATASET_ID",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "JOB_ID",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Telemetry",
+      "item": [
+        {
+          "name": "Healthcheck & Live Telemetry",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/health",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Retrieves real-time MongoDB ping status, memory footprint (RSS/heap), uptime, and API catalog."
+          }
+        },
+        {
+          "name": "Root Engine Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/",
+              "host": ["{{BASE_URL}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication & RBAC",
+      "item": [
+        {
+          "name": "User Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Rivera\",\n  \"email\": \"alex@dataforge.ai\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"data_scientist\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/register",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@dataforge.ai\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/login",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{AUTH_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/me",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Dataset Ingestion",
+      "item": [
+        {
+          "name": "Get Datasets List (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/datasets?page=1&limit=10",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "datasets"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Dataset by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/datasets/{{DATASET_ID}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "datasets", "{{DATASET_ID}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Synthesis Core",
+      "item": [
+        {
+          "name": "Run Gaussian Copula Synthesis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Credit Risk Gaussian Copula Batch\",\n  \"algorithm\": \"copula\",\n  \"rowCount\": 50,\n  \"headers\": [\"income\", \"credit_score\", \"debt_ratio\", \"approved\"],\n  \"data\": [\n    [45000, 680, 0.22, \"1\"],\n    [32000, 590, 0.45, \"0\"],\n    [82000, 780, 0.15, \"1\"],\n    [24000, 540, 0.60, \"0\"],\n    [61000, 720, 0.28, \"1\"],\n    [29000, 570, 0.52, \"0\"],\n    [95000, 810, 0.12, \"1\"]\n  ],\n  \"seed\": 42\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/synthesis/run",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "synthesis", "run"]
+            }
+          }
+        },
+        {
+          "name": "List Synthesis Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/synthesis/jobs?page=1&limit=20",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "synthesis", "jobs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Synthesis Job by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/synthesis/jobs/{{JOB_ID}}",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "synthesis", "jobs", "{{JOB_ID}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Fidelity & TSTR Benchmark",
+      "item": [
+        {
+          "name": "Fidelity & Privacy Audit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"headers\": [\"income\", \"credit_score\", \"approved\"],\n  \"realData\": [\n    [45000, 680, \"1\"],\n    [32000, 590, \"0\"],\n    [82000, 780, \"1\"],\n    [24000, 540, \"0\"]\n  ],\n  \"syntheticData\": [\n    [46200, 675, \"1\"],\n    [31500, 595, \"0\"],\n    [80900, 772, \"1\"],\n    [24800, 538, \"0\"]\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/evaluation/audit",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "evaluation", "audit"]
+            }
+          }
+        },
+        {
+          "name": "TSTR ML Benchmark (Train-on-Synthetic, Test-on-Real)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Credit Approval Empirical TSTR Proof\",\n  \"targetCol\": \"approved\",\n  \"headers\": [\"income\", \"credit_score\", \"approved\"],\n  \"realData\": [\n    [45000, 680, \"1\"],\n    [52000, 710, \"1\"],\n    [28000, 580, \"0\"],\n    [64000, 740, \"1\"],\n    [31000, 600, \"0\"],\n    [85000, 790, \"1\"],\n    [22000, 520, \"0\"],\n    [92000, 810, \"1\"]\n  ],\n  \"syntheticData\": [\n    [46000, 675, \"1\"],\n    [51500, 705, \"1\"],\n    [29000, 585, \"0\"],\n    [63500, 735, \"1\"],\n    [31800, 602, \"0\"],\n    [84200, 788, \"1\"]\n  ],\n  \"testSize\": 0.25,\n  \"seed\": 42\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/evaluation/tstr",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "evaluation", "tstr"]
+            }
+          }
+        },
+        {
+          "name": "Get Evaluation Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/evaluation/reports",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "evaluation", "reports"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Export Engine (Person 4)",
+      "item": [
+        {
+          "name": "Get Export Format Specifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/export",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "export"]
+            }
+          }
+        },
+        {
+          "name": "Export Synthesized Dataset to CSV (RFC-4180)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filename\": \"credit_risk_synthetic.csv\",\n  \"headers\": [\"applicant_id\", \"annual_income\", \"credit_score\", \"debt_ratio\", \"loan_approved\"],\n  \"data\": [\n    [1001, 75000, 720, 0.24, \"1\"],\n    [1002, 42000, 580, 0.48, \"0\"],\n    [1003, 98000, 790, 0.18, \"1\"],\n    [1004, 31000, 540, 0.55, \"0\"],\n    [1005, 62000, 690, 0.31, \"1\"],\n    [1006, 88000, 760, 0.21, \"1\"],\n    [1007, 27000, 510, 0.62, \"0\"],\n    [1008, 115000, 810, 0.14, \"1\"]\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/export/csv",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "export", "csv"]
+            }
+          }
+        },
+        {
+          "name": "Export Synthesized Dataset to JSON (Structured)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filename\": \"credit_risk_synthetic.json\",\n  \"structure\": \"structured\",\n  \"headers\": [\"applicant_id\", \"annual_income\", \"credit_score\", \"debt_ratio\", \"loan_approved\"],\n  \"data\": [\n    [1001, 75000, 720, 0.24, \"1\"],\n    [1002, 42000, 580, 0.48, \"0\"],\n    [1003, 98000, 790, 0.18, \"1\"],\n    [1004, 31000, 540, 0.55, \"0\"],\n    [1005, 62000, 690, 0.31, \"1\"]\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/export/json",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "export", "json"]
+            }
+          }
+        },
+        {
+          "name": "Export Synthesized Dataset to SQL (CREATE + INSERT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tableName\": \"synthetic_credit_risk\",\n  \"filename\": \"synthetic_credit_risk.sql\",\n  \"batchSize\": 100,\n  \"includeDropTable\": true,\n  \"headers\": [\"applicant_id\", \"annual_income\", \"credit_score\", \"debt_ratio\", \"loan_approved\"],\n  \"data\": [\n    [1001, 75000, 720, 0.24, \"1\"],\n    [1002, 42000, 580, 0.48, \"0\"],\n    [1003, 98000, 790, 0.18, \"1\"],\n    [1004, 31000, 540, 0.55, \"0\"],\n    [1005, 62000, 690, 0.31, \"1\"]\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/export/sql",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "export", "sql"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

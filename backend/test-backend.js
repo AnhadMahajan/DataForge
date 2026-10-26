@@ -1,6 +1,6 @@
 /**
  * DataForge Backend Integration Test Suite
- * Verifies Express endpoints, synthesis math, fidelity auditing, and TSTR benchmarking
+ * Verifies Express endpoints, telemetry health, synthesis math, fidelity auditing, TSTR benchmarking, and exports
  */
 
 import http from 'http';
@@ -10,7 +10,7 @@ function makeRequest(method, path, body = null) {
     const postData = body ? JSON.stringify(body) : '';
     const options = {
       hostname: 'localhost',
-      port: 5000,
+      port: process.env.PORT || 5000,
       path,
       method,
       headers: {
@@ -24,9 +24,9 @@ function makeRequest(method, path, body = null) {
       res.on('data', (chunk) => (data += chunk));
       res.on('end', () => {
         try {
-          resolve({ status: res.statusCode, body: JSON.parse(data) });
+          resolve({ status: res.statusCode, headers: res.headers, body: JSON.parse(data) });
         } catch (e) {
-          resolve({ status: res.statusCode, raw: data });
+          resolve({ status: res.statusCode, headers: res.headers, raw: data });
         }
       });
     });
@@ -40,9 +40,21 @@ function makeRequest(method, path, body = null) {
 async function runTests() {
   console.log('--- Starting DataForge Backend Verification ---');
 
-  // 1. Healthcheck
+  // Dynamically import server if not already listening
+  let serverInstance = null;
+  try {
+    const serverModule = await import('./server.js');
+    serverInstance = serverModule.server;
+  } catch (err) {
+    console.log('[Notice] Connecting to already running server...');
+  }
+
+  // Allow server socket a short moment to bind if just imported
+  await new Promise((r) => setTimeout(r, 800));
+
+  // 1. Healthcheck & Telemetry
   const health = await makeRequest('GET', '/api/health');
-  console.log('1. GET /api/health:', health.status === 200 ? 'PASS' : 'FAIL', health.body?.status);
+  console.log('1. GET /api/health:', health.status === 200 ? 'PASS' : 'FAIL', `status: ${health.body?.status}, uptime: ${health.body?.system?.uptimeFormatted}`);
 
   // Sample tabular dataset: [feature1, feature2, target]
   const testHeaders = ['income', 'credit_score', 'approved'];
@@ -110,7 +122,49 @@ async function runTests() {
     `Verdict: ${tstrRes.body?.data?.tstrBenchmark?.verdict}, F1 Lift: ${tstrRes.body?.data?.tstrBenchmark?.macroF1Lift}`
   );
 
-  console.log('--- All Backend Core Engines Operational ---');
+  // 5. CSV Export (Person 4)
+  const csvRes = await makeRequest('POST', '/api/export/csv', {
+    filename: 'test_export.csv',
+    headers: testHeaders,
+    data: syntheticData.slice(0, 10),
+  });
+  const hasCsvHeader = csvRes.headers?.['content-type']?.includes('text/csv');
+  console.log(
+    '5. POST /api/export/csv (RFC-4180):',
+    csvRes.status === 200 && hasCsvHeader ? 'PASS' : 'FAIL',
+    `Size: ${csvRes.raw?.length || 0} bytes`
+  );
+
+  // 6. JSON Export (Person 4)
+  const jsonRes = await makeRequest('POST', '/api/export/json', {
+    filename: 'test_export.json',
+    headers: testHeaders,
+    data: syntheticData.slice(0, 10),
+  });
+  console.log(
+    '6. POST /api/export/json (Structured):',
+    jsonRes.status === 200 ? 'PASS' : 'FAIL',
+    `Records: ${jsonRes.body?.records?.length || 0}`
+  );
+
+  // 7. SQL Export (Person 4)
+  const sqlRes = await makeRequest('POST', '/api/export/sql', {
+    tableName: 'synthetic_credit_test',
+    headers: testHeaders,
+    data: syntheticData.slice(0, 10),
+  });
+  const hasSqlCreate = typeof sqlRes.raw === 'string' && sqlRes.raw.includes('CREATE TABLE');
+  console.log(
+    '7. POST /api/export/sql (DDL + Batch DML):',
+    sqlRes.status === 200 && hasSqlCreate ? 'PASS' : 'FAIL',
+    `Contains CREATE TABLE & INSERT: ${hasSqlCreate}`
+  );
+
+  console.log('--- All Backend Core Engines & Export Modules Operational ---');
+
+  if (serverInstance && typeof serverInstance.close === 'function') {
+    serverInstance.close();
+  }
   process.exit(0);
 }
 
