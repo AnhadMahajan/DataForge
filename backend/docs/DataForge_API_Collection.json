@@ -2,8 +2,8 @@
   "clientName": "Thunder Client",
   "collectionName": "DataForge — Express & MongoDB MVC API Suite",
   "collectionId": "dataforge-eval-2026",
-  "dateExported": "2026-10-25",
-  "version": "1.2",
+  "dateExported": "2026-10-26",
+  "version": "2.0",
   "folders": [
     {
       "id": "f_health",
@@ -36,11 +36,41 @@
       "package": ""
     }
   ],
+  "settings": {
+    "options": {
+      "baseUrl": "{{BASE_URL}}"
+    },
+    "envId": "dataforge-local-env"
+  },
+  "variables": [
+    {
+      "name": "BASE_URL",
+      "value": "http://localhost:5000"
+    },
+    {
+      "name": "AUTH_TOKEN",
+      "value": ""
+    },
+    {
+      "name": "DATASET_ID",
+      "value": ""
+    },
+    {
+      "name": "JOB_ID",
+      "value": ""
+    }
+  ],
   "requests": [
     {
-      "name": "Healthcheck & System Telemetry",
+      "name": "Healthcheck & Live Telemetry",
       "method": "GET",
       "url": "{{BASE_URL}}/api/health",
+      "containerId": "f_health"
+    },
+    {
+      "name": "Root Engine Info",
+      "method": "GET",
+      "url": "{{BASE_URL}}/",
       "containerId": "f_health"
     },
     {
@@ -50,7 +80,7 @@
       "containerId": "f_auth",
       "body": {
         "type": "json",
-        "raw": "{\n  \"name\": \"Alex Rivera\",\n  \"email\": \"alex@dataforge.ai\",\n  \"password\": \"SecurePass123!\"\n}"
+        "raw": "{\n  \"name\": \"Alex Rivera\",\n  \"email\": \"alex@dataforge.ai\",\n  \"password\": \"SecurePass123!\",\n  \"role\": \"data_scientist\"\n}"
       }
     },
     {
@@ -64,9 +94,27 @@
       }
     },
     {
-      "name": "Get Datasets List",
+      "name": "Get Current User Profile",
       "method": "GET",
-      "url": "{{BASE_URL}}/api/datasets",
+      "url": "{{BASE_URL}}/api/auth/me",
+      "containerId": "f_auth",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{AUTH_TOKEN}}"
+        }
+      ]
+    },
+    {
+      "name": "Get Datasets List (Paginated)",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/datasets?page=1&limit=10",
+      "containerId": "f_datasets"
+    },
+    {
+      "name": "Get Single Dataset by ID",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/datasets/{{DATASET_ID}}",
       "containerId": "f_datasets"
     },
     {
@@ -82,7 +130,13 @@
     {
       "name": "List Synthesis Jobs",
       "method": "GET",
-      "url": "{{BASE_URL}}/api/synthesis/jobs",
+      "url": "{{BASE_URL}}/api/synthesis/jobs?page=1&limit=20",
+      "containerId": "f_synthesis"
+    },
+    {
+      "name": "Get Single Synthesis Job Details",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/synthesis/jobs/{{JOB_ID}}",
       "containerId": "f_synthesis"
     },
     {
@@ -112,10 +166,40 @@
       "containerId": "f_eval"
     },
     {
+      "name": "Get Export Specifications",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/export",
+      "containerId": "f_export"
+    },
+    {
       "name": "Export Synthesized Dataset to CSV",
       "method": "POST",
       "url": "{{BASE_URL}}/api/export/csv",
-      "containerId": "f_export"
+      "containerId": "f_export",
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"filename\": \"credit_risk_synthetic.csv\",\n  \"headers\": [\"applicant_id\", \"annual_income\", \"credit_score\", \"debt_ratio\", \"loan_approved\"],\n  \"data\": [\n    [1001, 75000, 720, 0.24, \"1\"],\n    [1002, 42000, 580, 0.48, \"0\"],\n    [1003, 98000, 790, 0.18, \"1\"],\n    [1004, 31000, 540, 0.55, \"0\"],\n    [1005, 62000, 690, 0.31, \"1\"],\n    [1006, 88000, 760, 0.21, \"1\"],\n    [1007, 27000, 510, 0.62, \"0\"],\n    [1008, 115000, 810, 0.14, \"1\"]\n  ]\n}"
+      }
+    },
+    {
+      "name": "Export Synthesized Dataset to JSON",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/export/json",
+      "containerId": "f_export",
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"filename\": \"credit_risk_synthetic.json\",\n  \"structure\": \"structured\",\n  \"headers\": [\"applicant_id\", \"annual_income\", \"credit_score\", \"debt_ratio\", \"loan_approved\"],\n  \"data\": [\n    [1001, 75000, 720, 0.24, \"1\"],\n    [1002, 42000, 580, 0.48, \"0\"],\n    [1003, 98000, 790, 0.18, \"1\"],\n    [1004, 31000, 540, 0.55, \"0\"],\n    [1005, 62000, 690, 0.31, \"1\"]\n  ]\n}"
+      }
+    },
+    {
+      "name": "Export Synthesized Dataset to SQL",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/export/sql",
+      "containerId": "f_export",
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"tableName\": \"synthetic_credit_risk\",\n  \"filename\": \"synthetic_credit_risk.sql\",\n  \"batchSize\": 100,\n  \"includeDropTable\": true,\n  \"headers\": [\"applicant_id\", \"annual_income\", \"credit_score\", \"debt_ratio\", \"loan_approved\"],\n  \"data\": [\n    [1001, 75000, 720, 0.24, \"1\"],\n    [1002, 42000, 580, 0.48, \"0\"],\n    [1003, 98000, 790, 0.18, \"1\"],\n    [1004, 31000, 540, 0.55, \"0\"],\n    [1005, 62000, 690, 0.31, \"1\"]\n  ]\n}"
+      }
     }
   ]
 }
