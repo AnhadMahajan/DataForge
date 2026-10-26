@@ -4,8 +4,11 @@
   "description": "DataForge — Synthetic Data Intelligence Engine",
   "type": "module",
   "scripts": {
+    "start": "node -e \"import('./backend/server.js'); import('./dev-server.js');\"",
+    "fullstack": "node -e \"import('./backend/server.js'); import('./dev-server.js');\"",
     "dev": "node dev-server.js",
     "serve": "node dev-server.js",
+    "frontend": "node dev-server.js",
     "backend": "node backend/server.js",
     "backend:dev": "node --watch backend/server.js",
     "backend:test": "node backend/test-backend.js",

@@ -26,7 +26,7 @@ async function runTests() {
   console.log('========================================================\n');
 
   // 1. Math & Linear Algebra Utils
-  const math = await import('./js/utils/math.js');
+  const math = await import('./frontend/js/utils/math.js');
   console.log('1️⃣ Testing Math & Linear Algebra Utilities...');
   const sampleArr = [10, 12, 14, 15, 18, 20, 22, 100];
   const m = math.mean(sampleArr);
@@ -39,7 +39,7 @@ async function runTests() {
   console.log(`✓ Mode: "${modeVal}", Sigmoid(0): ${sig}, DotProduct: ${dot}`);
 
   // 2. CSV Parser with Dirty Real-World Strings
-  const csv = await import('./js/utils/csv.js');
+  const csv = await import('./frontend/js/utils/csv.js');
   console.log('\n2️⃣ Testing Dirty Real-World CSV Ingestion...');
   const dirtyCSV = [
     'CustomerID,Department,MonthlySalary,TenureMonths,BonusRate,Status',
@@ -58,7 +58,7 @@ async function runTests() {
   console.log(`✓ Currency string "$5,200.50" successfully sanitized to numeric: ${parsed.data.rows[0][2]}`);
 
   // 3. Auth Service
-  const auth = await import('./js/services/auth.js');
+  const auth = await import('./frontend/js/services/auth.js');
   console.log('\n3️⃣ Testing Auth Service...');
   const signupRes = await auth.signup('Lead Researcher', 'researcher@dataforge.ai', 'Password123!');
   if (!signupRes.success) throw new Error('Signup failed: ' + signupRes.error.message);
@@ -69,7 +69,7 @@ async function runTests() {
   const userId = loginRes.data.user.id;
 
   // 4. Real-World Mixed Dataset Ingestion & ID Auto-Detection
-  const datasetService = await import('./js/services/dataset.js');
+  const datasetService = await import('./frontend/js/services/dataset.js');
   console.log('\n4️⃣ Testing Dataset Diagnostic Profiler & ID Detection...');
   const dsRes = await datasetService.createDatasetFromCSV(userId, 'real_customer_data.csv', datasetService.getSampleDatasetCSV(), 'ChurnRisk');
   if (!dsRes.success) throw new Error('Dataset creation failed: ' + dsRes.error.message);
@@ -78,7 +78,7 @@ async function runTests() {
   console.log(`✓ Augmentation Need Score: ${dataset.analysisResult.augmentationNeedScore}/100`);
 
   // 5. Test Advanced Augmentation Strategies (SMOTE-NC, ADASYN, SMOTE-Tomek)
-  const augService = await import('./js/services/augmentation.js');
+  const augService = await import('./frontend/js/services/augmentation.js');
   console.log('\n5️⃣ Testing Advanced Augmentation Algorithms (SMOTE-NC, ADASYN, SMOTE-Tomek)...');
   const numericIndices = dataset.analysisResult.numericIndices;
   const categoricalIndices = dataset.analysisResult.categoricalIndices;
@@ -95,7 +95,7 @@ async function runTests() {
   console.log(`✓ SMOTE-Tomek generated samples and cleaned ${tomekRes.tomekRemovedCount} boundary conflicts`);
 
   // 6. Test Multi-Model Classification (k-NN, Decision Tree, Logistic Regression, Random Forest)
-  const expService = await import('./js/services/experiment.js');
+  const expService = await import('./frontend/js/services/experiment.js');
   console.log('\n6️⃣ Testing Controlled Multi-Strategy & Multi-Model Evaluation Pipeline...');
   
   const modelsToTest = ['knn', 'decision_tree', 'logistic_regression', 'random_forest'];
@@ -135,7 +135,7 @@ async function runTests() {
   }
 
   // 7. Test Statistical Math (KS Test, Wasserstein Distance & Confusion Matrix)
-  const mathUtils = await import('./js/utils/math.js');
+  const mathUtils = await import('./frontend/js/utils/math.js');
   console.log('\n7️⃣ Testing Statistical Drift & Confusion Matrix Math Engine...');
   
   // Test KS Statistic
@@ -171,7 +171,7 @@ async function runTests() {
   console.log(`✓ Confusion Matrix: 3-Class Matrix generated with Sensitivity & FPR per class`);
 
   // 8. Test Reports Generator
-  const reportsService = await import('./js/services/reports.js');
+  const reportsService = await import('./frontend/js/services/reports.js');
   console.log('\n8️⃣ Testing Narrative Report Compiler...');
   const latestExp = expService.getExperiments(userId)[0];
   const report = reportsService.generateReportFromExperiment(userId, latestExp, dataset);
@@ -179,8 +179,8 @@ async function runTests() {
 
   // 9. Test Linear Algebra & Synthesizer Engine
   console.log('\n9️⃣ Testing Linear Algebra & Synthesizer Engine...');
-  const linalg = await import('./js/utils/linalg.js');
-  const synth = await import('./js/services/synthesizer.js');
+  const linalg = await import('./frontend/js/utils/linalg.js');
+  const synth = await import('./frontend/js/services/synthesizer.js');
 
   // Test Cholesky decomposition
   const symMatrix = [
@@ -324,7 +324,7 @@ async function runTests() {
 
   // 11. Test Statistical Fidelity & Privacy Audit Engine
   console.log('\n1️⃣1️⃣ Testing Statistical Fidelity & Privacy Audit Engine...');
-  const { auditSyntheticFidelity } = await import('./js/services/fidelity-audit.js');
+  const { auditSyntheticFidelity } = await import('./frontend/js/services/fidelity-audit.js');
   const auditReport = auditSyntheticFidelity(
     testData,
     copulaResult.syntheticData,
@@ -340,7 +340,7 @@ async function runTests() {
 
   // 12. Test Standalone Python Script Generation
   console.log('\n1️⃣2️⃣ Testing Standalone Python Script Generator...');
-  const { generateStandalonePythonScript } = await import('./js/services/pipeline.js');
+  const { generateStandalonePythonScript } = await import('./frontend/js/services/pipeline.js');
   const pyScript = generateStandalonePythonScript({
     datasetName: 'churn_data',
     targetCol: 'ChurnRisk',
