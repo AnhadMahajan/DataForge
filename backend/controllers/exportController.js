@@ -142,9 +142,119 @@ export async function exportCsv(req, res, next) {
   }
 }
 
+/**
+ * Converts headers and data matrix into structured JSON payload.
+ * Supports structured mode with metadata or pure records array.
+ *
+ * @param {string[]} headers
+ * @param {Array<Array<*>>} data
+ * @param {Object} options
+ * @returns {Object|Array}
+ */
+export function buildJsonPayload(headers, data, options = {}) {
+  const { structure = 'structured', filename = 'dataforge_export.json' } = options;
+
+  const records = data.map((row) => {
+    if (Array.isArray(row)) {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[h] = row[idx] !== undefined ? row[idx] : null;
+      });
+      return obj;
+    } else if (typeof row === 'object' && row !== null) {
+      return row;
+    }
+    return { value: row };
+  });
+
+  if (structure === 'records' || structure === 'array') {
+    return records;
+  }
+
+  return {
+    metadata: {
+      filename,
+      exportedAt: new Date().toISOString(),
+      rowCount: data.length,
+      columnCount: headers.length,
+      headers,
+      generator: 'DataForge Synthetic Intelligence Engine v2.0',
+    },
+    records,
+  };
+}
+
+/**
+ * @desc    Export dataset to structured JSON download
+ * @route   POST /api/export/json
+ * @access  Public / Authenticated
+ */
+export async function exportJson(req, res, next) {
+  try {
+    const { headers, data, filename: rawFilename } = normalizeExportPayload(req.body);
+
+    if (headers.length === 0 || data.length === 0) {
+      res.status(400);
+      throw new Error('Please provide non-empty "headers" array and "data" rows matrix.');
+    }
+
+    const safeFilename = (rawFilename || `dataforge_export_${Date.now()}.json`)
+      .replace(/[^a-zA-Z0-9_.-]/g, '_')
+      .replace(/\.json$/i, '') + '.json';
+
+    const structure = req.query.structure || req.body.structure || 'structured';
+    const jsonPayload = buildJsonPayload(headers, data, {
+      structure,
+      filename: safeFilename,
+    });
+
+    const jsonString = JSON.stringify(jsonPayload, null, 2);
+
+    // Record compliance audit log
+    await AuditLog.record({
+      req,
+      action: 'EXPORT_JSON',
+      resourceId: safeFilename,
+      details: {
+        format: 'json',
+        structure,
+        filename: safeFilename,
+        rowCount: data.length,
+        columnCount: headers.length,
+        headers,
+      },
+    });
+
+    // If client requested JSON body directly without attachment disposition
+    if (req.body.download === false || req.query.download === 'false') {
+      return res.status(200).json({
+        success: true,
+        format: 'json',
+        filename: safeFilename,
+        rowCount: data.length,
+        columnCount: headers.length,
+        payload: jsonPayload,
+      });
+    }
+
+    // Download headers
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
+    res.setHeader('X-Total-Rows', String(data.length));
+    res.setHeader('X-Total-Columns', String(headers.length));
+
+    return res.status(200).send(jsonString);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export default {
   exportCsv,
+  exportJson,
   escapeCsvField,
   buildCsvString,
+  buildJsonPayload,
   normalizeExportPayload,
 };
+
