@@ -406,45 +406,47 @@ Deploy with one click to Render free tier using `render.yaml` or `backend/render
 
 ```
 DataForge/
-├── backend/
-│   ├── main.py                  # FastAPI server with REST API routes
-│   └── engine/
-│       ├── synthesizer.py       # Gaussian Copula & Silverman KDE generators
-│       ├── fidelity.py          # KS test, Wasserstein distance, DCR privacy audit
-│       ├── evaluator.py         # Scikit-Learn TSTR classification & regression
-│       └── experiment.py        # Multi-run randomized cross-validation pipeline
+├── backend/                         # Express.js 4.21 & MongoDB Mongoose 8.9 MVC Backend
+│   ├── config/                      # Resilient MongoDB connection manager
+│   ├── controllers/                 # MVC Controllers (auth, dataset, synthesis, evaluation, export)
+│   ├── docs/                        # Postman & Thunder Client test suites
+│   ├── middlewares/                 # authMiddleware (JWT), uploadMiddleware (Multer), errorMiddleware
+│   ├── models/                      # Mongoose Models (User, Dataset, SynthesisJob, EvaluationReport, AuditLog)
+│   ├── routes/                      # Modular Express Routers (/api/health, /api/auth, /api/datasets, etc.)
+│   ├── services/                    # Synthesis (Copula, SMOTE-NC), Fidelity (KS, Wasserstein), TSTR Engine
+│   ├── Dockerfile                   # Hardened Node.js 20 Alpine production container
+│   ├── package.json                 # Backend dependencies & scripts
+│   ├── render.yaml                  # 1-Click Render Cloud deployment blueprint
+│   ├── server.js                    # Express application entrypoint (Port 5000)
+│   └── test-backend.js              # Integration test suite (11/11 tests passing)
 │
-├── js/
-│   ├── components/              # Canvas charts, command palette, dropzone, sidebar, toast, tables
-│   ├── pages/                   # Page controllers for each view
-│   ├── services/                # Dataset, augmentation, synthesizer, fidelity, pipeline, auth, storage
-│   ├── utils/                   # Math, linear algebra, CSV parser, DOM helpers, formatting, validation
-│   └── workers/                 # Pyodide WebAssembly worker, standard data worker
+├── frontend/                        # Production Web Application (Port 3005)
+│   ├── css/                         # Variables, layout, animations, components & page stylesheets
+│   ├── js/                          # Application logic
+│   │   ├── components/              # 3D canvas, charts, command palette, dropzone, sidebar, toast, tables
+│   │   ├── pages/                   # Landing, dashboard, synthesizer-lab, upload, results, reports, settings
+│   │   ├── services/                # api.js (Express client), auth.js, pipeline.js, dataset.js, storage.js
+│   │   ├── utils/                   # Linear algebra, statistical math, CSV parser, DOM helpers, validation
+│   │   └── vendor/                  # Three.js & GLTFLoader for 3D Monolith rendering
+│   ├── images/                      # Project screenshots & visual assets
+│   ├── models/                      # 3D Optical Data Monolith asset (optical_data_monolith.glb)
+│   ├── index.html                   # 3D Monolith Cinematic Landing Page
+│   ├── dashboard.html               # Main Workspace overview
+│   ├── synthesizer-lab.html         # Generative Tabular Synthesis & TSTR Studio
+│   ├── upload.html                  # Dataset Ingestion & Schema Profiler
+│   ├── results.html                 # Downstream ML Benchmarks & Lift Matrix
+│   ├── reports.html                 # Compliance Audit Reports & Multi-Format Exporter
+│   ├── settings.html                # Engine Configuration & Cloud Endpoint settings
+│   ├── login.html                   # User Authentication
+│   └── signup.html                  # User Registration & RBAC selection
 │
-├── css/
-│   ├── variables.css            # Design tokens, color palette, fluid typography
-│   ├── reset.css                # Element normalization
-│   ├── base.css                 # Typography & body styles
-│   ├── components.css           # Cards, buttons, tables, badges, inputs
-│   ├── layout.css               # Responsive sidebar, navigation, grid systems
-│   ├── animations.css           # Keyframes & micro-transitions
-│   └── pages/                   # Page-specific stylesheets
-│
-├── dashboard.html               # Main Workspace view
-├── experiment.html              # Multi-Strategy Experiment Lab
-├── index.html                   # Public Landing Page & Showcase
-├── login.html                   # Authentication Login
-├── package.json                 # ES Module project manifest
-├── reports.html                 # Scientific Narrative Reports
-├── results.html                 # Performance & Comparison Matrix
-├── dev-server.js                # Zero-dependency local development Node.js server
-├── settings.html                # Workspace Backup & Quota settings
-├── signup.html                  # User Registration
-├── start-backend.bat            # Quick-launch batch file for FastAPI
-├── synthesizer-lab.html         # Generative Synthesis Studio
-├── test_backend.py              # Python API endpoint verification
-├── test-suite.js                # Node.js end-to-end algorithm test suite
-└── upload.html                  # Dataset Ingestion & Profiler
+├── dev-server.js                    # Zero-dependency local Node.js static dev server (Port 3005)
+├── package.json                     # Root orchestrator ("npm run fullstack", "dev", "backend", "test")
+├── render.yaml                      # Root Render.com Blueprint configuration
+├── start-backend.bat                # 1-Click launcher for Express & MongoDB
+├── start-fullstack.bat              # 1-Click launcher for Backend + Frontend simultaneously
+├── test-suite.js                    # End-to-end frontend algorithm test suite (12/12 passing)
+└── vercel.json                      # Vercel deployment configuration pointing to frontend/
 ```
 
 ---
