@@ -274,93 +274,131 @@ Manage researcher credentials, audit local storage quotas, and monitor hybrid ru
 
 ---
 
-## 🔌 Native Backend REST API Reference
+## 🔌 Express.js & MongoDB MVC Backend API (v2.0)
 
-The FastAPI backend (`backend/main.py`) exposes high-performance endpoints:
+DataForge v2.0 features an enterprise-grade **Express.js & MongoDB MVC Backend** located in [`backend/`](backend/README.md). It orchestrates mathematical generative synthesis, statistical fidelity audits, downstream TSTR machine learning benchmarks, compliance audit logging, and multi-format dataset exports.
 
-### `GET /api/health`
-Checks runtime availability and package versions.
-```json
-{
-  "status": "online",
-  "backend": "DataForge Native Python Engine",
-  "pythonVersion": "3.11.x",
-  "packages": { "numpy": "1.24.x", "scipy": "1.11.x", "pandas": "2.0.x", "scikit-learn": "1.3.x" }
-}
+### Architecture Overview
+
 ```
-
-### `POST /api/synthesize`
-Generates synthetic tabular samples via Gaussian Copula or KDE.
-- **Request Body**: `{ headers: string[], data: any[][], algorithm: "copula" | "kde", rowCount: number, seed: number }`
-- **Response**: `{ syntheticHeaders: string[], syntheticData: any[][], rowCount: number, algorithm: string }`
-
-### `POST /api/audit`
-Executes statistical fidelity tests (KS-test, Wasserstein-1, DCR privacy score).
-- **Request Body**: `{ headers: string[], realData: any[][], syntheticData: any[][] }`
-- **Response**: `{ overallScore: number, numericFidelity: number, correlationFidelity: number, privacyScore: number, featureAudits: object[] }`
-
-### `POST /api/benchmark/tstr`
-Runs a downstream Scikit-Learn TSTR evaluation.
-- **Request Body**: `{ headers: string[], realData: any[][], syntheticData: any[][], targetCol: string, modelType: string, testSize: number, seed: number }`
-- **Response**: `{ baseline: object, synthetic: object, tstrRetention: number, taskType: string }`
-
-### `POST /api/experiment`
-Executes a multi-strategy, multi-run randomized benchmark.
-- **Request Body**: `{ headers: string[], data: any[][], targetCol: string, strategies: string[], runs: number, trainTestSplit: number, modelType: string, baseSeed: number }`
-- **Response**: `{ baseline: object, strategyResults: object[], recommendation: object, taskType: string }`
+backend/
+├── config/db.js              # Resilient MongoDB Atlas / local connection manager
+├── controllers/              # MVC Controller Layer (auth, datasets, synthesis, eval, export)
+├── docs/                     # Thunder Client & Postman Collection exports
+├── middlewares/              # JWT auth, RBAC authorization, error handling, Multer upload
+├── models/                   # Mongoose Schemas: User, Dataset, SynthesisJob, EvaluationReport, AuditLog
+├── routes/                   # Express Routers (/api/health, /api/auth, /api/datasets, /api/synthesis, /api/evaluation, /api/export)
+├── Dockerfile                # Production-hardened Node.js 20 Alpine container
+├── render.yaml               # Cloud deployment blueprint for Render Web Service
+└── test-backend.js           # Integration test suite verifying all 6 API modules
+```
 
 ---
 
-## 🛠️ Getting Started
+### Core API Modules & Endpoints
 
-### Prerequisites
-- **Node.js** (v16+) for local web serving and test runner
-- **Python** (v3.9+) with `pip` (optional, for native backend acceleration)
+#### 1. System Health & Telemetry
+- **`GET /api/health`**: Returns live MongoDB connection status & ping latency, server uptime, Node.js memory footprint (RSS/Heap), host CPU/OS diagnostics, and active API catalog.
+- **`GET /`**: API engine identification and version status.
 
-### Option 1: Full-Stack Setup (Recommended)
+#### 2. Authentication & RBAC (Person 2)
+- **`POST /api/auth/register`**: Creates researcher profile with bcrypt password hashing and assigned RBAC role (`user`, `data_scientist`, `admin`).
+- **`POST /api/auth/login`**: Authenticates credentials and returns signed JWT Bearer token.
+- **`GET /api/auth/me`**: Retrieves authenticated researcher profile.
 
-1. **Clone the repository**:
+#### 3. Dataset Ingestion & Profiling (Person 3)
+- **`POST /api/datasets/upload`**: Multipart file upload (`.csv`, `.json`) with automated statistical column profiling.
+- **`GET /api/datasets`**: Paginated dataset listing with metadata, shape, and column profiles.
+- **`GET /api/datasets/:id`**: Retrieves dataset metadata with a 20-row preview slice.
+- **`DELETE /api/datasets/:id`**: Removes dataset and associated indices.
+
+#### 4. Mathematical Synthesis Core (Person 1)
+- **`POST /api/synthesis/run`**: Generates synthetic tabular records using Gaussian Copula, Multivariate KDE, or SMOTE.
+- **`GET /api/synthesis/jobs`**: Paginated history of generative synthesis runs.
+- **`GET /api/synthesis/jobs/:id`**: Fetches complete synthesized dataset matrix and generation metrics.
+- **`DELETE /api/synthesis/jobs/:id`**: Removes synthesis job.
+
+#### 5. Statistical Fidelity & TSTR Benchmark (Person 1)
+- **`POST /api/evaluation/audit`**: Computes Kolmogorov-Smirnov test, 1-Wasserstein metric, and Distance to Closest Record (DCR) privacy score.
+- **`POST /api/evaluation/tstr`**: Runs empirical Train-on-Synthetic, Test-on-Real (TSTR) benchmark measuring Macro F1 lift on held-out data.
+- **`GET /api/evaluation/reports`**: Lists historical validation reports.
+
+#### 6. Dataset Multi-Format Export Engine (Person 4)
+- **`GET /api/export`**: Discovers available export formats and specifications.
+- **`POST /api/export/csv`**: Generates RFC-4180 compliant CSV downloads with strict quote/delimiter escaping and CRLF line breaks.
+- **`POST /api/export/json`**: Formats synthetic datasets into structured JSON with embedded metadata headers or raw record arrays.
+- **`POST /api/export/sql`**: Generates relational SQL DDL (`CREATE TABLE` with automatic type inference) and batch `INSERT INTO` statements.
+
+---
+
+### 🔒 Compliance Audit Logging
+
+Every critical platform action is automatically recorded in MongoDB via `backend/models/AuditLog.js`:
+- **Compliance Schema**: Tracks `user` reference, `action` (`EXPORT_CSV`, `EXPORT_SQL`, `SYNTHESIS_RUN`, `DATASET_UPLOAD`), `resourceId`, client `ipAddress` (with reverse proxy detection), client `userAgent`, and `timestamp`.
+- **Non-Blocking Resilience**: Safe error-catching ensures audit persistence never blocks critical application execution.
+
+---
+
+### 🛠️ Backend Setup & Execution
+
+1. **Install Dependencies**:
    ```bash
-   git clone https://github.com/AnhadMahajan/DataForge.git
-   cd DataForge
+   cd backend
+   npm install
    ```
 
-2. **Start the Frontend Web Server**:
+2. **Configure Environment (`backend/.env`)**:
+   ```env
+   PORT=5000
+   NODE_ENV=development
+   MONGO_URI=mongodb://localhost:27017/dataforge
+   JWT_SECRET=dataforge_super_secure_jwt_secret_key_2026_production
+   CLIENT_URL=http://localhost:3005
+   ```
+
+3. **Start the Express Backend Server**:
    ```bash
+   # Development mode with hot-reloading
+   npm run dev
+
+   # Production mode
    npm start
    ```
-   *The application will open at `http://localhost:3005` (or port specified in `PORT`).*
 
-3. **Start the Native Python Backend** (in a separate terminal):
+4. **Run Backend Integration Tests**:
    ```bash
-   # Install Python requirements
-   pip install fastapi uvicorn numpy scipy pandas scikit-learn
-
-   # Launch FastAPI Server
-   python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+   npm test
    ```
-   *Windows users can simply double-click `start-backend.bat`.*
-
-### Option 2: Pure Browser Client (Zero Backend)
-You can directly open `index.html` in any modern web browser that supports ES Modules (Chrome, Firefox, Edge, Safari). All parsing, synthesis, and evaluation will execute locally via client-side Web Workers and Pyodide.
 
 ---
 
-## 🧪 Automated Testing & Verification
+### 📬 Evaluation Postman & Thunder Client Suite
 
-DataForge includes automated test suites covering both frontend algorithms and backend API endpoints:
+Comprehensive API suites are provided in `backend/docs/`:
+- **`DataForge_API_Collection.json`**: Complete Thunder Client collection ready for VS Code import.
+- **`DataForge_Postman_Collection.json`**: Postman v2.1.0 collection with pre-configured `{{BASE_URL}}` environment variables and realistic sample payloads.
 
-### 1. JavaScript & Node.js E2E Test Suite
-Validates mathematical routines, linear algebra, dirty CSV ingestion, SMOTE/ADASYN/Tomek algorithms, and classification pipelines:
+---
+
+### 🐳 Docker & Cloud Deployment
+
+#### Docker Container
+A minimal Node.js 20 Alpine container image with zero-dependency health checks:
 ```bash
-npm test
+# Build production image
+docker build -t dataforge-backend ./backend
+
+# Run container
+docker run -d -p 5000:5000 --name dataforge-api dataforge-backend
 ```
 
-### 2. Native Python FastAPI Test Suite
-Validates API endpoints, Gaussian Copula sampling, fidelity audits, and continuous regression benchmarks:
-```bash
-python test_backend.py
-```
+#### Render.com Cloud Blueprint
+Deploy with one click to Render free tier using `render.yaml` or `backend/render.yaml`:
+1. Link your repository in Render Dashboard.
+2. Render detects `render.yaml` and deploys the web service with automatic health checks pointing to `/api/health`.
+3. Provide your `MONGO_URI` (MongoDB Atlas free tier M0) in the Render environment settings.
+
+---
 
 ---
 
