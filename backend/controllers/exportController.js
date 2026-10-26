@@ -249,12 +249,257 @@ export async function exportJson(req, res, next) {
   }
 }
 
+/**
+ * Infers an appropriate SQL column type by inspecting sample values.
+ *
+ * @param {Array<*>} values
+ * @returns {string}
+ */
+export function inferSqlType(values = []) {
+  const nonNulls = values.filter((v) => v !== null && v !== undefined && v !== '');
+  if (nonNulls.length === 0) return 'VARCHAR(255)';
+
+  let isBoolean = true;
+  let isInteger = true;
+  let isNumeric = true;
+  let isTimestamp = true;
+  let maxLength = 0;
+
+  for (const v of nonNulls) {
+    const str = String(v).trim();
+    if (str.length > maxLength) maxLength = str.length;
+
+    // Check Boolean
+    if (v !== true && v !== false && str !== '1' && str !== '0' && str.toLowerCase() !== 'true' && str.toLowerCase() !== 'false') {
+      isBoolean = false;
+    }
+
+    // Check Number
+    const num = Number(str);
+    if (str === '' || isNaN(num)) {
+      isNumeric = false;
+      isInteger = false;
+    } else {
+      if (!Number.isInteger(num)) {
+        isInteger = false;
+      }
+    }
+
+    // Check Timestamp / ISO Date
+    if (isNaN(Date.parse(str)) || str.length < 8 || !/^\d{4}[-/.]/.test(str)) {
+      isTimestamp = false;
+    }
+  }
+
+  if (isBoolean) return 'BOOLEAN';
+  if (isInteger) return 'BIGINT';
+  if (isNumeric) return 'NUMERIC(14, 4)';
+  if (isTimestamp) return 'TIMESTAMP';
+  if (maxLength > 255) return 'TEXT';
+  return 'VARCHAR(255)';
+}
+
+/**
+ * Escapes an arbitrary value as a safe SQL literal.
+ *
+ * @param {*} val
+ * @returns {string}
+ */
+export function escapeSqlLiteral(val) {
+  if (val === null || val === undefined || val === '') {
+    return 'NULL';
+  }
+
+  if (typeof val === 'boolean') {
+    return val ? 'TRUE' : 'FALSE';
+  }
+
+  if (typeof val === 'number') {
+    return Number.isFinite(val) ? String(val) : 'NULL';
+  }
+
+  if (val instanceof Date) {
+    return `'${val.toISOString()}'`;
+  }
+
+  if (typeof val === 'object') {
+    return `'${JSON.stringify(val).replace(/'/g, "''")}'`;
+  }
+
+  const str = String(val);
+  // If string is pure numeric
+  if (!isNaN(Number(str)) && str.trim() !== '') {
+    return str.trim();
+  }
+
+  // Escape single quotes for SQL: ' -> ''
+  return `'${str.replace(/'/g, "''")}'`;
+}
+
+/**
+ * Builds complete SQL DDL and DML statements with batch INSERTs.
+ *
+ * @param {string[]} headers
+ * @param {Array<Array<*>>} data
+ * @param {Object} options
+ * @returns {string}
+ */
+export function buildSqlDump(headers, data, options = {}) {
+  const {
+    tableName = 'synthetic_data',
+    batchSize = 100,
+    includeDropTable = true,
+  } = options;
+
+  // Clean identifier: alphanumeric + underscore, max 63 chars
+  const cleanTableName = (tableName.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase() || 'synthetic_data')
+    .replace(/^_+/, '')
+    .slice(0, 63) || 'synthetic_data';
+
+  // Sanitize column names
+  const cleanCols = headers.map((h, i) => {
+    let clean = String(h || `col_${i + 1}`)
+      .replace(/[^a-zA-Z0-9_]/g, '_')
+      .toLowerCase()
+      .replace(/^_+/, '');
+    if (!clean || /^[0-9]/.test(clean)) clean = `col_${clean}`;
+    return clean;
+  });
+
+  // Infer SQL types per column from data samples
+  const columnTypes = cleanCols.map((colName, colIdx) => {
+    const colSamples = data.slice(0, 500).map((row) => (Array.isArray(row) ? row[colIdx] : row[headers[colIdx]]));
+    const inferredType = inferSqlType(colSamples);
+    return { name: colName, type: inferredType };
+  });
+
+  const lines = [
+    `-- =====================================================================`,
+    `-- DataForge Synthetic Intelligence Engine v2.0 — Relational SQL Export`,
+    `-- Exported At: ${new Date().toISOString()}`,
+    `-- Target Table: "${cleanTableName}" | Rows: ${data.length} | Columns: ${headers.length}`,
+    `-- =====================================================================\n`,
+  ];
+
+  if (includeDropTable) {
+    lines.push(`DROP TABLE IF EXISTS "${cleanTableName}";\n`);
+  }
+
+  // CREATE TABLE statement
+  lines.push(`CREATE TABLE "${cleanTableName}" (`);
+  lines.push(`  "df_row_id" SERIAL PRIMARY KEY,`);
+  columnTypes.forEach((col, idx) => {
+    const isLast = idx === columnTypes.length - 1;
+    lines.push(`  "${col.name}" ${col.type}${isLast ? '' : ','}`);
+  });
+  lines.push(`);\n`);
+
+  // Batch INSERT INTO statements
+  const colNamesList = cleanCols.map((c) => `"${c}"`).join(', ');
+
+  for (let i = 0; i < data.length; i += batchSize) {
+    const chunk = data.slice(i, i + batchSize);
+    lines.push(`INSERT INTO "${cleanTableName}" (${colNamesList}) VALUES`);
+
+    const valueRows = chunk.map((row) => {
+      let rowValues = [];
+      if (Array.isArray(row)) {
+        rowValues = cleanCols.map((_, colIdx) => escapeSqlLiteral(row[colIdx]));
+      } else if (typeof row === 'object' && row !== null) {
+        rowValues = headers.map((h) => escapeSqlLiteral(row[h]));
+      } else {
+        rowValues = [escapeSqlLiteral(row)];
+      }
+      return `  (${rowValues.join(', ')})`;
+    });
+
+    lines.push(valueRows.join(',\n') + ';\n');
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * @desc    Export dataset to relational SQL DDL & batch INSERT script
+ * @route   POST /api/export/sql
+ * @access  Public / Authenticated
+ */
+export async function exportSql(req, res, next) {
+  try {
+    const { headers, data, filename: rawFilename } = normalizeExportPayload(req.body);
+
+    if (headers.length === 0 || data.length === 0) {
+      res.status(400);
+      throw new Error('Please provide non-empty "headers" array and "data" rows matrix.');
+    }
+
+    const rawTableName = req.body.tableName || rawFilename?.replace(/\.[^/.]+$/, '') || 'synthetic_dataset';
+    const safeTableName = rawTableName.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
+    const safeFilename = (rawFilename || `${safeTableName}_${Date.now()}.sql`)
+      .replace(/[^a-zA-Z0-9_.-]/g, '_')
+      .replace(/\.sql$/i, '') + '.sql';
+
+    const batchSize = Math.max(1, Math.min(parseInt(req.body.batchSize, 10) || 100, 1000));
+    const includeDropTable = req.body.includeDropTable !== false;
+
+    const sqlContent = buildSqlDump(headers, data, {
+      tableName: safeTableName,
+      batchSize,
+      includeDropTable,
+    });
+
+    // Record compliance audit log
+    await AuditLog.record({
+      req,
+      action: 'EXPORT_SQL',
+      resourceId: safeFilename,
+      details: {
+        format: 'sql',
+        tableName: safeTableName,
+        filename: safeFilename,
+        rowCount: data.length,
+        columnCount: headers.length,
+        batchSize,
+        headers,
+      },
+    });
+
+    // If client requested JSON body directly without attachment disposition
+    if (req.body.download === false || req.query.download === 'false') {
+      return res.status(200).json({
+        success: true,
+        format: 'sql',
+        filename: safeFilename,
+        tableName: safeTableName,
+        rowCount: data.length,
+        columnCount: headers.length,
+        sql: sqlContent,
+      });
+    }
+
+    // Download headers
+    res.setHeader('Content-Type', 'application/sql; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
+    res.setHeader('X-Total-Rows', String(data.length));
+    res.setHeader('X-Total-Columns', String(headers.length));
+
+    return res.status(200).send(sqlContent);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export default {
   exportCsv,
   exportJson,
+  exportSql,
   escapeCsvField,
   buildCsvString,
   buildJsonPayload,
+  inferSqlType,
+  escapeSqlLiteral,
+  buildSqlDump,
   normalizeExportPayload,
 };
+
 
