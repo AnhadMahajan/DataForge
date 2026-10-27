@@ -40,18 +40,18 @@ const btnResearcher = qs('#btn-fill-researcher');
 if (btnAdmin && emailInput && passwordInput) {
   btnAdmin.addEventListener('click', () => {
     emailInput.value = 'admin@dataforge.ai';
-    passwordInput.value = 'DataForge2026!';
+    passwordInput.value = 'Admin123!';
     clearErrors();
-    toast.info('Admin demo credentials populated.');
+    toast.info('Admin credentials populated (Admin123!).');
   });
 }
 
 if (btnResearcher && emailInput && passwordInput) {
   btnResearcher.addEventListener('click', () => {
     emailInput.value = 'researcher@dataforge.ai';
-    passwordInput.value = 'Research2026!';
+    passwordInput.value = 'Researcher123!';
     clearErrors();
-    toast.info('Researcher demo credentials populated.');
+    toast.info('Researcher credentials populated (Researcher123!).');
   });
 }
 
