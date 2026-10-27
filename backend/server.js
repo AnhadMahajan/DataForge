@@ -20,13 +20,29 @@ import authRoutes from './routes/authRoutes.js';
 import datasetRoutes from './routes/datasetRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
 
-// Load Environment Variables
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load Environment Variables (supports running from root or backend directory)
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 dotenv.config();
 
 // Initialize Database Connection
 connectDB();
 
 const app = express();
+
+// Ensure database connection in serverless / asynchronous contexts
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error('[DB Middleware Warning]', err.message);
+  }
+  next();
+});
 
 // Security & Parsing Middlewares
 app.use(helmet());
@@ -76,14 +92,17 @@ app.post('/api/benchmark/tstr', runTstrBenchmark);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-
-const server = app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`[DataForge Server] Running on http://localhost:${PORT}`);
-  console.log(`[DataForge Server] Health check: http://localhost:${PORT}/api/health`);
-  console.log(`[DataForge Server] Mode: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`====================================================`);
-});
+let server = null;
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  server = app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`[DataForge Server] Running on http://localhost:${PORT}`);
+    console.log(`[DataForge Server] Health check: http://localhost:${PORT}/api/health`);
+    console.log(`[DataForge Server] Mode: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`====================================================`);
+  });
+}
 
 export { app, server };
+export default app;

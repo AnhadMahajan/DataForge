@@ -281,7 +281,7 @@ async function updateBackendUI() {
   if (indicatorDot && indicatorText && indicatorPill) {
     if (res.online) {
       indicatorDot.style.background = '#10b981';
-      indicatorText.textContent = `Native Python Server (FastAPI on ${res.url})`;
+      indicatorText.textContent = `Express.js & MongoDB MVC Engine (${res.url})`;
       indicatorPill.textContent = 'Active Server';
       indicatorPill.className = 'pill pill-positive ml-auto';
     } else {
@@ -314,7 +314,7 @@ if (btnResetBackend) {
 if (btnTestBackend) {
   btnTestBackend.addEventListener('click', async () => {
     const val = customBackendInput?.value?.trim();
-    const testUrl = val || (window.location.protocol === 'https:' ? null : 'http://127.0.0.1:8000');
+    const testUrl = val || (window.location.protocol === 'https:' ? window.location.origin : 'http://localhost:5000');
 
     if (!testUrl) {
       if (backendTestResult) {

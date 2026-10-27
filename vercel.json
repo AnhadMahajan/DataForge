@@ -1,9 +1,12 @@
 {
-  "framework": null,
-  "buildCommand": "echo 'Static build ready'",
-  "outputDirectory": "frontend",
+  "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/api", "destination": "/api/index.js" },
+    { "source": "/(.*)", "destination": "/frontend/$1" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

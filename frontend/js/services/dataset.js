@@ -164,6 +164,17 @@ export async function createDatasetFromCSV(userId, fileName, csvText, targetColu
   const saveRes = storage.addToCollection(storageKey, rawDataset);
   if (!saveRes.success) return saveRes;
 
+  // Asynchronously replicate to cloud MongoDB Atlas
+  if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+    try {
+      import('./api.js').then(({ api }) => {
+        const blob = new Blob([csvText], { type: 'text/csv' });
+        const file = new File([blob], fileName, { type: 'text/csv' });
+        api.uploadDataset(file, rawDataset.name, 'Ingested via DataForge UI', chosenTarget).catch(() => {});
+      }).catch(() => {});
+    } catch (_) {}
+  }
+
   return { success: true, data: rawDataset };
 }
 

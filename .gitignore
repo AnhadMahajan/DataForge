@@ -39,6 +39,7 @@ jspm_packages/
 .env
 .env.*
 !.env.example
+.agents/mcp_config.json
 
 # Temporary / Archives
 docs.zip

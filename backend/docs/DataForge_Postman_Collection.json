@@ -8,6 +8,11 @@
   "variable": [
     {
       "key": "BASE_URL",
+      "value": "https://data-forge-mocha.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "LOCAL_BASE_URL",
       "value": "http://localhost:5000",
       "type": "string"
     },

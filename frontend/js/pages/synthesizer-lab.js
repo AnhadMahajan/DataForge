@@ -222,6 +222,20 @@ async function runSynthesis() {
     lastResult = result;
     renderResults(result);
     showToast(`Generated ${result.syntheticData.length} synthetic rows via ${algo.toUpperCase()}.`, 'success');
+
+    // Asynchronously record synthesis job in cloud MongoDB Atlas
+    if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+      import('../services/api.js').then(({ api }) => {
+        api.runSynthesis({
+          name: `${selectedDataset.name || 'Dataset'} - ${algo.toUpperCase()}`,
+          headers,
+          data: workingData,
+          algorithm: algo,
+          rowCount,
+          seed,
+        }).catch(() => {});
+      }).catch(() => {});
+    }
   } catch (err) {
     console.error('[SynthLab] Synthesis failed:', err);
     showToast(`Synthesis failed: ${err.message}`, 'error');

@@ -23,9 +23,13 @@ export function getBackendUrl() {
     if (custom !== null) {
       return custom.trim() || null;
     }
-    // If on https: (e.g. Vercel deployment), do not probe insecure http:// localhost by default
+    // If on https: (e.g. Vercel deployment), route directly to deployed origin
     if (window.location.protocol === 'https:') {
-      return null;
+      return window.location.origin;
+    }
+    // If accessed via localhost:5000 directly
+    if (window.location.port === '5000') {
+      return window.location.origin;
     }
   }
   return DEFAULT_LOCAL_BACKEND;
