@@ -62,7 +62,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Root Status
-app.get('/', (req, res) => {
+app.get(['/', '/api'], (req, res) => {
   res.status(200).json({
     name: 'DataForge API Engine',
     version: '2.0.0',
