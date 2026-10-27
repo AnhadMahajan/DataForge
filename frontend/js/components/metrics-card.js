@@ -36,15 +36,17 @@ export function createMetricsCard({ label, value, delta = null, isDark = true, s
   ].filter(Boolean));
   body.appendChild(tagEl);
 
+  const isLong = String(value).length > 10;
   const valueEl = el('div', {
     className: 'metric-value font-mono',
     style: {
-      fontSize: '2.1rem',
+      fontSize: isLong ? '1.35rem' : '2.1rem',
       fontWeight: '700',
       letterSpacing: '-0.03em',
       color: 'var(--text-primary)',
-      lineHeight: '1.1',
-      margin: '0.2rem 0'
+      lineHeight: '1.15',
+      margin: '0.2rem 0',
+      wordBreak: 'break-word',
     }
   }, String(value));
   body.appendChild(valueEl);
