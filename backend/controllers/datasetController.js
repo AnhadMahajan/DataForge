@@ -7,6 +7,7 @@ import path from 'path';
 import mongoose from 'mongoose';
 import Dataset from '../models/Dataset.js';
 import { profileRawData, coerceRows } from '../services/profilingService.js';
+import { connectDB } from '../config/db.js';
 
 const PREVIEW_ROWS = 20;
 const DEFAULT_PAGE_SIZE = 20;
@@ -22,7 +23,10 @@ const CANDIDATE_DELIMITERS = [',', ';', '\t', '|'];
 /**
  * Fail fast with 503 instead of letting Mongoose buffer commands for 10s.
  */
-function assertDbConnected(res) {
+async function assertDbConnected(res) {
+  if (mongoose.connection.readyState !== 1) {
+    await connectDB();
+  }
   if (mongoose.connection.readyState !== 1) {
     res.status(503);
     throw new Error('Database unavailable. Please ensure MongoDB is running and try again.');
@@ -281,7 +285,7 @@ export async function uploadDataset(req, res, next) {
       );
     }
 
-    assertDbConnected(res);
+    await assertDbConnected(res);
 
     const originalName = req.file.originalname;
     const requestedName = String(req.body?.name ?? '').trim();
@@ -330,7 +334,7 @@ export async function uploadDataset(req, res, next) {
  */
 export async function getDatasets(req, res, next) {
   try {
-    assertDbConnected(res);
+    await assertDbConnected(res);
 
     const page = parseIntParam(req.query.page, 1, 1, 1e6);
     const limit = parseIntParam(req.query.limit, DEFAULT_PAGE_SIZE, 1, MAX_PAGE_SIZE);
@@ -368,7 +372,7 @@ export async function getDatasets(req, res, next) {
  */
 export async function getDatasetById(req, res, next) {
   try {
-    assertDbConnected(res);
+    await assertDbConnected(res);
 
     const { id } = req.params;
 
@@ -418,7 +422,7 @@ export async function getDatasetById(req, res, next) {
  */
 export async function deleteDataset(req, res, next) {
   try {
-    assertDbConnected(res);
+    await assertDbConnected(res);
 
     const { id } = req.params;
 

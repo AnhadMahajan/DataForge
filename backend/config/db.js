@@ -21,8 +21,11 @@ export async function connectDB() {
   if (mongoose.connection.readyState === 1) {
     return mongoose.connection;
   }
-  if (cachedConn) {
-    return cachedConn;
+  if (mongoose.connection.readyState === 2) {
+    try {
+      await mongoose.connection.asPromise();
+      return mongoose.connection;
+    } catch (_) {}
   }
 
   const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/dataforge';
