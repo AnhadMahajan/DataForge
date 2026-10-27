@@ -194,9 +194,11 @@ function getPyodideWorker() {
       };
 
       pyodideWorker.onerror = (err) => {
-        console.error('[Pipeline] Pyodide Worker error:', err);
+        console.warn('[Pipeline] Pyodide Worker unavailable, executing via in-browser math engine:', err?.message || err);
         for (const [taskId, pending] of pendingPyodideTasks.entries()) {
-          pending.reject(new Error('Pyodide Worker error: ' + (err.message || 'unknown error')));
+          runSynchronous(pending.task, pending.payload, pending.onProgress)
+            .then(pending.resolve)
+            .catch(pending.reject);
           pendingPyodideTasks.delete(taskId);
         }
         pyodideWorker = null;
@@ -248,7 +250,7 @@ export async function runPyodideTask(task, payload, onProgress = () => {}) {
 
   return new Promise((resolve, reject) => {
     const taskId = `pytask_${++pyodideTaskCounter}_${Date.now()}`;
-    pendingPyodideTasks.set(taskId, { resolve, reject, onProgress });
+    pendingPyodideTasks.set(taskId, { resolve, reject, onProgress, task, payload });
     try {
       w.postMessage({ taskId, task, payload });
     } catch (err) {
