@@ -23,12 +23,13 @@
       <!-- Top Page Header -->
       <header class="page-header">
         <div class="page-header-left">
+          <div class="text-caption font-mono text-muted mb-xs" style="letter-spacing: 0.1em; font-size: 0.68rem;">[PLATFORM / MISSION_CONTROL / LIVE_TELEMETRY]</div>
           <h1 class="page-title" id="welcome-title">Workspace Dashboard</h1>
-          <div class="flex items-center gap-sm">
-            <span class="page-subtitle" id="current-date"></span>
-            <span class="dashboard-header-status">
+          <div class="flex items-center gap-sm mt-xs">
+            <span class="page-subtitle font-mono" style="font-size: 0.8rem;" id="current-date"></span>
+            <span class="dashboard-header-status" id="dash-engine-status">
               <span class="status-dot"></span>
-              <span>Client-Side Engine Active</span>
+              <span id="dash-engine-status-text">Detecting Engine...</span>
             </span>
           </div>
         </div>

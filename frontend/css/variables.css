@@ -1,46 +1,59 @@
 /* =========================================
    DataForge — Design Tokens
-   Single source of truth for all visual decisions
+   Unified Dark Obsidian & Scientific Foundry System
    ========================================= */
 
 :root {
-  /* ---- Color: Backgrounds ---- */
-  --bg-body:                #f2f2f2;
-  --bg-card:                rgba(255, 255, 255, 0.55);
-  --bg-card-solid:          #ffffff;
-  --bg-card-dark:           #111111;
-  --bg-card-dark-secondary: #1a1a1a;
-  --bg-sidebar:             rgba(255, 255, 255, 0.45);
-  --bg-input:               rgba(255, 255, 255, 0.65);
-  --bg-hover:               rgba(0, 0, 0, 0.04);
+  /* ---- Color: Backgrounds (Foundry Elevation) ---- */
+  --bg-body:                #080a0f;
+  --bg-surface:             #0b0e16;
+  --bg-card:                rgba(16, 21, 32, 0.75);
+  --bg-card-solid:          #0f1420;
+  --bg-card-dark:           #131a29;
+  --bg-card-dark-secondary: #172033;
+  --bg-sidebar:             #090c13;
+  --bg-input:               #111624;
+  --bg-hover:               rgba(255, 255, 255, 0.05);
   --bg-hover-dark:          rgba(255, 255, 255, 0.08);
-  --bg-active:              #111111;
+  --bg-active:              #10b981;
+  --bg-card-hover:          #161e2e;
 
-  /* ---- Color: Borders ---- */
-  --border-light:           rgba(0, 0, 0, 0.06);
-  --border-dark:            rgba(255, 255, 255, 0.1);
+  /* ---- Color: Borders (1px Precision Micro-Borders) ---- */
+  --border-light:           rgba(255, 255, 255, 0.07);
+  --border-dark:            rgba(255, 255, 255, 0.12);
+  --border-highlight:       rgba(16, 185, 129, 0.35);
+  --border-glow-cyan:       rgba(6, 182, 212, 0.35);
 
-  /* ---- Color: Text ---- */
-  --text-primary:           #0a0a0a;
-  --text-body:              #333333;
-  --text-secondary:         #666666;
-  --text-muted:             #999999;
+  /* ---- Color: Text (High Contrast Dark Mode) ---- */
+  --text-primary:           #f8fafc;
+  --text-body:              #cbd5e1;
+  --text-secondary:         #94a3b8;
+  --text-muted:             #64748b;
   --text-on-dark:           #ffffff;
-  --text-on-dark-secondary: #aaaaaa;
+  --text-on-dark-secondary: #e2e8f0;
 
-  /* ---- Color: Semantic (results only, never UI chrome) ---- */
-  --result-positive:        #1a8a5c;
-  --result-negative:        #c43e3e;
-  --result-neutral:         #b08a2e;
+  /* ---- Color: Scientific Accents ---- */
+  --accent-emerald:         #10b981;
+  --accent-emerald-glow:    rgba(16, 185, 129, 0.22);
+  --accent-cyan:            #06b6d4;
+  --accent-cyan-glow:       rgba(6, 182, 212, 0.22);
+  --accent-amber:           #f59e0b;
+  --accent-rose:            #f43f5e;
+  --accent-indigo:          #6366f1;
 
-  /* ---- Color: Charts ---- */
-  --chart-1: #333333;
-  --chart-2: #1a8a5c;
-  --chart-3: #c43e3e;
-  --chart-4: #b08a2e;
-  --chart-5: #4a7fb5;
-  --chart-6: #888888;
-  --chart-7: #2a9d8f;
+  /* ---- Color: Semantic (Fidelity & Diagnostics) ---- */
+  --result-positive:        #10b981;
+  --result-negative:        #f43f5e;
+  --result-neutral:         #f59e0b;
+
+  /* ---- Color: Charts (Dark Grid Palette) ---- */
+  --chart-1: #10b981;
+  --chart-2: #06b6d4;
+  --chart-3: #f59e0b;
+  --chart-4: #818cf8;
+  --chart-5: #f43f5e;
+  --chart-6: #94a3b8;
+  --chart-7: #2dd4bf;
 
   /* ---- Typography ---- */
   --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -51,8 +64,8 @@
   --h3:      clamp(1.05rem, 2vw, 1.125rem);
   --body:    0.9375rem;
   --small:   0.8125rem;
-  --caption: 0.75rem;
-  --metric:  clamp(2rem, 4.5vw, 2.75rem);
+  --caption: 0.72rem;
+  --metric:  clamp(1.85rem, 4vw, 2.45rem);
 
   --weight-regular: 400;
   --weight-medium:  500;
@@ -65,6 +78,7 @@
 
   --ls-tight: -0.03em;
   --ls-normal: 0;
+  --ls-wide: 0.06em;
 
   /* ---- Spacing ---- */
   --space-xs:  0.25rem;
@@ -75,30 +89,32 @@
   --space-2xl: 3rem;
   --space-3xl: 4rem;
 
-  /* ---- Border Radius ---- */
-  --radius-sm:   8px;
-  --radius-md:   14px;
-  --radius-lg:   20px;
+  /* ---- Border Radius (Crisp Industrial Engineering) ---- */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
   --radius-pill: 9999px;
 
-  /* ---- Shadows ---- */
-  --shadow-sm:        0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md:        0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg:        0 12px 40px rgba(0, 0, 0, 0.08);
-  --shadow-dark-card: 0 8px 32px rgba(0, 0, 0, 0.2);
+  /* ---- Shadows & Telemetry Glows ---- */
+  --shadow-sm:        0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-md:        0 4px 20px rgba(0, 0, 0, 0.55);
+  --shadow-lg:        0 12px 40px rgba(0, 0, 0, 0.75);
+  --shadow-dark-card: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --glow-emerald:     0 0 24px rgba(16, 185, 129, 0.2);
+  --glow-cyan:        0 0 24px rgba(6, 182, 212, 0.2);
 
   /* ---- Transitions ---- */
-  --transition-fast: 150ms ease;
-  --transition-base: 250ms ease;
-  --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ---- Layout ---- */
-  --sidebar-width:     240px;
-  --sidebar-collapsed: 56px;
+  --sidebar-width:     250px;
+  --sidebar-collapsed: 60px;
   --page-padding:      var(--space-2xl);
   --card-gap:          var(--space-lg);
 
-  /* ---- Breakpoints (for reference — used in media queries) ---- */
+  /* ---- Breakpoints ---- */
   --mobile:  640px;
   --tablet:  1024px;
   --desktop: 1280px;

@@ -1,3 +1,7 @@
+/* =========================================
+   DataForge — Experiment Lab Styles
+   ========================================= */
+
 .strategy-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -6,21 +10,47 @@
 }
 
 .strategy-card {
-  background: var(--bg-card);
-  border: 1.5px solid var(--border-light);
+  background: rgba(16, 21, 32, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: var(--space-lg);
   cursor: pointer;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
 }
 
 .strategy-card:hover {
-  box-shadow: var(--shadow-md);
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 21, 32, 0.9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.1);
+  transform: translateY(-2px);
 }
 
 .strategy-card.selected {
-  border-color: #111111;
-  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--accent-emerald);
+  background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12) 0%, rgba(16, 21, 32, 0.95) 75%);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.22), inset 0 1px 0 rgba(16, 185, 129, 0.4);
+}
+
+.strategy-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  background: var(--accent-emerald);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
 .strategy-card-header {
@@ -33,13 +63,13 @@
 .strategy-params {
   margin-top: var(--space-md);
   padding-top: var(--space-md);
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .progress-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(242, 242, 242, 0.85);
+  background: rgba(8, 10, 15, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
@@ -59,10 +89,12 @@
 }
 
 .progress-modal {
-  background: var(--bg-card-solid);
-  border: 1px solid var(--border-light);
+  background: rgba(11, 14, 22, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(16, 185, 129, 0.18);
   padding: var(--space-2xl);
   max-width: 480px;
   width: 100%;

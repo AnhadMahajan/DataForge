@@ -13,6 +13,7 @@ import { renderGroupedBarChart } from '../components/charts.js';
 import { toast } from '../components/toast.js';
 import { formatDimensions, formatRelativeTime, formatPercent, formatStrategy } from '../utils/formatting.js';
 import { el, qs, show, hide } from '../utils/dom.js';
+import { checkNativeBackend } from '../services/pipeline.js';
 
 // Authenticate session
 const session = requireSession();
@@ -50,6 +51,21 @@ if (currentDate) {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+  });
+}
+
+// Probe cluster telemetry for header ticker
+const dashEngineStatusText = qs('#dash-engine-status-text');
+if (dashEngineStatusText) {
+  checkNativeBackend().then(res => {
+    if (res.online) {
+      const latency = res.info?.database?.latencyMs ? `${res.info.database.latencyMs}ms` : 'connected';
+      dashEngineStatusText.textContent = `MongoDB Atlas (${latency})`;
+      dashEngineStatusText.style.color = '#10b981';
+    } else {
+      dashEngineStatusText.textContent = 'Pyodide Wasm Engine';
+      dashEngineStatusText.style.color = '#06b6d4';
+    }
   });
 }
 
@@ -166,11 +182,11 @@ function renderDashboard() {
       {
         name: 'Baseline (Raw)',
         values: [baseAgg.f1.mean, baseAgg.accuracy.mean, baseAgg.precision.mean, baseAgg.recall.mean],
-        color: '#333333',
+        color: '#475569',
       },
     ];
 
-    const colors = ['#1a8a5c', '#4a7fb5', '#b08a2e'];
+    const colors = ['#10b981', '#06b6d4', '#f59e0b'];
     stratResults.forEach((s, idx) => {
       series.push({
         name: formatStrategy(s.strategyType),
@@ -189,8 +205,8 @@ function renderDashboard() {
     // Show clean interactive preview chart
     const previewLabels = ['Macro F1', 'Accuracy', 'Precision', 'Recall'];
     const previewSeries = [
-      { name: 'Baseline (Sample)', values: [0.74, 0.78, 0.72, 0.70], color: '#333333' },
-      { name: 'SMOTE (Sample)', values: [0.86, 0.85, 0.84, 0.87], color: '#1a8a5c' },
+      { name: 'Baseline (Raw)', values: [0.74, 0.78, 0.72, 0.70], color: '#475569' },
+      { name: 'SMOTE (Augmented)', values: [0.86, 0.85, 0.84, 0.87], color: '#10b981' },
     ];
     renderGroupedBarChart(chartContainer, previewLabels, previewSeries, { height: 210 });
   }

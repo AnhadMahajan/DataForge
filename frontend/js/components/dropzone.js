@@ -22,22 +22,33 @@ export function createDropzone(container, onFileSelected) {
     'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4',
     'M17 8l-5-5-5 5',
     'M12 3v12',
-  ], 32);
+  ], 36);
+  uploadIcon.style.color = 'var(--accent-emerald)';
+  uploadIcon.style.filter = 'drop-shadow(0 0 10px rgba(16, 185, 129, 0.4))';
 
   const dropzoneEl = el('div', {
     className: 'card flex flex-col items-center justify-center cursor-pointer p-xl text-center',
     style: {
       borderStyle: 'dashed',
       borderWidth: '2px',
-      minHeight: '220px',
-      transition: 'border-color var(--transition-fast), background var(--transition-fast)',
+      borderColor: 'rgba(16, 185, 129, 0.35)',
+      background: 'rgba(16, 21, 32, 0.6)',
+      minHeight: '230px',
+      transition: 'all var(--transition-fast)',
+      position: 'relative',
     },
     onClick: () => fileInput.click(),
   }, [
     uploadIcon,
-    el('div', { className: 'card-title mt-md' }, 'Choose a CSV file or drag it here'),
-    el('p', { className: 'text-secondary text-small mt-xs mb-md' }, 'Standard comma, semicolon or tab delimited CSV files up to 5MB'),
-    el('div', { className: 'btn btn-secondary btn-sm' }, 'Browse computer'),
+    el('div', { className: 'card-title mt-md', style: { color: 'var(--text-primary)' } }, 'Select CSV or Drag to Upload'),
+    el('p', { className: 'text-secondary text-small mt-xs mb-sm' }, 'Auto-detects headers, delimiters, types & class imbalance'),
+    el('div', { className: 'flex gap-xs mb-md' }, [
+      el('span', { className: 'pill pill-dark font-mono', style: { fontSize: '0.68rem' } }, '.CSV'),
+      el('span', { className: 'pill pill-dark font-mono', style: { fontSize: '0.68rem' } }, 'UTF-8'),
+      el('span', { className: 'pill pill-dark font-mono', style: { fontSize: '0.68rem' } }, 'TAB / COMMA'),
+      el('span', { className: 'pill pill-dark font-mono', style: { fontSize: '0.68rem' } }, 'MAX 5MB'),
+    ]),
+    el('div', { className: 'btn btn-primary btn-sm' }, 'Browse Local Files'),
     fileInput,
   ]);
 
@@ -46,8 +57,9 @@ export function createDropzone(container, onFileSelected) {
     dropzoneEl.addEventListener(eventName, (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropzoneEl.style.borderColor = '#111111';
-      dropzoneEl.style.background = 'rgba(0, 0, 0, 0.04)';
+      dropzoneEl.style.borderColor = 'var(--accent-emerald)';
+      dropzoneEl.style.background = 'rgba(16, 185, 129, 0.1)';
+      dropzoneEl.style.boxShadow = '0 0 24px rgba(16, 185, 129, 0.25)';
     });
   });
 
@@ -55,8 +67,9 @@ export function createDropzone(container, onFileSelected) {
     dropzoneEl.addEventListener(eventName, (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropzoneEl.style.borderColor = 'var(--border-light)';
-      dropzoneEl.style.background = 'var(--bg-card)';
+      dropzoneEl.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+      dropzoneEl.style.background = 'rgba(16, 21, 32, 0.6)';
+      dropzoneEl.style.boxShadow = 'none';
     });
   });
 

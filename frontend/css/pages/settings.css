@@ -63,18 +63,21 @@
   }
   
   .settings-nav-btn.active {
-    background: var(--bg-active);
-    color: var(--text-on-dark);
-    font-weight: var(--weight-medium);
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.02) 100%);
+    color: #ffffff;
+    border-left: 2px solid var(--accent-emerald);
+    font-weight: var(--weight-semi);
+    box-shadow: inset 1px 0 0 rgba(16, 185, 129, 0.4);
   }
   
   .settings-nav-btn.active svg {
-    color: var(--text-on-dark);
+    color: var(--accent-emerald);
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.5));
   }
   
   /* User Profile Header Card */
   .profile-banner-card {
-    background: var(--bg-card);
+    background: rgba(16, 21, 32, 0.65);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-light);
@@ -97,14 +100,15 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: #111111;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.125rem;
     font-weight: var(--weight-bold);
-    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.3);
   }
   
   .profile-banner-name {
@@ -116,6 +120,7 @@
   
   .profile-banner-email {
     font-size: var(--small);
+    font-family: var(--font-mono);
     color: var(--text-secondary);
     margin-top: 2px;
   }
@@ -136,7 +141,7 @@
   .storage-bar-track {
     width: 100%;
     height: 8px;
-    background: rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 4px;
     overflow: hidden;
     position: relative;
@@ -144,7 +149,8 @@
   
   .storage-bar-fill {
     height: 100%;
-    background: #111111;
+    background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
     border-radius: 4px;
     transition: width var(--transition-slow);
   }
@@ -157,7 +163,7 @@
   }
   
   .storage-stat-tile {
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(16, 21, 32, 0.65);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
     padding: var(--space-sm) var(--space-md);
@@ -168,11 +174,12 @@
     font-family: var(--font-mono);
     font-size: 1.25rem;
     font-weight: var(--weight-bold);
-    color: var(--text-primary);
+    color: var(--accent-emerald);
   }
   
   .storage-stat-label {
     font-size: var(--caption);
+    font-family: var(--font-mono);
     color: var(--text-muted);
     margin-top: 2px;
   }

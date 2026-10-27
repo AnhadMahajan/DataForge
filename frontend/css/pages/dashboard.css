@@ -1,17 +1,19 @@
 /* =========================================
    DataForge — Dashboard Redesign Styles
-   Monochrome glassmorphism, crisp contrast, high information density
+   Mission Control telemetry, high density, dark glassmorphism
    ========================================= */
 
 .dashboard-header-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--caption);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
   font-weight: var(--weight-medium);
-  color: var(--text-secondary);
-  background: rgba(0, 0, 0, 0.04);
-  padding: 2px 10px;
+  color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
   margin-top: 4px;
 }
@@ -20,17 +22,18 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--result-positive);
+  background: var(--accent-emerald);
+  box-shadow: 0 0 6px var(--accent-emerald);
 }
 
-/* Quick Start Playground Card */
+/* Quick Start Playground Card / Mission Deck */
 .playground-banner {
-  background: var(--bg-card);
+  background: radial-gradient(circle at 85% 15%, rgba(16, 185, 129, 0.09) 0%, rgba(16, 21, 32, 0.88) 65%), #0c101a;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-light);
+  border: 1px solid rgba(16, 185, 129, 0.32);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(16, 185, 129, 0.22);
   padding: var(--space-xl);
   margin-bottom: var(--space-2xl);
   display: flex;
@@ -46,9 +49,10 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 3px;
   height: 100%;
-  background: #111111;
+  background: linear-gradient(180deg, #10b981 0%, #06b6d4 100%);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
 }
 
 .playground-content {
@@ -60,12 +64,15 @@
   font-weight: var(--weight-bold);
   color: var(--text-primary);
   margin-bottom: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .playground-desc {
   font-size: var(--small);
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
   max-width: 680px;
   margin: 0;
 }
@@ -79,7 +86,7 @@
 /* 2-Column Visual Intelligence Grid */
 .analytics-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: 1.25fr 1fr;
   gap: var(--card-gap);
   margin-bottom: var(--space-2xl);
 }
@@ -89,8 +96,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-lg);
-  padding: var(--space-md);
-  background: rgba(0, 0, 0, 0.02);
+  padding: var(--space-md) var(--space-lg);
+  background: rgba(16, 21, 32, 0.65);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   margin-top: var(--space-md);
 }
@@ -100,7 +108,8 @@
   font-size: 2.25rem;
   font-weight: var(--weight-bold);
   line-height: 1;
-  color: var(--text-primary);
+  color: var(--accent-emerald);
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
 }
 
 .health-gauge-details {
@@ -113,7 +122,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   transition: background var(--transition-fast);
   text-decoration: none;
   color: inherit;
@@ -124,7 +133,7 @@
 }
 
 .dash-item-row:hover {
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.04);
   text-decoration: none;
 }
 
@@ -134,7 +143,8 @@
   gap: var(--space-sm);
   font-size: var(--caption);
   color: var(--text-muted);
-  margin-top: 2px;
+  font-family: var(--font-mono);
+  margin-top: 3px;
 }
 
 /* Dashboard Bottom 2-Column Grid Layout */
@@ -151,7 +161,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: var(--caption);
+  font-size: 0.7rem;
   font-weight: var(--weight-semi);
   padding: 0.2rem 0.65rem;
   border-radius: var(--radius-pill);
@@ -160,18 +170,21 @@
 }
 
 .health-badge.health-high {
-  background: rgba(26, 138, 92, 0.1);
-  color: var(--result-positive);
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .health-badge.health-medium {
-  background: rgba(176, 138, 46, 0.1);
-  color: var(--result-neutral);
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 .health-badge.health-low {
-  background: rgba(196, 62, 62, 0.1);
-  color: var(--result-negative);
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 /* Responsive */

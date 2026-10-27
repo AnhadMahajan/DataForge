@@ -1,3 +1,7 @@
+/* ============================================================
+   DataForge — Upload & Dataset Diagnostic Styles
+   ============================================================ */
+
 .upload-grid-container {
   display: grid;
   grid-template-columns: 1fr;
@@ -9,12 +13,26 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-xl);
-  background: var(--bg-card-dark);
-  color: var(--text-on-dark);
+  background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12) 0%, rgba(16, 21, 32, 0.95) 70%), #0c101a;
+  color: var(--text-primary);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-dark-card);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(16, 185, 129, 0.25);
   margin-bottom: var(--space-xl);
   gap: var(--space-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.analysis-score-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #10b981 0%, #06b6d4 100%);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
 }
 
 .analysis-score-number {
@@ -22,6 +40,8 @@
   font-size: clamp(2.5rem, 6vw, 3.5rem);
   font-weight: var(--weight-bold);
   line-height: 1;
+  color: var(--accent-emerald);
+  text-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
 }
 
 .analysis-reasons-list {
@@ -37,6 +57,12 @@
   gap: var(--space-sm);
   font-size: var(--small);
   color: var(--text-secondary);
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.analysis-reason-item:last-child {
+  border-bottom: none;
 }
 
 .feature-analysis-grid {
@@ -46,10 +72,16 @@
 }
 
 .feature-card-item {
-  background: var(--bg-card);
+  background: rgba(16, 21, 32, 0.65);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: var(--space-md);
+  transition: all var(--transition-fast);
+}
+
+.feature-card-item:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 21, 32, 0.9);
 }
 
 @media (max-width: 768px) {

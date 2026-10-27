@@ -84,31 +84,31 @@ export function initSidebar(containerId = 'sidebar') {
   }
 
   const sidebar = el('aside', { className: 'sidebar', id: 'app-sidebar' }, [
-    // Header
+    // Header with DataForge logo and live version chip
     el('div', { className: 'sidebar-header' }, [
       el('div', { className: 'sidebar-logo' }, [
         document.createTextNode('Data'),
         el('span', {}, 'Forge'),
       ]),
+      el('span', { className: 'telemetry-chip-pulse', title: 'DataForge Engine v2.0.0 Cloud Active' }, 'v2.0 Cloud'),
     ]),
 
     // Navigation
     el('nav', { className: 'sidebar-nav' }, [
       el('button', {
-        className: 'nav-item mb-sm w-full',
-        style: { border: '1px dashed rgba(0, 0, 0, 0.15)', justifyContent: 'space-between' },
+        className: 'sidebar-search-btn',
         title: 'Open Command Palette (Cmd+K / /)',
         onClick: () => openCommandPalette(),
       }, [
         el('div', { className: 'flex items-center gap-xs' }, [
-          icon(ICONS.search, 16),
-          el('span', {}, 'Quick Find'),
+          icon(ICONS.search, 15),
+          el('span', { style: { fontSize: '0.8rem' } }, 'Quick Find'),
         ]),
-        el('span', { className: 'font-mono text-caption text-muted' }, '⌘K'),
+        el('span', { className: 'font-mono text-caption text-muted', style: { fontSize: '0.7rem' } }, '⌘K'),
       ]),
-      el('div', { className: 'sidebar-section-label' }, 'Main'),
+      el('div', { className: 'sidebar-section-label' }, 'Platform'),
       ...NAV_ITEMS.map(item => createNavItem(item, currentPage)),
-      el('div', { className: 'sidebar-section-label mt-lg' }, 'System'),
+      el('div', { className: 'sidebar-section-label mt-md' }, 'System'),
       ...BOTTOM_ITEMS.map(item => createNavItem(item, currentPage)),
     ]),
 
@@ -117,46 +117,77 @@ export function initSidebar(containerId = 'sidebar') {
       el('div', { className: 'sidebar-user' }, [
         el('div', { className: 'sidebar-user-avatar' }, getInitials(user?.name || 'U')),
         el('div', { className: 'sidebar-user-info' }, [
-          el('div', { className: 'sidebar-user-name' }, user?.name || 'User'),
-          el('div', { className: 'sidebar-user-email' }, user?.email || ''),
+          el('div', { className: 'sidebar-user-name' }, user?.name || 'Research Lead'),
+          el('div', { className: 'sidebar-user-email' }, user?.email || 'admin@dataforge.ai'),
         ]),
       ]),
-      // Backend Status Pill
+      // High-precision cluster telemetry badge
       el('a', {
         id: 'sidebar-backend-badge',
         href: 'settings.html',
         className: 'mt-xs p-xs rounded text-caption flex items-center gap-xs no-underline',
-        style: { background: 'var(--bg-card-hover)', border: '1px solid var(--border-light)', cursor: 'pointer', transition: 'all 0.2s ease' },
-        title: 'Click to configure Backend API in Settings',
+        style: {
+          background: 'rgba(16, 21, 32, 0.75)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          padding: '6px 8px'
+        },
+        title: 'Click to configure Engine & Database Telemetry in Settings',
       }, [
-        el('span', { id: 'backend-status-dot', style: { width: '8px', height: '8px', borderRadius: '50%', background: '#ffaa00', flexShrink: '0' } }),
-        el('span', { id: 'backend-status-text', className: 'text-muted truncate' }, 'Detecting Engine...'),
+        el('span', {
+          id: 'backend-status-dot',
+          style: {
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            background: '#ffaa00',
+            boxShadow: '0 0 6px #ffaa00',
+            flexShrink: '0'
+          }
+        }),
+        el('span', {
+          id: 'backend-status-text',
+          className: 'truncate font-mono',
+          style: { fontSize: '0.68rem', color: 'var(--text-secondary)' }
+        }, 'Probing Cluster...'),
       ]),
       el('button', {
         className: 'nav-item mt-xs w-full',
+        style: { color: 'var(--text-muted)' },
         onClick: () => {
           logout();
         },
       }, [
-        icon(ICONS.logout, 18),
-        el('span', {}, 'Log Out'),
+        icon(ICONS.logout, 16),
+        el('span', { style: { fontSize: '0.8rem' } }, 'Disconnect'),
       ]),
     ]),
   ]);
 
-  // Check backend status async and update badge
+  // Check backend status async and update badge with live Atlas latency
   checkNativeBackend().then(res => {
     const dot = sidebar.querySelector('#backend-status-dot');
     const text = sidebar.querySelector('#backend-status-text');
     if (dot && text) {
       if (res.online) {
-        dot.style.background = '#10b981'; // Green
-        text.textContent = 'Native Python (FastAPI)';
+        dot.style.background = '#10b981';
+        dot.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.7)';
+        const latency = res.info?.database?.latencyMs ? `${res.info.database.latencyMs}ms` : null;
+        const dbStatus = res.info?.database?.status === 'connected';
+        if (dbStatus && latency) {
+          text.textContent = `● Atlas Cloud (${latency})`;
+        } else if (dbStatus) {
+          text.textContent = '● Atlas Connected';
+        } else {
+          text.textContent = '● API Online';
+        }
         text.style.color = '#10b981';
       } else {
-        dot.style.background = '#3b82f6'; // Blue
-        text.textContent = 'Browser Wasm (Pyodide)';
-        text.style.color = '#60a5fa';
+        dot.style.background = '#06b6d4';
+        dot.style.boxShadow = '0 0 8px rgba(6, 182, 212, 0.6)';
+        text.textContent = '● In-Browser Wasm (Pyodide)';
+        text.style.color = '#06b6d4';
       }
     }
   });

@@ -33,6 +33,28 @@ if (togglePasswordBtn && passwordInput) {
   });
 }
 
+// 1-Click Demo Fill Listeners
+const btnAdmin = qs('#btn-fill-admin');
+const btnResearcher = qs('#btn-fill-researcher');
+
+if (btnAdmin && emailInput && passwordInput) {
+  btnAdmin.addEventListener('click', () => {
+    emailInput.value = 'admin@dataforge.ai';
+    passwordInput.value = 'DataForge2026!';
+    clearErrors();
+    toast.info('Admin demo credentials populated.');
+  });
+}
+
+if (btnResearcher && emailInput && passwordInput) {
+  btnResearcher.addEventListener('click', () => {
+    emailInput.value = 'researcher@dataforge.ai';
+    passwordInput.value = 'Research2026!';
+    clearErrors();
+    toast.info('Researcher demo credentials populated.');
+  });
+}
+
 const validationRules = {
   email: [
     { type: 'required', message: 'Email is required' },

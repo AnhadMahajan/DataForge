@@ -1,11 +1,12 @@
 /* ============================================================
    DataForge — Synthesizer Lab Page Styles
+   Scientific Workstation, Tactile Sliders, High-Contrast HUD Gauges
    ============================================================ */
 
 /* ---- Algorithm Selection Grid ---- */
 .synth-algo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: var(--space-md);
 }
 
@@ -15,53 +16,66 @@
   align-items: center;
   text-align: center;
   padding: var(--space-lg) var(--space-md);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: var(--color-surface);
+  transition: all var(--transition-fast);
+  background: rgba(16, 21, 32, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   position: relative;
+  overflow: hidden;
 }
 
 .synth-algo-card:hover {
-  border-color: var(--color-text-secondary);
+  border-color: rgba(16, 185, 129, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  background: rgba(16, 21, 32, 0.95);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.1);
 }
 
 .synth-algo-card.selected {
-  border-color: var(--color-text-primary);
-  background: rgba(0, 0, 0, 0.02);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: var(--accent-emerald);
+  background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.14) 0%, rgba(16, 21, 32, 0.95) 75%);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.22), inset 0 1px 0 rgba(16, 185, 129, 0.4);
 }
 
 .synth-algo-card.selected::after {
   content: '✓';
   position: absolute;
-  top: 8px;
-  right: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-text-primary);
+  top: 10px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  background: var(--accent-emerald);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
 .synth-algo-icon {
   font-size: 2rem;
   margin-bottom: var(--space-sm);
   line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.3));
 }
 
 .synth-algo-name {
   font-weight: 600;
-  font-size: var(--font-size-md);
+  font-size: var(--body);
   margin-bottom: var(--space-xs);
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 .synth-algo-desc {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  line-height: 1.4;
+  font-size: var(--small);
+  color: var(--text-secondary);
+  line-height: 1.45;
   margin-bottom: var(--space-sm);
 }
 
@@ -82,7 +96,7 @@
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
-  background: var(--color-border);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   outline: none;
   cursor: pointer;
@@ -91,42 +105,47 @@
 .synth-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--color-text-primary);
+  background: var(--accent-emerald);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .synth-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+  transform: scale(1.25);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.9);
 }
 
 .synth-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--color-text-primary);
+  background: var(--accent-emerald);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
   border: none;
   cursor: pointer;
 }
 
 .synth-row-count {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-size-lg);
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
   font-weight: 700;
-  min-width: 60px;
+  min-width: 70px;
   text-align: right;
-  color: var(--color-text-primary);
+  color: var(--accent-emerald);
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
 .synth-slider-labels {
   display: flex;
   justify-content: space-between;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  margin-top: 2px;
+  font-size: var(--caption);
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-top: 4px;
   padding: 0 2px;
 }
 
@@ -142,7 +161,7 @@
 .synth-progress-bar {
   flex: 1;
   height: 6px;
-  background: var(--color-border);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
   overflow: hidden;
   position: relative;
@@ -155,14 +174,16 @@
   top: 0;
   height: 100%;
   width: var(--progress, 0%);
-  background: var(--color-text-primary);
+  background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
 
 .synth-progress-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-size: var(--caption);
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
   white-space: nowrap;
   min-width: 120px;
 }
@@ -170,7 +191,7 @@
 /* ---- Quality Gauges Grid ---- */
 .synth-quality-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: var(--space-lg);
   justify-items: center;
 }
@@ -198,18 +219,21 @@
 
 /* ---- Pill Variants for Algorithm Tags ---- */
 .pill-positive {
-  background: rgba(26, 138, 92, 0.1);
-  color: #1a8a5c;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .pill-neutral {
-  background: rgba(74, 127, 181, 0.1);
-  color: #4a7fb5;
+  background: rgba(6, 182, 212, 0.15);
+  color: #22d3ee;
+  border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
 .pill-caution {
-  background: rgba(176, 138, 46, 0.1);
-  color: #b08a2e;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 /* ---- Table Scroll Container ---- */
@@ -222,7 +246,7 @@
 /* ---- Metadata Grid ---- */
 #metadata-grid .meta-item {
   padding: var(--space-sm) 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 #metadata-grid .meta-item:last-child {
@@ -230,15 +254,17 @@
 }
 
 #metadata-grid .meta-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-size: var(--caption);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
   margin-bottom: 2px;
 }
 
 #metadata-grid .meta-value {
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: var(--font-size-md);
+  font-family: var(--font-mono);
+  font-size: var(--body);
+  color: var(--text-primary);
 }
 
 /* ---- Responsive ---- */

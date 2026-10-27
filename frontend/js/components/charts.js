@@ -6,15 +6,16 @@
 import { el } from '../utils/dom.js';
 
 const CHART_COLORS = {
-  baseline: '#333333',
-  positive: '#1a8a5c',
-  negative: '#c43e3e',
-  neutral:  '#b08a2e',
-  blue:     '#4a7fb5',
-  gray:     '#888888',
-  teal:     '#2a9d8f',
-  grid:     'rgba(0, 0, 0, 0.06)',
-  text:     '#888888',
+  baseline: '#475569',
+  positive: '#10b981',
+  negative: '#ef4444',
+  neutral:  '#f59e0b',
+  blue:     '#06b6d4',
+  gray:     '#94a3b8',
+  teal:     '#10b981',
+  grid:     'rgba(255, 255, 255, 0.08)',
+  text:     '#94a3b8',
+  lightText:'#f8fafc',
 };
 
 /**
@@ -95,7 +96,7 @@ export function renderBarChart(container, data, options = {}) {
 
     // Value label on top
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#0a0a0a';
+    ctx.fillStyle = CHART_COLORS.lightText;
     ctx.font = '11px JetBrains Mono, monospace';
     ctx.fillText(String(item.value), x + barW / 2, y - 6);
 
@@ -219,7 +220,7 @@ export function renderGroupedBarChart(container, labels, series, options = {}) {
 
       // Value label on bar top — rotate when bars are narrow to prevent overlap
       const labelText = `${(val * 100).toFixed(1)}%`;
-      ctx.fillStyle = '#0a0a0a';
+      ctx.fillStyle = CHART_COLORS.lightText;
       ctx.font = '9px JetBrains Mono, monospace';
 
       if (needsRotatedLabels) {
@@ -263,7 +264,7 @@ export function renderGroupedBarChart(container, labels, series, options = {}) {
 
     ctx.fillStyle = s.color || CHART_COLORS.baseline;
     ctx.fillRect(legendX, legendY, 10, 10);
-    ctx.fillStyle = '#333333';
+    ctx.fillStyle = CHART_COLORS.lightText;
     ctx.textAlign = 'left';
     ctx.fillText(s.name, legendX + 14, legendY + 9);
     legendX += itemW;
@@ -352,7 +353,7 @@ export function renderRunVarianceChart(container, runs, options = {}) {
     const yBase = padding.top + chartH - ((r.baseline - 0.5) / 0.5) * chartH;
 
     // Base point
-    ctx.fillStyle = '#555555';
+    ctx.fillStyle = CHART_COLORS.gray;
     ctx.beginPath();
     ctx.arc(x, yBase, 3.5, 0, Math.PI * 2);
     ctx.fill();
@@ -416,12 +417,12 @@ export function renderCorrelationHeatmap(container, features, matrix, options = 
   ctx.scale(dpr, dpr);
 
   // Background
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
   ctx.fillRect(0, 0, totalW, totalH);
 
   // Render Top Labels (rotated 45deg)
   ctx.font = '11px Inter, sans-serif';
-  ctx.fillStyle = '#444444';
+  ctx.fillStyle = CHART_COLORS.lightText;
   features.forEach((feat, col) => {
     const x = labelMarginLeft + col * cellSize + cellSize / 2;
     const y = labelMarginTop - 10;
@@ -488,7 +489,7 @@ export function renderCorrelationHeatmap(container, features, matrix, options = 
   // Legend at bottom
   const legendY = labelMarginTop + n * cellSize + 15;
   ctx.font = '10px Inter, sans-serif';
-  ctx.fillStyle = '#666666';
+  ctx.fillStyle = CHART_COLORS.text;
   ctx.textAlign = 'left';
   ctx.fillText('Emerald: Positive Correlation (+)  |  Burgundy: Negative Correlation (-)  |  Range: -1.00 to +1.00', labelMarginLeft, legendY);
 
@@ -660,9 +661,9 @@ export function renderDriftDensityChart(container, origVals, synthVals, featureN
   const chartH = height - padding.top - padding.bottom;
 
   // Grid Lines
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+  ctx.strokeStyle = CHART_COLORS.grid;
   ctx.lineWidth = 1;
-  ctx.fillStyle = '#888888';
+  ctx.fillStyle = CHART_COLORS.text;
   ctx.font = '10px JetBrains Mono, monospace';
   ctx.textAlign = 'right';
 
@@ -685,18 +686,18 @@ export function renderDriftDensityChart(container, origVals, synthVals, featureN
     // Original Ground Truth Bar (Dark Slate)
     const origH = (origFreqs[b] / maxFreq) * chartH;
     const origY = padding.top + chartH - origH;
-    ctx.fillStyle = 'rgba(34, 34, 34, 0.75)';
+    ctx.fillStyle = 'rgba(71, 85, 105, 0.85)';
     ctx.fillRect(groupX + 2, origY, barWidth, origH);
 
     // Synthetic Bar (Emerald or Burgundy depending on drift)
     const synthH = (synthFreqs[b] / maxFreq) * chartH;
     const synthY = padding.top + chartH - synthH;
-    ctx.fillStyle = severity === 'severe' ? 'rgba(196, 62, 62, 0.75)' : 'rgba(26, 138, 92, 0.75)';
+    ctx.fillStyle = severity === 'severe' ? 'rgba(239, 68, 68, 0.85)' : 'rgba(16, 185, 129, 0.85)';
     ctx.fillRect(groupX + 2 + barWidth, synthY, barWidth, synthH);
 
     // X Axis bin labels
     const binStart = minVal + b * binStep;
-    ctx.fillStyle = '#666666';
+    ctx.fillStyle = CHART_COLORS.text;
     ctx.font = '9px JetBrains Mono, monospace';
     ctx.textAlign = 'center';
     if (b % 2 === 0 || numBins <= 6) {
@@ -709,7 +710,7 @@ export function renderDriftDensityChart(container, origVals, synthVals, featureN
   ctx.textAlign = 'left';
 
   // Orig legend
-  ctx.fillStyle = '#222222';
+  ctx.fillStyle = CHART_COLORS.lightText;
   ctx.fillRect(padding.left, 12, 10, 10);
   ctx.fillText(`Original Ground Truth (N=${cleanOrig.length})`, padding.left + 16, 21);
 
@@ -871,7 +872,7 @@ export function renderQualityGauge(container, score, options = {}) {
   // Background arc
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0.75 * Math.PI, 2.25 * Math.PI);
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.lineWidth = lineWidth;
   ctx.lineCap = 'round';
   ctx.stroke();
@@ -880,9 +881,9 @@ export function renderQualityGauge(container, score, options = {}) {
   const pct = Math.max(0, Math.min(100, score)) / 100;
   const endAngle = 0.75 * Math.PI + pct * 1.5 * Math.PI;
 
-  let color = '#c43e3e'; // Red (poor)
-  if (score >= thresholds[1]) color = '#1a8a5c'; // Green (good)
-  else if (score >= thresholds[0]) color = '#b08a2e'; // Yellow (moderate)
+  let color = '#ef4444'; // Red (poor)
+  if (score >= thresholds[1]) color = '#10b981'; // Green (good)
+  else if (score >= thresholds[0]) color = '#f59e0b'; // Amber (moderate)
 
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0.75 * Math.PI, endAngle);
@@ -892,7 +893,7 @@ export function renderQualityGauge(container, score, options = {}) {
   ctx.stroke();
 
   // Score text
-  ctx.fillStyle = '#333';
+  ctx.fillStyle = CHART_COLORS.lightText;
   ctx.font = `bold ${size * 0.22}px system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
